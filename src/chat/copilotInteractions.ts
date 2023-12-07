@@ -16,7 +16,7 @@ async function getChatAccess(): Promise<vscode.ChatAccess> {
 }
 
 const showDebugCopilotInteractionAsProgress = false;
-function debugCopilotInteraction(progress: vscode.Progress<vscode.ChatAgentExtendedProgress>, msg: string) {
+export function debugCopilotInteraction(progress: vscode.Progress<vscode.ChatAgentExtendedProgress>, msg: string) {
     if (showDebugCopilotInteractionAsProgress) {
         progress.report({ content: `\n\n${new Date().toISOString()} >> \`${msg.replace(/\n/g, "").trim()}\`\n\n` });
     }
@@ -101,24 +101,24 @@ async function doCopilotInteraction(onResponseFragment: (fragment: string) => vo
             onResponseFragment(fragment);
         }
     } catch (e) {
-        debugCopilotInteraction(progress, `Error: ${e}`);
+        debugCopilotInteraction(progress, `Failed to do copilot interaction with system prompt '${systemPrompt}'. Error: ${JSON.stringify(e)}`);
     }
 }
 
 /**
  * Gets a string field from a Copilot response that may contain a stringified JSON object.
  * @param copilotResponseMaybeWithStrJson The Copilot response that might contain a stringified JSON object.
- * @param fieldName The name of the field to get from the stringified JSON object. Will first look for fields that are an exact match, then will look for fields that contain the {@link fieldName}.
+ * @param fieldNameOrNames The name of the field to get from the stringified JSON object. Will first look for fields that are an exact match, then will look for fields that contain the {@link fieldName}.
  * @param filter An optional list of strings to filter contains-matches by if there are multiple fields that contain the {@link fieldName}.
  */
-export function getStringFieldFromCopilotResponseMaybeWithStrJson(copilotResponseMaybeWithStrJson: string | undefined, fieldName: string, filter?: string[]): string | undefined {
+export function getStringFieldFromCopilotResponseMaybeWithStrJson(copilotResponseMaybeWithStrJson: string | undefined, fieldNameOrNames: string | string[], filter?: string[]): string | undefined {
     if (copilotResponseMaybeWithStrJson === undefined) {
         return undefined;
     }
 
     try {
         const parsedCopilotResponse = parseCopilotResponseMaybeWithStrJson(copilotResponseMaybeWithStrJson);
-        return findPossibleValuesOfFieldFromParsedCopilotResponse(parsedCopilotResponse, fieldName, filter)
+        return findPossibleValuesOfFieldFromParsedCopilotResponse(parsedCopilotResponse, fieldNameOrNames, filter)
             .find((value): value is string => value !== undefined && value !== "" && typeof value === "string");
     } catch (e) {
         console.log(e);
@@ -166,16 +166,23 @@ function parseCopilotResponseMaybeWithStrJson(copilotResponseMaybeWithStrJson: s
         const maybeJsonCopilotResponse = copilotResponseMaybeWithStrJson.substring(copilotResponseMaybeWithStrJson.indexOf("{"), copilotResponseMaybeWithStrJson.lastIndexOf("}") + 1);
         return JSON.parse(maybeJsonCopilotResponse) as { [key: string]: (string | boolean | number | object) };
     } catch (e) {
-        console.log(e);
+        console.log(`Failed to parse copilot response maybe with string JSON, response: '${copilotResponseMaybeWithStrJson}'. Error: ${JSON.stringify(e)}`);
         return {};
     }
 }
 
-function findPossibleValuesOfFieldFromParsedCopilotResponse(parsedCopilotResponse: { [key: string]: (string | boolean | number | object) }, fieldName: string, filter?: string[]): (string | boolean | number | object)[] {
-    const exactMatches = Object.keys(parsedCopilotResponse)
-        .filter((key) => key.toLowerCase() === fieldName.toLowerCase());
-    const containsMatches = Object.keys(parsedCopilotResponse)
-        .filter((key) => key.toLowerCase().includes(fieldName.toLowerCase()))
-        .filter((key) => filter === undefined || filter.every((filterValue) => !key.toLowerCase().includes(filterValue.toLowerCase())));
-    return [...exactMatches, ...containsMatches].map((key) => parsedCopilotResponse[key]);
+function findPossibleValuesOfFieldFromParsedCopilotResponse(parsedCopilotResponse: { [key: string]: (string | boolean | number | object) }, fieldNameOrNames: string | string[], filter?: string[]): (string | boolean | number | object)[] {
+    const filedNames = Array.isArray(fieldNameOrNames) ? fieldNameOrNames : [fieldNameOrNames];
+    for (const fieldName of filedNames) {
+        const exactMatches = Object.keys(parsedCopilotResponse)
+            .filter((key) => key.toLowerCase() === fieldName.toLowerCase());
+        const containsMatches = Object.keys(parsedCopilotResponse)
+            .filter((key) => key.toLowerCase().includes(fieldName.toLowerCase()))
+            .filter((key) => filter === undefined || filter.every((filterValue) => !key.toLowerCase().includes(filterValue.toLowerCase())));
+        const matchValues = [...exactMatches, ...containsMatches].map((key) => parsedCopilotResponse[key]);
+        if (matchValues.length > 0) {
+            return matchValues;
+        }
+    }
+    return [];
 }
