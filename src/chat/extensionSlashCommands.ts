@@ -6,6 +6,7 @@
 import * as vscode from "vscode";
 import { IExtensionCommandSchemaProvider } from "./commandSchema/commandSchema";
 import { MockFunctionsExtension } from "./commandSchema/mockFunctionsExtension";
+import { NoCommandsExtension } from "./commandSchema/noCommandsExtension";
 import { slashCommandFromCommandSchema } from "./commandSchema/slashCommandFromCommandSchema";
 import { BrainstormCommandConfig, LearnCommandConfig, MightBeInterestedHandlerConfig, getBrainstormCommand, getLearnCommand, getMightBeInterestedHandler } from "./commonCommandsAndHandlers";
 import { InvokeableSlashCommands, SlashCommand, SlashCommandHandlerResult, SlashCommandsOwner } from "./slashCommands";
@@ -88,7 +89,7 @@ const functionsCommonSlashCommandConfigs: CommonSlashCommandAndHandlerConfigs = 
         noInputSuggestions: [
             "What is the difference between Azure functions and Azure web apps?",
             "How scalable is Azure functions?",
-            "Is Azure functions serverless??",
+            "Is Azure functions serverless?",
         ]
     },
     mightBeInterested: {
@@ -106,4 +107,41 @@ export const functionsExtensionSlashCommandsOwner: ExtensionSlashCommandsOwner =
     "Azure Functions",
     "Azure Functions",
     functionsCommonSlashCommandConfigs
+);
+
+const storageExtension = new NoCommandsExtension();
+const storageCommonSlashCommandConfigs: CommonSlashCommandAndHandlerConfigs = {
+    brainstorm: {
+        shortTopic: "Azure Storage",
+        longTopic: "Azure Storage and/or the Azure Storage extension for VS Code",
+        noInputSuggestions: [
+            "How can I use Azure Storage to store files?",
+            "How can I use Azure Storage to communicate tasks between services?",
+            "How can I use Azure Storage to store tabular data?",
+        ]
+    },
+    learn: {
+        shortTopic: "Azure Storage",
+        longTopic: "Azure Storage and/or the Azure Storage extension for VS Code",
+        noInputSuggestions: [
+            "What is the difference between Azure Storage and Azure CosmosDB?",
+            "How scalable is Azure Storage?",
+            "What developer tooling exists for Azure Storage?",
+        ]
+    },
+    mightBeInterested: {
+        topic: "Azure Storage extension for VS Code",
+        suggestions: [
+            "I want to use Azure Storage to to store files.",
+            "I want to use Azure Storage to communicate tasks between services.",
+            "I want to use Azure Storage to store tabular data.",
+        ]
+    }
+}
+export const storageExtensionSlashCommandsOwner: ExtensionSlashCommandsOwner = new ExtensionSlashCommandsOwner(
+    storageExtension,
+    "storage",
+    "Azure Storage",
+    "Azure Storage",
+    storageCommonSlashCommandConfigs
 );
