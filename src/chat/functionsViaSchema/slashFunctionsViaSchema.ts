@@ -6,7 +6,7 @@
 import * as vscode from "vscode";
 import { MockFunctionsExtension } from "../commandSchema/mockFunctionsExtension";
 import { slashCommandFromCommandSchema } from "../commandSchema/slashCommandFromCommandSchema";
-import { getBrainstormCommand, getLearnCommand, getMightBeInterestedHandler } from "../commonCommands";
+import { getBrainstormCommand, getLearnCommand, getMightBeInterestedHandler } from "../commonCommandsAndHandlers";
 import { InvokeableSlashCommands, SlashCommand, SlashCommandHandlerResult, SlashCommandOwner } from "../slashCommands";
 
 const mockFunctionsExtension = new MockFunctionsExtension();
