@@ -6,7 +6,7 @@
 import * as vscode from "vscode";
 import { MockFunctionsExtension } from "../commandSchema/mockFunctionsExtension";
 import { slashCommandFromCommandSchema } from "../commandSchema/slashCommandFromCommandSchema";
-import { getBrainstormCommand, getLearnCommand } from "../commonCommands";
+import { getBrainstormCommand, getLearnCommand, getMightBeInterestedHandler } from "../commonCommands";
 import { InvokeableSlashCommands, SlashCommand, SlashCommandHandlerResult, SlashCommandOwner } from "../slashCommands";
 
 const mockFunctionsExtension = new MockFunctionsExtension();
@@ -54,18 +54,14 @@ export const functionsViaSchemaSlashCommand: SlashCommand = [
 
 async function functionsHandler(userContent: string, _ctx: vscode.ChatAgentContext, progress: vscode.Progress<vscode.ChatAgentExtendedProgress>, token: vscode.CancellationToken): Promise<SlashCommandHandlerResult> {
     const functionsViaSchemaSlashCommands = await getFunctionsViaSchemaSlashCommands();
-    const functionsViaSchemaSlashCommandOwner = new SlashCommandOwner(functionsViaSchemaSlashCommands, { noInput: giveNoInputResponse, default: giveNoInputResponse });
-    return await functionsViaSchemaSlashCommandOwner.handleRequestOrPrompt(userContent, _ctx, progress, token);
-}
-
-async function giveNoInputResponse(_userContent: string, _ctx: vscode.ChatAgentContext, progress: vscode.Progress<vscode.ChatAgentExtendedProgress>, _token: vscode.CancellationToken): Promise<SlashCommandHandlerResult> {
-    progress.report({ content: `Hi! It sounds like you might be interested in using the Azure Functions Extension for VS Code, however, I can't quite help with what you're asking about. Try asking something else.` });
-    return {
-        chatAgentResult: {},
-        followUp: [
-            { message: `@azure-extensions I want to use Azure Functions to serve dynamic content and APIs.` },
-            { message: `@azure-extensions I want to use Azure Functions to run background jobs or scheduled tasks.` },
-            { message: `@azure-extensions I want to use Azure Functions to process files as soon as they are uploaded.` },
+    const mightBeInterestedHandler = getMightBeInterestedHandler({
+        topic: "Azure Functions extension for VS Code",
+        suggestions: [
+            "I want to use Azure Functions to serve dynamic content and APIs.",
+            "I want to use Azure Functions to run background jobs or scheduled tasks.",
+            "I want to use Azure Functions to process files as soon as they are uploaded.",
         ]
-    };
+    });
+    const functionsViaSchemaSlashCommandOwner = new SlashCommandOwner(functionsViaSchemaSlashCommands, { noInput: mightBeInterestedHandler, default: mightBeInterestedHandler });
+    return await functionsViaSchemaSlashCommandOwner.handleRequestOrPrompt(userContent, _ctx, progress, token);
 }

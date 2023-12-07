@@ -6,7 +6,7 @@
 import * as vscode from "vscode";
 import { agentName } from "./agentConsts";
 import { verbatimCopilotInteraction } from "./copilotInteractions";
-import { SlashCommand, SlashCommandHandlerResult } from "./slashCommands";
+import { SlashCommand, SlashCommandHandler, SlashCommandHandlerResult } from "./slashCommands";
 
 export type BrainstormCommandConfig = {
     shortTopic: string;
@@ -80,4 +80,19 @@ async function learnHandler(config: LearnCommandConfig, userContent: string, _ct
 
 function getLearnSystemPrompt(config: LearnCommandConfig): string {
     return `You are an expert in ${config.longTopic}. The user wants to use ${config.longTopic}. They want to use them to solve a problem or accomplish a task. Your job is to help the user learn about how they can use ${config.longTopic} to solve a problem or accomplish a task. Do not suggest using any other tools other than what has been previously mentioned. Assume the the user is only interested in using cloud services from Microsoft Azure. Finally, do not overwhelm the user with too much information. Keep responses short and sweet.`;
+}
+
+export type MightBeInterestedHandlerConfig = {
+    topic: string;
+    suggestions: string[];
+}
+
+export function getMightBeInterestedHandler(config: MightBeInterestedHandlerConfig): SlashCommandHandler {
+    return async (_userContent: string, _ctx: vscode.ChatAgentContext, progress: vscode.Progress<vscode.ChatAgentExtendedProgress>, _token: vscode.CancellationToken) => {
+        progress.report({ content: `Hi! It sounds like you might be interested in the ${config.topic}, however, I can't quite help with what you're asking about. Try asking something else.` });
+        return {
+            chatAgentResult: {},
+            followUp: config.suggestions.map((suggestion) => ({ message: `@${agentName} ${suggestion}` }))
+        };
+    }
 }
