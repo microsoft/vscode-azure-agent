@@ -5,9 +5,9 @@
 
 import { getResponseAsStringCopilotInteraction, getStringFieldFromCopilotResponseMaybeWithStrJson } from "../copilotInteractions";
 import { SlashCommand, SlashCommandHandlerResult } from "../slashCommands";
-import { ExtensionCommandParameterSchema, ExtensionCommandParameters, ExtensionCommandSchema, IExtensionCommandProvider } from "./commandSchema";
+import { ExtensionCommandParameterSchema, ExtensionCommandParameters, ExtensionCommandSchema, IExtensionCommandSchemaProvider } from "./commandSchema";
 
-export function slashCommandFromCommandSchema(api: ExtensionCommandSchema, apiProvider: IExtensionCommandProvider): SlashCommand {
+export function slashCommandFromCommandSchema(api: ExtensionCommandSchema, apiProvider: IExtensionCommandSchemaProvider): SlashCommand {
     return [
         api.name,
         {

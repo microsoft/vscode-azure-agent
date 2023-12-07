@@ -113,7 +113,7 @@ export type ExtensionCommandSubmitParametersResponse = {
 
 export type ExtensionCommandParameters = { [parameterName: string]: string };
 
-export interface IExtensionCommandProvider {
-    getApis(): Promise<ExtensionCommandSchema[]>;
+export interface IExtensionCommandSchemaProvider {
+    getCommandSchemas(): Promise<ExtensionCommandSchema[]>;
     submitParameters(api: ExtensionCommandSchema, parameters: ExtensionCommandParameters): Promise<ExtensionCommandSubmitParametersResponse>;
 }

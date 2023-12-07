@@ -4,10 +4,10 @@
  *--------------------------------------------------------------------------------------------*/
 
 import { getWellKnownCSharpTemplate, getWellKnownTypeScriptTemplate, wellKnownCSharpTemplateDisplayNames, wellKnownTypeScriptTemplateDisplayNames } from "../wellKnownThings";
-import { ExtensionCommandParameterSchema, ExtensionCommandParameters, ExtensionCommandSchema, ExtensionCommandSubmitParametersResponse, IExtensionCommandProvider } from "./commandSchema";
+import { ExtensionCommandParameterSchema, ExtensionCommandParameters, ExtensionCommandSchema, ExtensionCommandSubmitParametersResponse, IExtensionCommandSchemaProvider } from "./commandSchema";
 
-export class MockFunctionsExtension implements IExtensionCommandProvider {
-    public async getApis(): Promise<ExtensionCommandSchema[]> {
+export class MockFunctionsExtension implements IExtensionCommandSchemaProvider {
+    public async getCommandSchemas(): Promise<ExtensionCommandSchema[]> {
         return [
             {
                 name: "createFunctionProject",

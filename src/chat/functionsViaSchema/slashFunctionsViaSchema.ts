@@ -33,7 +33,7 @@ async function getFunctionsViaSchemaSlashCommands(): Promise<InvokeableSlashComm
         })
     ]);
 
-    const functionsViaSchemaApis = await mockFunctionsExtension.getApis();
+    const functionsViaSchemaApis = await mockFunctionsExtension.getCommandSchemas();
     for (const api of functionsViaSchemaApis) {
         const slashCommand = slashCommandFromCommandSchema(api, mockFunctionsExtension);
         functionsViaSchemaSlashCommands.set(slashCommand[0], slashCommand[1]);
@@ -52,7 +52,6 @@ export const functionsViaSchemaSlashCommand: SlashCommand = [
     }
 ];
 
-
 async function functionsHandler(userContent: string, _ctx: vscode.ChatAgentContext, progress: vscode.Progress<vscode.ChatAgentExtendedProgress>, token: vscode.CancellationToken): Promise<SlashCommandHandlerResult> {
     const functionsViaSchemaSlashCommands = await getFunctionsViaSchemaSlashCommands();
     const functionsViaSchemaSlashCommandOwner = new SlashCommandOwner(functionsViaSchemaSlashCommands, { noInput: giveNoInputResponse, default: giveNoInputResponse });
@@ -70,5 +69,3 @@ async function giveNoInputResponse(_userContent: string, _ctx: vscode.ChatAgentC
         ]
     };
 }
-
-
