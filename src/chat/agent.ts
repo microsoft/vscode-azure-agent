@@ -15,7 +15,7 @@ import {
     FallbackSlashCommandHandlers,
     InvokeableSlashCommands,
     SlashCommandHandlerResult,
-    SlashCommandOwner
+    SlashCommandsOwner
 } from "./slashCommands";
 
 const agentSlashCommands: InvokeableSlashCommands = new Map([
@@ -27,9 +27,9 @@ const fallbackSlashCommandHandlers: FallbackSlashCommandHandlers = {
     noInput: noInputHandler,
     default: defaultHandler,
 };
-const agentSlashCommandOwner = new SlashCommandOwner(agentSlashCommands, fallbackSlashCommandHandlers);
+const agentSlashCommandsOwner = new SlashCommandsOwner(agentSlashCommands, fallbackSlashCommandHandlers);
 
-const agentBenchmarker = new AgentBenchmarker(agentSlashCommandOwner);
+const agentBenchmarker = new AgentBenchmarker(agentSlashCommandsOwner);
 
 export function registerChatAgent() {
     try {
@@ -46,7 +46,7 @@ export function registerChatAgent() {
 
 async function handler(request: vscode.ChatAgentRequest, context: vscode.ChatAgentContext, progress: vscode.Progress<vscode.ChatAgentExtendedProgress>, token: vscode.CancellationToken): Promise<vscode.ChatAgentResult2 | undefined> {
     const handleResult = await agentBenchmarker.handleRequestOrPrompt(request, context, progress, token) ||
-        await agentSlashCommandOwner.handleRequestOrPrompt(request, context, progress, token);
+        await agentSlashCommandsOwner.handleRequestOrPrompt(request, context, progress, token);
 
     if (handleResult !== undefined) {
         return handleResult.chatAgentResult;
@@ -56,7 +56,7 @@ async function handler(request: vscode.ChatAgentRequest, context: vscode.ChatAge
 }
 
 function followUpProvider(result: vscode.ChatAgentResult2, token: vscode.CancellationToken): vscode.ProviderResult<vscode.ChatAgentFollowup[]> {
-    return agentBenchmarker.getFollowUpForLastHandledSlashCommand(result, token) || agentSlashCommandOwner.getFollowUpForLastHandledSlashCommand(result, token) || [];
+    return agentBenchmarker.getFollowUpForLastHandledSlashCommand(result, token) || agentSlashCommandsOwner.getFollowUpForLastHandledSlashCommand(result, token) || [];
 }
 
 function getSlashCommands(_token: vscode.CancellationToken): vscode.ProviderResult<vscode.ChatAgentSlashCommand[]> {

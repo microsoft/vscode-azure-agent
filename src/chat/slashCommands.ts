@@ -59,7 +59,7 @@ export type InvokeableSlashCommands = Map<string, SlashCommandConfig>;
 
 export type FallbackSlashCommandHandlers = { noInput?: SlashCommandHandler, default?: SlashCommandHandler, }
 
-export class SlashCommandOwner {
+export class SlashCommandsOwner {
     private _invokeableSlashCommands: InvokeableSlashCommands;
     private _fallbackSlashCommands: FallbackSlashCommandHandlers;
 

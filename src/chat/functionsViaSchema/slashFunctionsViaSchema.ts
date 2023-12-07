@@ -7,7 +7,7 @@ import * as vscode from "vscode";
 import { MockFunctionsExtension } from "../commandSchema/mockFunctionsExtension";
 import { slashCommandFromCommandSchema } from "../commandSchema/slashCommandFromCommandSchema";
 import { getBrainstormCommand, getLearnCommand, getMightBeInterestedHandler } from "../commonCommandsAndHandlers";
-import { InvokeableSlashCommands, SlashCommand, SlashCommandHandlerResult, SlashCommandOwner } from "../slashCommands";
+import { InvokeableSlashCommands, SlashCommand, SlashCommandHandlerResult, SlashCommandsOwner } from "../slashCommands";
 
 const mockFunctionsExtension = new MockFunctionsExtension();
 
@@ -62,6 +62,6 @@ async function functionsHandler(userContent: string, _ctx: vscode.ChatAgentConte
             "I want to use Azure Functions to process files as soon as they are uploaded.",
         ]
     });
-    const functionsViaSchemaSlashCommandOwner = new SlashCommandOwner(functionsViaSchemaSlashCommands, { noInput: mightBeInterestedHandler, default: mightBeInterestedHandler });
-    return await functionsViaSchemaSlashCommandOwner.handleRequestOrPrompt(userContent, _ctx, progress, token);
+    const functionsViaSchemaSlashCommandsOwner = new SlashCommandsOwner(functionsViaSchemaSlashCommands, { noInput: mightBeInterestedHandler, default: mightBeInterestedHandler });
+    return await functionsViaSchemaSlashCommandsOwner.handleRequestOrPrompt(userContent, _ctx, progress, token);
 }

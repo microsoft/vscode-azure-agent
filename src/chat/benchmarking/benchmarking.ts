@@ -5,7 +5,7 @@
 
 import * as vscode from "vscode";
 import { agentName } from "../agentConsts";
-import { FallbackSlashCommandHandlers, SlashCommand, SlashCommandConfig, SlashCommandHandlerResult, SlashCommandOwner } from "../slashCommands";
+import { FallbackSlashCommandHandlers, SlashCommand, SlashCommandConfig, SlashCommandHandlerResult, SlashCommandsOwner } from "../slashCommands";
 import { functionsBenchmarks } from "./functionsBenchmarks";
 
 export type AgentBenchmark = {
@@ -57,27 +57,27 @@ const benchmarkCommandName = "benchmark";
 const benchmarkStatsCommandName = "benchmarkStats";
 
 export class AgentBenchmarker {
-    private _agentSlashCommandOwner: SlashCommandOwner;
-    private _benchmarkerSlashCommandOwner: SlashCommandOwner;
+    private _agentSlashCommandsOwner: SlashCommandsOwner;
+    private _benchmarkerSlashCommandsOwner: SlashCommandsOwner;
     private _continuationIndex: number;
 
-    constructor(agentSlashCommandOwner: SlashCommandOwner) {
-        this._agentSlashCommandOwner = agentSlashCommandOwner;
+    constructor(agentSlashCommandsOwner: SlashCommandsOwner) {
+        this._agentSlashCommandsOwner = agentSlashCommandsOwner;
 
         const slashCommands = new Map([this._getBenchmarkSlashCommand(), this._getBenchmarkStatsSlashCommand()]);
         const fallbackSlashCommandHandlers: FallbackSlashCommandHandlers = { noInput: undefined, default: undefined };
-        this._benchmarkerSlashCommandOwner = new SlashCommandOwner(slashCommands, fallbackSlashCommandHandlers);
+        this._benchmarkerSlashCommandsOwner = new SlashCommandsOwner(slashCommands, fallbackSlashCommandHandlers);
 
         this._continuationIndex = 0;
     }
 
     public handleRequestOrPrompt(request: vscode.ChatAgentRequest | string, context: vscode.ChatAgentContext, progress: vscode.Progress<vscode.ChatAgentExtendedProgress>, token: vscode.CancellationToken): Promise<SlashCommandHandlerResult> {
-        return this._benchmarkerSlashCommandOwner.handleRequestOrPrompt(request, context, progress, token, true);
+        return this._benchmarkerSlashCommandsOwner.handleRequestOrPrompt(request, context, progress, token, true);
     }
 
 
     public getFollowUpForLastHandledSlashCommand(result: vscode.ChatAgentResult2, token: vscode.CancellationToken): vscode.ChatAgentFollowup[] | undefined {
-        return this._benchmarkerSlashCommandOwner.getFollowUpForLastHandledSlashCommand(result, token);
+        return this._benchmarkerSlashCommandsOwner.getFollowUpForLastHandledSlashCommand(result, token);
     }
 
     private async _benchmarkAgent(userContent: string, ctx: vscode.ChatAgentContext, progress: vscode.Progress<vscode.ChatAgentExtendedProgress>, token: vscode.CancellationToken): Promise<SlashCommandHandlerResult> {
@@ -117,7 +117,7 @@ export class AgentBenchmarker {
         this._debugBenchmarking(progress, `📋 Benchmark (${this._continuationIndex}/${benchmarks.length}): ${benchmark.name}\n💭 Prompt: '${benchmark.prompt}'...`);
 
         const startTime = Date.now();
-        const handleResult = await this._agentSlashCommandOwner.handleRequestOrPrompt({ prompt: benchmark.prompt, variables: {}, }, ctx, progress, token);
+        const handleResult = await this._agentSlashCommandsOwner.handleRequestOrPrompt({ prompt: benchmark.prompt, variables: {}, }, ctx, progress, token);
         const endTime = Date.now();
 
         if (handleResult) {

@@ -4,7 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 import * as vscode from "vscode";
-import { InvokeableSlashCommands, SlashCommand, SlashCommandHandlerResult, SlashCommandOwner } from "../slashCommands";
+import { InvokeableSlashCommands, SlashCommand, SlashCommandHandlerResult, SlashCommandsOwner } from "../slashCommands";
 import { brainstormSlashCommand } from "./slashBrainstorm";
 import { createFunctionAppSlashCommand } from "./slashCreateFunctionApp";
 import { createFunctionProjectSlashCommand } from "./slashCreateFunctionProject";
@@ -27,10 +27,10 @@ export const functionsSlashCommand: SlashCommand = [
     }
 ];
 
-const functionsSlashCommandOwner = new SlashCommandOwner(functionsSlashCommands, { noInput: giveNoInputResponse, default: giveNoInputResponse });
+const functionsSlashCommandsOwner = new SlashCommandsOwner(functionsSlashCommands, { noInput: giveNoInputResponse, default: giveNoInputResponse });
 
 async function functionsHandler(userContent: string, _ctx: vscode.ChatAgentContext, progress: vscode.Progress<vscode.ChatAgentExtendedProgress>, token: vscode.CancellationToken): Promise<SlashCommandHandlerResult> {
-    return await functionsSlashCommandOwner.handleRequestOrPrompt(userContent, _ctx, progress, token);
+    return await functionsSlashCommandsOwner.handleRequestOrPrompt(userContent, _ctx, progress, token);
 }
 
 async function giveNoInputResponse(_userContent: string, _ctx: vscode.ChatAgentContext, progress: vscode.Progress<vscode.ChatAgentExtendedProgress>, _token: vscode.CancellationToken): Promise<SlashCommandHandlerResult> {
