@@ -9,8 +9,7 @@ import { ext } from '../extensionVariables';
 import { agentDescription, agentFullName, agentName } from "./agentConsts";
 import { AgentBenchmarker } from "./benchmarking/benchmarking";
 import { verbatimCopilotInteraction } from "./copilotInteractions";
-// import { functionsSlashCommand } from "./functions/slashFunctions";
-import { functionsViaSchemaSlashCommand } from "./functionsViaSchema/slashFunctionsViaSchema";
+import { functionsExtensionSlashCommandsOwner } from "./extensionSlashCommands";
 import {
     FallbackSlashCommandHandlers,
     InvokeableSlashCommands,
@@ -19,15 +18,13 @@ import {
 } from "./slashCommands";
 
 const agentSlashCommands: InvokeableSlashCommands = new Map([
-    // functionsSlashCommand,
-    functionsViaSchemaSlashCommand
+    functionsExtensionSlashCommandsOwner.getTopLevelSlashCommand(),
 ]);
-
-const fallbackSlashCommandHandlers: FallbackSlashCommandHandlers = {
+const agentFallbackSlashCommandHandlers: FallbackSlashCommandHandlers = {
     noInput: noInputHandler,
     default: defaultHandler,
 };
-const agentSlashCommandsOwner = new SlashCommandsOwner(agentSlashCommands, fallbackSlashCommandHandlers);
+const agentSlashCommandsOwner = new SlashCommandsOwner(agentSlashCommands, agentFallbackSlashCommandHandlers);
 
 const agentBenchmarker = new AgentBenchmarker(agentSlashCommandsOwner);
 
