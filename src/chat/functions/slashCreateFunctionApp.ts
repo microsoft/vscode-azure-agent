@@ -12,7 +12,7 @@ export const createFunctionAppSlashCommand: SlashCommand = [
     {
         shortDescription: "Create a Function App",
         longDescription: "Use this command to create a Function App resource in Azure.",
-        determineCommandDescription: "This command is best when users ask to create a Function App resource in Azure. They may refer to a Function App as 'Function App', 'function', 'function resource', 'function app resource', 'function app' etc. This command is not useful if the user is asking how to do something, or if something is possible.",
+        intentDescription: "This command is best when users ask to create a Function App resource in Azure. They may refer to a Function App as 'Function App', 'function', 'function resource', 'function app resource', 'function app' etc. This command is not useful if the user is asking how to do something, or if something is possible.",
         handler: createFunctionAppHandler
     }
 ];
@@ -64,7 +64,7 @@ async function determineUserReferencingCurrentProject(userContent: string, _ctx:
 
 async function determineSubscriptionIdOrName(_userContent: string, _ctx: vscode.ChatAgentContext, _progress: vscode.Progress<vscode.ChatAgentExtendedProgress>, _token: vscode.CancellationToken): Promise<{ subscriptionId: string, subscriptionName: string } | undefined> {
     return undefined;
-    
+
     // const availableSubscriptions = await getAvailableSubscriptions();
     // if (availableSubscriptions === undefined || availableSubscriptions.length === 0) {
     //     return undefined;
@@ -143,7 +143,7 @@ async function determineRuntime(_userContent: string, _projectInfo: object | und
     // }
 }
 
-async function getCurrentProjectDetails(): Promise<{language: string }> {
+async function getCurrentProjectDetails(): Promise<{ language: string }> {
     return { language: "TypeScript" };
 
     // eslint-disable-next-line @typescript-eslint/no-misused-promises, @typescript-eslint/no-explicit-any, no-async-promise-executor

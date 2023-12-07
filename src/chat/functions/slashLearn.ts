@@ -14,7 +14,7 @@ export const learnSlashCommand: SlashCommand = [
     {
         shortDescription: "Learn about Azure Functions",
         longDescription: "Use this command to learn more about Azure Functions.",
-        determineCommandDescription: "This command is best when users want to know general information, or have basic questions, about Azure Functions.",
+        intentDescription: "This command is best when users want to know general information, or have basic questions, about Azure Functions.",
         handler: slashLearnHandler
     }
 ];

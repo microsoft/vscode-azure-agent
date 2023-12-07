@@ -14,7 +14,7 @@ export const createFunctionProjectSlashCommand: SlashCommand = [
     {
         shortDescription: "Create a Function Project",
         longDescription: "Use this command to create a new Function Project. Try giving additional context such as what you want the project to do, languages you are familiar with, etc.",
-        determineCommandDescription: "This command is best when users explicitly want to create a new project. They may refer to a project as 'project', 'func project', 'functions project', 'azure functions project', etc.",
+        intentDescription: "This command is best when users explicitly want to create a new project. They may refer to a project as 'project', 'func project', 'functions project', 'azure functions project', etc.",
         handler: createFunctionProjectHandler
     }
 ];

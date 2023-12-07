@@ -6,13 +6,57 @@
 import * as vscode from "vscode";
 import { detectIntent } from "./intentDetection";
 
+/**
+ * A camel cased string that names the slash command. Will be used as the string that the user types to invoke the command.
+ */
 export type SlashCommandName = string;
-export type SlashCommandHandlerResult = { chatAgentResult: vscode.ChatAgentResult2, followUp?: vscode.ChatAgentFollowup[], handlerChain?: string[] } | undefined;
+
+/**
+ * The result of a slash command handler.
+ */
+export type SlashCommandHandlerResult = {
+    /**
+     * The VsCode chat agent result.
+     */
+    chatAgentResult: vscode.ChatAgentResult2,
+    /**
+     * Any follow-up messages to be given for this result.
+     */
+    followUp?: vscode.ChatAgentFollowup[],
+    /**
+     * The chain of slash command handlers that were invoked to produce this result.
+     */
+    handlerChain?: string[]
+} | undefined;
+
+/**
+ * A handler for a slash command.
+ */
 export type SlashCommandHandler = (userContent: string, ctx: vscode.ChatAgentContext, progress: vscode.Progress<vscode.ChatAgentExtendedProgress>, token: vscode.CancellationToken) => Promise<SlashCommandHandlerResult>;
-export type SlashCommandConfig = { shortDescription: string, longDescription: string, determineCommandDescription?: string, handler: SlashCommandHandler };
+
+/**
+ * The configuration for a slash command.
+ */
+export type SlashCommandConfig = {
+    /**
+     * A short sentence description of the slash command. Should give the user a good idea of what the command does.
+     */
+    shortDescription: string,
+    /**
+     * A longer sentence description of the slash command. Should make clear to the user when the command is appropriate to use.
+     */
+    longDescription: string,
+    /**
+     * A sentence description that helps copilot understand when the command should be used.
+     */
+    intentDescription?: string,
+    handler: SlashCommandHandler
+};
+
 export type SlashCommand = [SlashCommandName, SlashCommandConfig];
 
 export type InvokeableSlashCommands = Map<string, SlashCommandConfig>;
+
 export type FallbackSlashCommandHandlers = { noInput?: SlashCommandHandler, default?: SlashCommandHandler, }
 
 export class SlashCommandOwner {
@@ -83,7 +127,7 @@ export class SlashCommandOwner {
 
         if (!result && skipIntentDetection !== true) {
             const intentDetectionTargets = Array.from(this._invokeableSlashCommands.entries())
-                .map(([name, config]) => ({ name: name, intentDetectionDescription: config.determineCommandDescription || config.shortDescription }));
+                .map(([name, config]) => ({ name: name, intentDetectionDescription: config.intentDescription || config.shortDescription }));
             const detectedTarget = await detectIntent(prompt, intentDetectionTargets, context, progress, token);
             if (detectedTarget !== undefined) {
                 const command = detectedTarget.name;

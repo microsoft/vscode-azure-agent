@@ -182,7 +182,7 @@ export class AgentBenchmarker {
         const config: SlashCommandConfig = {
             shortDescription: "",
             longDescription: "",
-            determineCommandDescription: "",
+            intentDescription: "",
             handler: (userContent: string, ctx: vscode.ChatAgentContext, progress: vscode.Progress<vscode.ChatAgentExtendedProgress>, token: vscode.CancellationToken) => this._benchmarkAgent(userContent, ctx, progress, token),
         };
         return [benchmarkCommandName, config];
@@ -192,7 +192,7 @@ export class AgentBenchmarker {
         const config: SlashCommandConfig = {
             shortDescription: "",
             longDescription: "",
-            determineCommandDescription: "",
+            intentDescription: "",
             handler: (userContent: string, ctx: vscode.ChatAgentContext, progress: vscode.Progress<vscode.ChatAgentExtendedProgress>, token: vscode.CancellationToken) => this._benchmarkStats(userContent, ctx, progress, token),
         };
         return [benchmarkStatsCommandName, config];

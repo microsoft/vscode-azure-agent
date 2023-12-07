@@ -13,7 +13,7 @@ export const brainstormSlashCommand: SlashCommand = [
     {
         shortDescription: "Brainstorm about how you can use Azure Functions",
         longDescription: "Use this command to get help brainstorming about how you can use Azure Functions and VS Code to help you solve a problem.",
-        determineCommandDescription: "This command is best when users have a question about wanting to know if or how Azure Functions can help them solve a problem, create somthing, or accomplish a task. For example, if they are saying 'how do I' or 'is it possible' or 'how can azure functions', this command is probably the best choice.",
+        intentDescription: "This command is best when users have a question about wanting to know if or how Azure Functions can help them solve a problem, create somthing, or accomplish a task. For example, if they are saying 'how do I' or 'is it possible' or 'how can azure functions', this command is probably the best choice.",
         handler: brainstormHandler
     }
 ];

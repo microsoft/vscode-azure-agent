@@ -22,7 +22,7 @@ export const functionsSlashCommand: SlashCommand = [
     {
         shortDescription: "Do something with the Azure Functions extension for VS Code",
         longDescription: "Use this command when you want to do something with the Azure Functions extension for VS Code.",
-        determineCommandDescription: "This command is best when a users prompt could be related to Azure Functions or the Azure Functions extension for VS Code.",
+        intentDescription: "This command is best when a users prompt could be related to Azure Functions or the Azure Functions extension for VS Code.",
         handler: functionsHandler,
     }
 ];
