@@ -9,7 +9,8 @@ import { ext } from '../extensionVariables';
 import { agentDescription, agentFullName, agentName } from "./agentConsts";
 import { AgentBenchmarker } from "./benchmarking/benchmarking";
 import { verbatimCopilotInteraction } from "./copilotInteractions";
-import { functionsSlashCommand } from "./functions/slashFunctions";
+// import { functionsSlashCommand } from "./functions/slashFunctions";
+import { functionsViaSchemaSlashCommand } from "./functionsViaSchema/slashFunctionsViaSchema";
 import {
     FallbackSlashCommandHandlers,
     InvokeableSlashCommands,
@@ -18,7 +19,8 @@ import {
 } from "./slashCommands";
 
 const agentSlashCommands: InvokeableSlashCommands = new Map([
-    functionsSlashCommand
+    // functionsSlashCommand,
+    functionsViaSchemaSlashCommand
 ]);
 
 const fallbackSlashCommandHandlers: FallbackSlashCommandHandlers = {
