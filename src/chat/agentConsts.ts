@@ -3,6 +3,6 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-export const agentName = "azure-extensions";
-export const agentFullName = "Azure Extensions Agent";
-export const agentDescription = "Agent for the Azure Extensions for VS Code";
+export const agentName = "azure";
+export const agentFullName = "Azure Agent";
+export const agentDescription = "Agent for working with all things Azure";
