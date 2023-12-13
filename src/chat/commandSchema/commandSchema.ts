@@ -83,7 +83,7 @@ export type ExtensionCommandParameterSchema = {
          * - "The programming language for your function project."
          */
         description: string;
-    }
+    }[]
     copilotStrings: {
         /**
          * A descriptive blurb to give to copilot that describes the purpose of the parameter within the scope of the
