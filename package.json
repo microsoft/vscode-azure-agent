@@ -42,8 +42,7 @@
         "readonlyMessage"
     ],
     "main": "./main.js",
-    "contributes": {
-    },
+    "contributes": {},
     "scripts": {
         "vscode:prepublish": "npm run webpack-prod",
         "build": "tsc",
@@ -75,7 +74,10 @@
         "webpack-cli": "^4.6.0"
     },
     "dependencies": {
-        "@microsoft/vscode-azext-utils": "^2.1.0",
+        "@azure/identity": "^4.0.0",
+        "@azure/openai": "^1.0.0-beta.8",
+        "@microsoft/vscode-azext-azureutils": "^2.0.2",
+        "@microsoft/vscode-azext-utils": "^2.1.4",
         "vscode-nls": "^4.1.1"
     },
     "extensionDependencies": [

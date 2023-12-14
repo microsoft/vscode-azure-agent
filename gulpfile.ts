@@ -15,6 +15,13 @@ async function prepareForWebpack(): Promise<void> {
         .replace('out/src/extension', 'dist/extension.bundle')
         .replace(', true /* ignoreBundle */', '');
     await fse.writeFile(mainJsPath, contents);
+
+    // TODO: Figure out how to get this working, webpack npm script is failing right now
+    // const packageJsonPath = path.join(__dirname, 'package.json');
+    // const packageJsonObj = require(packageJsonPath);
+    // packageJsonObj.openAiConfigEndpoint = process.env.OPENAI_CONFIG_ENDPOINT?.toString();
+    // packageJsonObj.extensionIdentity = process.env.VSCODE_AZURE_AGENT_IDENTITY?.toString();
+    // await fse.writeFile(packageJsonPath, JSON.stringify(packageJsonObj, undefined, 4));
 }
 
 async function cleanReadme() {
