@@ -3,9 +3,11 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
+import { callWithTelemetryAndErrorHandling } from "@microsoft/vscode-azext-utils";
 import * as vscode from "vscode";
 import { agentName } from "./agentConsts";
 import { verbatimCopilotInteraction } from "./copilotInteractions";
+import { getMicrosoftLearnRagContent } from "./rag";
 import { SlashCommand, SlashCommandHandler, SlashCommandHandlerResult } from "./slashCommands";
 
 export type BrainstormCommandConfig = {
@@ -24,25 +26,30 @@ export function getBrainstormCommand(config: BrainstormCommandConfig): SlashComm
         }];
 }
 
-async function brainstormHandler(config: BrainstormCommandConfig, userContent: string, _ctx: vscode.ChatAgentContext, progress: vscode.Progress<vscode.ChatAgentExtendedProgress>, token: vscode.CancellationToken): Promise<SlashCommandHandlerResult> {
-    if (userContent.length === 0) {
-        progress.report({ content: `If you'd like to brainstorm about how you can use ${config.longTopic} to help you solve a problem or accomplish a task, let me know what it is you would like to do.\n` });
-        return { chatAgentResult: {}, followUp: config.noInputSuggestions.map((suggestion) => ({ message: `@${agentName} ${suggestion}` })), };
-    } else {
-        const { copilotResponded, /** copilotResponse */ } = await verbatimCopilotInteraction(getBrainstormSystemPrompt(config), userContent, progress, token);
-        if (!copilotResponded) {
-            progress.report({ content: "Sorry, I can't help with that right now.\n" });
-            return { chatAgentResult: {}, followUp: [], };
+function brainstormHandler(config: BrainstormCommandConfig, userContent: string, _ctx: vscode.ChatAgentContext, progress: vscode.Progress<vscode.ChatAgentExtendedProgress>, token: vscode.CancellationToken): Promise<SlashCommandHandlerResult> {
+    return callWithTelemetryAndErrorHandling("brainstormHandler", async (actionContext) => {
+        if (userContent.length === 0) {
+            progress.report({ content: `If you'd like to brainstorm about how you can use ${config.longTopic} to help you solve a problem or accomplish a task, let me know what it is you would like to do.\n` });
+            return { chatAgentResult: {}, followUp: config.noInputSuggestions.map((suggestion) => ({ message: `@${agentName} ${suggestion}` })), };
         } else {
-            // const followUps = await generateGeneralInteractionFollowUps(userContent, copilotResponse, ctx, progress, token);
-            // return { chatAgentResult: {}, followUp: followUps, };
-            return { chatAgentResult: {}, followUp: [], };
+            const ragContent = await getMicrosoftLearnRagContent(actionContext, userContent);
+            const { copilotResponded, /** copilotResponse */ } = await verbatimCopilotInteraction(getBrainstormSystemPrompt(config, ragContent?.content), userContent, progress, token);
+            if (!copilotResponded) {
+                progress.report({ content: "Sorry, I can't help with that right now.\n" });
+                return { chatAgentResult: {}, followUp: [], };
+            } else {
+                // const followUps = await generateGeneralInteractionFollowUps(userContent, copilotResponse, ctx, progress, token);
+                // return { chatAgentResult: {}, followUp: followUps, };
+                return { chatAgentResult: {}, followUp: [], };
+            }
         }
-    }
+    });
 }
 
-function getBrainstormSystemPrompt(config: BrainstormCommandConfig): string {
-    return `You are an expert in ${config.longTopic}. The user wants to use ${config.longTopic}. They want to use them to solve a problem or accomplish a task. Your job is to help the user brainstorm about how they can use ${config.longTopic} to solve a problem or accomplish a task. Do not suggest using any other tools other than what has been previously mentioned. Assume the the user is only interested in using cloud services from Microsoft Azure. Finally, do not overwhelm the user with too much information. Keep responses short and sweet.`;
+function getBrainstormSystemPrompt(config: BrainstormCommandConfig, ragContent: string | undefined): string {
+    const initialSection = `You are an expert in ${config.longTopic}. The user wants to use ${config.longTopic}. They want to use them to solve a problem or accomplish a task. Your job is to help the user brainstorm about how they can use ${config.longTopic} to solve a problem or accomplish a task. Do not suggest using any other tools other than what has been previously mentioned. Assume the the user is only interested in using cloud services from Microsoft Azure. Finally, do not overwhelm the user with too much information. Keep responses short and sweet.`;
+    const ragSection = !ragContent ? "" : `\n\nHere is some up-to-date information about the topic the user is asking about:\n\n${ragContent}`;
+    return initialSection + ragSection;
 }
 
 export type LearnCommandConfig = {
@@ -61,25 +68,30 @@ export function getLearnCommand(config: LearnCommandConfig): SlashCommand {
         }];
 }
 
-async function learnHandler(config: LearnCommandConfig, userContent: string, _ctx: vscode.ChatAgentContext, progress: vscode.Progress<vscode.ChatAgentExtendedProgress>, token: vscode.CancellationToken): Promise<SlashCommandHandlerResult> {
-    if (userContent.length === 0) {
-        progress.report({ content: `If you want to learn more about ${config.longTopic}, simply ask me what it is you'd like to learn.\n` });
-        return { chatAgentResult: {}, followUp: config.noInputSuggestions.map((suggestion) => ({ message: `@${agentName} ${suggestion}` })), };
-    } else {
-        const { copilotResponded, /** copilotResponse */ } = await verbatimCopilotInteraction(getLearnSystemPrompt(config), userContent, progress, token);
-        if (!copilotResponded) {
-            progress.report({ content: "Sorry, I can't help with that right now.\n" });
-            return { chatAgentResult: {}, followUp: [], };
+function learnHandler(config: LearnCommandConfig, userContent: string, _ctx: vscode.ChatAgentContext, progress: vscode.Progress<vscode.ChatAgentExtendedProgress>, token: vscode.CancellationToken): Promise<SlashCommandHandlerResult> {
+    return callWithTelemetryAndErrorHandling("learnHandler", async (actionContext) => {
+        if (userContent.length === 0) {
+            progress.report({ content: `If you want to learn more about ${config.longTopic}, simply ask me what it is you'd like to learn.\n` });
+            return { chatAgentResult: {}, followUp: config.noInputSuggestions.map((suggestion) => ({ message: `@${agentName} ${suggestion}` })), };
         } else {
-            // const followUps = await generateGeneralInteractionFollowUps(userContent, copilotResponse, ctx, progress, token);
-            // return { chatAgentResult: {}, followUp: followUps, };
-            return { chatAgentResult: {}, followUp: [], };
+            const ragContent = await getMicrosoftLearnRagContent(actionContext, userContent);
+            const { copilotResponded, /** copilotResponse */ } = await verbatimCopilotInteraction(getLearnSystemPrompt(config, ragContent?.content), userContent, progress, token);
+            if (!copilotResponded) {
+                progress.report({ content: "Sorry, I can't help with that right now.\n" });
+                return { chatAgentResult: {}, followUp: [], };
+            } else {
+                // const followUps = await generateGeneralInteractionFollowUps(userContent, copilotResponse, ctx, progress, token);
+                // return { chatAgentResult: {}, followUp: followUps, };
+                return { chatAgentResult: {}, followUp: [], };
+            }
         }
-    }
+    });
 }
 
-function getLearnSystemPrompt(config: LearnCommandConfig): string {
-    return `You are an expert in ${config.longTopic}. The user wants to use ${config.longTopic}. They want to use them to solve a problem or accomplish a task. Your job is to help the user learn about how they can use ${config.longTopic} to solve a problem or accomplish a task. Do not suggest using any other tools other than what has been previously mentioned. Assume the the user is only interested in using cloud services from Microsoft Azure. Finally, do not overwhelm the user with too much information. Keep responses short and sweet.`;
+function getLearnSystemPrompt(config: LearnCommandConfig, ragContent: string | undefined): string {
+    const initialSection = `You are an expert in ${config.longTopic}. The user wants to use ${config.longTopic}. They want to use them to solve a problem or accomplish a task. Your job is to help the user learn about how they can use ${config.longTopic} to solve a problem or accomplish a task. Do not suggest using any other tools other than what has been previously mentioned. Assume the the user is only interested in using cloud services from Microsoft Azure. Finally, do not overwhelm the user with too much information. Keep responses short and sweet.`;
+    const ragSection = !ragContent ? "" : `\n\nHere is some up-to-date information about the topic the user is asking about:\n\n${ragContent}`;
+    return initialSection + ragSection;
 }
 
 export type MightBeInterestedHandlerConfig = {

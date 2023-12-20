@@ -5,7 +5,8 @@
 
 'use strict';
 
-import { IActionContext, callWithTelemetryAndErrorHandling } from '@microsoft/vscode-azext-utils';
+import { registerAzureUtilsExtensionVariables } from '@microsoft/vscode-azext-azureutils';
+import { IActionContext, callWithTelemetryAndErrorHandling, createAzExtOutputChannel, registerUIExtensionVariables } from '@microsoft/vscode-azext-utils';
 import * as vscode from 'vscode';
 import { registerChatAgent } from './chat/agent';
 import { ext } from './extensionVariables';
@@ -13,6 +14,10 @@ import { ext } from './extensionVariables';
 export async function activateInternal(context: vscode.ExtensionContext, perfStats: { loadStartTime: number; loadEndTime: number }, ignoreBundle?: boolean): Promise<void> {
     ext.context = context;
     ext.ignoreBundle = ignoreBundle;
+    ext.outputChannel = createAzExtOutputChannel('Azure Agent', ext.prefix);
+
+    registerUIExtensionVariables(ext);
+    registerAzureUtilsExtensionVariables(ext);
 
     await callWithTelemetryAndErrorHandling(`${ext.prefix}.activate`, async (activateContext: IActionContext) => {
         activateContext.telemetry.properties.isActivationEvent = 'true';
