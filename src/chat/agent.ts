@@ -10,6 +10,7 @@ import { agentDescription, agentFullName, agentName } from "./agentConsts";
 import { AgentBenchmarker } from "./benchmarking/benchmarking";
 import { verbatimCopilotInteraction } from "./copilotInteractions";
 import { functionsExtensionSlashCommandsOwner, storageExtensionSlashCommandsOwner } from "./extensionSlashCommands";
+import { toggleRagSlashCommand } from "./rag";
 import {
     FallbackSlashCommandHandlers,
     InvokeableSlashCommands,
@@ -20,6 +21,7 @@ import {
 const agentSlashCommands: InvokeableSlashCommands = new Map([
     functionsExtensionSlashCommandsOwner.getTopLevelSlashCommand(),
     storageExtensionSlashCommandsOwner.getTopLevelSlashCommand(),
+    toggleRagSlashCommand,
 ]);
 const agentFallbackSlashCommandHandlers: FallbackSlashCommandHandlers = {
     noInput: noInputHandler,

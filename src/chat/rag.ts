@@ -8,7 +8,9 @@ import { ClientSecretCredential } from "@azure/identity";
 import { AzureKeyCredential, OpenAIClient } from "@azure/openai";
 import { AzExtRequestPrepareOptions, sendRequestWithTimeout } from "@microsoft/vscode-azext-azureutils";
 import { IActionContext } from "@microsoft/vscode-azext-utils";
+import * as vscode from "vscode";
 import { ext } from "../extensionVariables";
+import { SlashCommand, SlashCommandHandlerResult } from "./slashCommands";
 
 const microsoftLearnEndpoint = "https://learn.microsoft.com/api/knowledge/vector/document/relevantItems";
 const microsoftLearnScopes = ["api://5405974b-a0ac-4de0-80e0-9efe337ea291/.default"];
@@ -46,7 +48,31 @@ export type MicrosoftLearnKnowledgeServiceDocument = {
     title: string;
 };
 
+let ragEnabled = true;
+async function toggleRag(): Promise<boolean> {
+    ragEnabled = !ragEnabled;
+    return ragEnabled;
+}
+
+export const toggleRagSlashCommand: SlashCommand = [
+    "toggleRag",
+    {
+        shortDescription: "Toggle RAG on or off",
+        longDescription: "Toggle RAG on or off",
+        intentDescription: "Toggle RAG on or off",
+        handler: async (_userContent: string, _ctx: vscode.ChatAgentContext, progress: vscode.Progress<vscode.ChatAgentExtendedProgress>, _token: vscode.CancellationToken): Promise<SlashCommandHandlerResult> => {
+            const newState = await toggleRag();
+            progress.report({ content: `RAG is now ${newState ? "on" : "off"}.` });
+            return undefined;
+        },
+    }
+]
+
 export async function getMicrosoftLearnRagContent(context: IActionContext, input: string): Promise<MicrosoftLearnKnowledgeServiceDocument | undefined> {
+    if (!ragEnabled) {
+        return undefined;
+    }
+
     const openAiConfig = await getOpenAiConfig(context);
     if (!openAiConfig) {
         return undefined;
