@@ -40,6 +40,7 @@ export function slashCommandFromCommandSchema(api: ExtensionCommandSchema, apiPr
                 if (Object.keys(validatedParameters).length > 0) {
                     markdownResponseLines.push(`I have determined the following parameters:`);
                     markdownResponseLines.push(...Object.keys(validatedParameters).map((parameterName) => `- ${parameterName}: ${validatedParameters[parameterName]}`));
+                    markdownResponseLines.push("\n");
                 }
 
                 if (moreParameters.length > 0) {

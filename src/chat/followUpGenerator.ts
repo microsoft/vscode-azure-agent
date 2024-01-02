@@ -6,7 +6,7 @@
 import * as vscode from "vscode";
 import { agentName } from "./agentConsts";
 import { getResponseAsStringCopilotInteraction, getStringFieldFromCopilotResponseMaybeWithStrJson } from "./copilotInteractions";
-import { WellKnownFunctionProjectLanguage, WellKnownTemplate, getWellKnownCSharpTemplate, getWellKnownTypeScriptTemplate, isWellKnownFunctionProjectLanguage, wellKnownCSharpTemplateDisplayNames, wellKnownTypeScriptTemplateDisplayNames } from "./wellKnownThings";
+import { WellKnownFunctionProjectLanguage, WellKnownTemplate, getWellKnownCSharpTemplate, getWellKnownTypeScriptTemplate, isWellKnownFunctionProjectLanguage, wellKnownCSharpTemplateDisplayNames, wellKnownTypeScriptTemplateDisplayNames } from "./mockFunctionsExtension/wellKnownThings";
 
 /**
  * Generates all types of follow ups for the given copilot response. This currently includes:

@@ -45,7 +45,6 @@ export type ExtensionCommandSchema = {
          */
         intentDescription: string;
     }
-    submitParametersFunction: string;
     initialParameters: ExtensionCommandParameterSchema[];
 }
 
