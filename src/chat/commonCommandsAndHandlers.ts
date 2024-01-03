@@ -40,6 +40,9 @@ function brainstormHandler(config: BrainstormCommandConfig, userContent: string,
             } else {
                 // const followUps = await generateGeneralInteractionFollowUps(userContent, copilotResponse, ctx, progress, token);
                 // return { chatAgentResult: {}, followUp: followUps, };
+                if (!!ragContent) {
+                    progress.report({ reference: vscode.Uri.parse(ragContent.contentUrl) });
+                }
                 return { chatAgentResult: {}, followUp: [], };
             }
         }
@@ -82,6 +85,9 @@ function learnHandler(config: LearnCommandConfig, userContent: string, _ctx: vsc
             } else {
                 // const followUps = await generateGeneralInteractionFollowUps(userContent, copilotResponse, ctx, progress, token);
                 // return { chatAgentResult: {}, followUp: followUps, };
+                if (!!ragContent) {
+                    progress.report({ reference: vscode.Uri.parse(ragContent.contentUrl) });
+                }
                 return { chatAgentResult: {}, followUp: [], };
             }
         }
