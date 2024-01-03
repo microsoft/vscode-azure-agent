@@ -5,10 +5,10 @@
 
 import * as vscode from "vscode";
 import { IExtensionCommandSchemaProvider } from "./commandSchema/commandSchema";
-import { MockFunctionsExtension } from "./commandSchema/mockFunctionsExtension";
 import { NoCommandsExtension } from "./commandSchema/noCommandsExtension";
 import { slashCommandFromCommandSchema } from "./commandSchema/slashCommandFromCommandSchema";
 import { BrainstormCommandConfig, LearnCommandConfig, MightBeInterestedHandlerConfig, getBrainstormCommand, getLearnCommand, getMightBeInterestedHandler } from "./commonCommandsAndHandlers";
+import { MockFunctionsExtension } from "./mockFunctionsExtension/mockFunctionsExtension";
 import { InvokeableSlashCommands, SlashCommand, SlashCommandHandlerResult, SlashCommandsOwner } from "./slashCommands";
 
 export type CommonSlashCommandAndHandlerConfigs = {
