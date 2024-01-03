@@ -32,13 +32,13 @@
         "onStartupFinished"
     ],
     "enabledApiProposals": [
+        "chat",
         "chatAgents2",
         "chatAgents2Additions",
         "chatProvider",
         "chatRequestAccess",
         "chatVariables",
         "interactive",
-        "interactiveUserActions",
         "readonlyMessage"
     ],
     "main": "./main.js",
