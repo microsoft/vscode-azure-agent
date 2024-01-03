@@ -6,7 +6,7 @@
 
 import * as vscode from "vscode";
 import { ext } from '../extensionVariables';
-import { agentDescription, agentFullName, agentName } from "./agentConsts";
+import { agentDescription, agentFullName, agentName, maxFollowUps } from "./agentConsts";
 import { AgentBenchmarker } from "./benchmarking/benchmarking";
 import { verbatimCopilotInteraction } from "./copilotInteractions";
 import { functionsExtensionSlashCommandsOwner, storageExtensionSlashCommandsOwner } from "./extensionSlashCommands";
@@ -49,6 +49,7 @@ async function handler(request: vscode.ChatAgentRequest, context: vscode.ChatAge
         await agentSlashCommandsOwner.handleRequestOrPrompt(request, context, progress, token);
 
     if (handleResult !== undefined) {
+        handleResult.followUp = handleResult.followUp?.slice(0, maxFollowUps);
         return handleResult.chatAgentResult;
     } else {
         return undefined;

@@ -81,7 +81,8 @@ const functionsCommonSlashCommandConfigs: CommonSlashCommandAndHandlerConfigs = 
             "How can I use Azure Functions to serve dynamic content and APIs?",
             "How can I use Azure Functions to run background jobs or scheduled tasks?",
             "How can I use Azure Functions to process files as soon as they are uploaded?",
-        ]
+        ],
+        followUpApiProvider: functionsExtension,
     },
     learn: {
         shortTopic: "Azure Functions",
@@ -90,7 +91,8 @@ const functionsCommonSlashCommandConfigs: CommonSlashCommandAndHandlerConfigs = 
             "What is the difference between Azure functions and Azure web apps?",
             "How scalable is Azure functions?",
             "Is Azure functions serverless?",
-        ]
+        ],
+        followUpApiProvider: functionsExtension,
     },
     mightBeInterested: {
         topic: "Azure Functions extension for VS Code",
