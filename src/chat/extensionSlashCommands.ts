@@ -43,7 +43,7 @@ export class ExtensionSlashCommandsOwner {
             {
                 shortDescription: `Work with the ${this._extensionName} extension for VS Code and/or ${this._azureServiceName}`,
                 longDescription: `Use this command when you want to work with the ${this._extensionName} extension for VS Code and ${this._azureServiceName}.`,
-                intentDescription: `This command is best when a users prompt could be related to the ${this._extensionName} extension for VS Code or ${this._azureServiceName}.`,
+                intentDescription: `This is best when a user prompt could be related to the ${this._extensionName} extension for VS Code or ${this._azureServiceName}.`,
                 handler: (...args) => this._handleExtensionSlashCommand(...args),
             }
         ]
