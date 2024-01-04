@@ -6,3 +6,4 @@
 export const agentName = "azure";
 export const agentFullName = "Azure Agent";
 export const agentDescription = "Agent for working with all things Azure";
+export const maxFollowUps = 3;

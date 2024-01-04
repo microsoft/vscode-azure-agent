@@ -6,14 +6,17 @@
 import { callWithTelemetryAndErrorHandling } from "@microsoft/vscode-azext-utils";
 import * as vscode from "vscode";
 import { agentName } from "./agentConsts";
+import { IExtensionCommandSchemaProvider } from "./commandSchema/commandSchema";
 import { verbatimCopilotInteraction } from "./copilotInteractions";
+import { generateExtensionCommandFollowUps, generateNextQuestionsFollowUps } from "./followUpGenerator";
 import { getMicrosoftLearnRagContent } from "./rag";
 import { SlashCommand, SlashCommandHandler, SlashCommandHandlerResult } from "./slashCommands";
 
 export type BrainstormCommandConfig = {
     shortTopic: string;
     longTopic: string;
-    noInputSuggestions: string[]
+    noInputSuggestions: string[];
+    followUpApiProvider?: IExtensionCommandSchemaProvider;
 }
 
 export function getBrainstormCommand(config: BrainstormCommandConfig): SlashCommand {
@@ -33,17 +36,19 @@ function brainstormHandler(config: BrainstormCommandConfig, userContent: string,
             return { chatAgentResult: {}, followUp: config.noInputSuggestions.map((suggestion) => ({ message: `@${agentName} ${suggestion}` })), };
         } else {
             const ragContent = await getMicrosoftLearnRagContent(actionContext, userContent);
-            const { copilotResponded, /** copilotResponse */ } = await verbatimCopilotInteraction(getBrainstormSystemPrompt(config, ragContent?.content), userContent, progress, token);
+            const { copilotResponded, copilotResponse } = await verbatimCopilotInteraction(getBrainstormSystemPrompt(config, ragContent?.content), userContent, progress, token);
             if (!copilotResponded) {
                 progress.report({ content: "Sorry, I can't help with that right now.\n" });
                 return { chatAgentResult: {}, followUp: [], };
             } else {
-                // const followUps = await generateGeneralInteractionFollowUps(userContent, copilotResponse, ctx, progress, token);
-                // return { chatAgentResult: {}, followUp: followUps, };
                 if (!!ragContent) {
                     progress.report({ reference: vscode.Uri.parse(ragContent.contentUrl) });
                 }
-                return { chatAgentResult: {}, followUp: [], };
+                const followUps = [
+                    ...(!!config.followUpApiProvider ? await generateExtensionCommandFollowUps(config.followUpApiProvider, userContent, copilotResponse, _ctx, progress, token) : []),
+                    ...(await generateNextQuestionsFollowUps(userContent, copilotResponse, _ctx, progress, token))
+                ];
+                return { chatAgentResult: {}, followUp: followUps, };
             }
         }
     });
@@ -58,7 +63,8 @@ function getBrainstormSystemPrompt(config: BrainstormCommandConfig, ragContent: 
 export type LearnCommandConfig = {
     shortTopic: string;
     longTopic: string;
-    noInputSuggestions: string[]
+    noInputSuggestions: string[];
+    followUpApiProvider?: IExtensionCommandSchemaProvider;
 }
 
 export function getLearnCommand(config: LearnCommandConfig): SlashCommand {
@@ -78,17 +84,19 @@ function learnHandler(config: LearnCommandConfig, userContent: string, _ctx: vsc
             return { chatAgentResult: {}, followUp: config.noInputSuggestions.map((suggestion) => ({ message: `@${agentName} ${suggestion}` })), };
         } else {
             const ragContent = await getMicrosoftLearnRagContent(actionContext, userContent);
-            const { copilotResponded, /** copilotResponse */ } = await verbatimCopilotInteraction(getLearnSystemPrompt(config, ragContent?.content), userContent, progress, token);
+            const { copilotResponded, copilotResponse } = await verbatimCopilotInteraction(getLearnSystemPrompt(config, ragContent?.content), userContent, progress, token);
             if (!copilotResponded) {
                 progress.report({ content: "Sorry, I can't help with that right now.\n" });
                 return { chatAgentResult: {}, followUp: [], };
             } else {
-                // const followUps = await generateGeneralInteractionFollowUps(userContent, copilotResponse, ctx, progress, token);
-                // return { chatAgentResult: {}, followUp: followUps, };
                 if (!!ragContent) {
                     progress.report({ reference: vscode.Uri.parse(ragContent.contentUrl) });
                 }
-                return { chatAgentResult: {}, followUp: [], };
+                const followUps = [
+                    ...(!!config.followUpApiProvider ? await generateExtensionCommandFollowUps(config.followUpApiProvider, userContent, copilotResponse, _ctx, progress, token) : []),
+                    ...(await generateNextQuestionsFollowUps(userContent, copilotResponse, _ctx, progress, token))
+                ];
+                return { chatAgentResult: {}, followUp: followUps, };
             }
         }
     });
