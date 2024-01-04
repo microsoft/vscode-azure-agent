@@ -111,7 +111,7 @@ export const createFunctionAppSchema: ExtensionCommandSchema = {
         longDescription: "Use this command to create a new function app in Azure. Try giving additional context such as what subscription or region you want the function app to be in, what runtime the function should use, etc.",
     },
     copilotStrings: {
-        intentDescription: "This command is best when users explicitly want to create a new function app. They may refer to a function app as 'function app', 'func app', 'azure functions app', etc.",
+        intentDescription: "This is best when users explicitly want to create a new function app. They may refer to a function app as 'function app', 'func app', 'azure functions app', etc.",
     },
     initialParameters: [
         subscriptionParameter,

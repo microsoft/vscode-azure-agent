@@ -60,7 +60,7 @@ export const createFunctionProjectSchema: ExtensionCommandSchema = {
         longDescription: "Use this command to create a new function project. Try giving additional context such as what you want the project to do, languages you are familiar with, etc.",
     },
     copilotStrings: {
-        intentDescription: "This command is best when users explicitly want to create a new project. They may refer to a project as 'project', 'func project', 'functions project', 'azure functions project', etc.",
+        intentDescription: "This is best when users explicitly want to create a new project. They may refer to a project as 'project', 'func project', 'functions project', 'azure functions project', etc.",
     },
     initialParameters: [
         languageParameter

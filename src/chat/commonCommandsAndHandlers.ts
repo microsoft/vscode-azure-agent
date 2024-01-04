@@ -21,7 +21,7 @@ export function getBrainstormCommand(config: BrainstormCommandConfig): SlashComm
         {
             shortDescription: `Brainstorm about how you can use ${config.shortTopic}`,
             longDescription: `Brainstorm about how you can use ${config.longTopic} to help you solve a problem or accomplish a task.`,
-            intentDescription: `This command is best when users have a question about, or want to know if or how ${config.longTopic}, can help them solve a problem or accomplish a task. For example, if they are saying phrases like 'how do I', 'is it possible', or 'how can it', this command is probably the best choice.`,
+            intentDescription: `This is best when users have a question about, or want to know if or how ${config.longTopic}, can help them solve a problem or accomplish a task. For example, if they are saying phrases like 'how do I', 'is it possible', or 'how can it', this is probably the best choice.`,
             handler: (userContent, ctx, progress, token) => brainstormHandler(config, userContent, ctx, progress, token)
         }];
 }
@@ -66,7 +66,7 @@ export function getLearnCommand(config: LearnCommandConfig): SlashCommand {
         {
             shortDescription: `Learn about how you can use ${config.shortTopic}`,
             longDescription: `Learn more information about ${config.longTopic}`,
-            intentDescription: `This command is best when users want to know general information, or have basic questions, about ${config.longTopic}`,
+            intentDescription: `This is best when users want to know general information, or have basic questions, about ${config.longTopic}`,
             handler: (userContent, ctx, progress, token) => learnHandler(config, userContent, ctx, progress, token)
         }];
 }

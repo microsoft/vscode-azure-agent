@@ -39,7 +39,6 @@ export type ExtensionCommandSchema = {
         longDescription: string,
     },
     copilotStrings: {
-
         /**
          * A sentence description that helps copilot understand when the command should be used.
          */
