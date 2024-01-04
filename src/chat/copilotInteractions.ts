@@ -43,6 +43,7 @@ export async function getResponseAsStringCopilotInteraction(systemPrompt: string
     await queueCopilotInteraction((fragment) => {
         joinedFragements += fragment;
     }, systemPrompt, userContent, progress, token);
+    debugCopilotInteraction(progress, `Copilot response:\n\n${joinedFragements}\n`);
     return joinedFragements;
 }
 
@@ -95,6 +96,9 @@ async function doCopilotInteraction(onResponseFragment: (fragment: string) => vo
                 content: userContent
             },
         ];
+
+        debugCopilotInteraction(progress, `System Prompt:\n\n${systemPrompt}\n`);
+        debugCopilotInteraction(progress, `User Content:\n\n${userContent}\n`);
 
         const request = access.makeRequest(messages, {}, token);
         for await (const fragment of request.response) {
