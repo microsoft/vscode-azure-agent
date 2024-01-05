@@ -4,6 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 import * as vscode from "vscode";
+import { AgentRequest } from "./agent";
 import { detectIntent } from "./intentDetection";
 
 /**
@@ -32,7 +33,7 @@ export type SlashCommandHandlerResult = {
 /**
  * A handler for a slash command.
  */
-export type SlashCommandHandler = (userContent: string, ctx: vscode.ChatAgentContext, progress: vscode.Progress<vscode.ChatAgentExtendedProgress>, token: vscode.CancellationToken) => Promise<SlashCommandHandlerResult>;
+export type SlashCommandHandler = (request: AgentRequest) => Promise<SlashCommandHandlerResult>;
 
 /**
  * The configuration for a slash command.
@@ -70,24 +71,19 @@ export class SlashCommandsOwner {
         this._fallbackSlashCommands = fallbackSlashCommands;
     }
 
-    public async handleRequestOrPrompt(request: vscode.ChatAgentRequest | string, context: vscode.ChatAgentContext, progress: vscode.Progress<vscode.ChatAgentExtendedProgress>, token: vscode.CancellationToken, skipIntentDetection?: boolean): Promise<SlashCommandHandlerResult> {
-        if (typeof request === "string") {
-            request = {
-                prompt: request,
-                variables: {},
-            };
-        }
-
-        const getHandlerResult = await this._getSlashCommandHandlerForRequest(request, context, progress, token, skipIntentDetection);
+    public async handleRequestOrPrompt(request: AgentRequest, skipIntentDetection?: boolean): Promise<SlashCommandHandlerResult> {
+        const getHandlerResult = await this._getSlashCommandHandlerForRequest(request, skipIntentDetection);
         if (getHandlerResult.handler !== undefined) {
             const handler = getHandlerResult.handler;
-            const result = await handler(getHandlerResult.prompt, context, progress, token);
+            const refinedRequest = getHandlerResult.refinedRequest;
+
+            const result = await handler(refinedRequest);
             this._previousSlashCommandHandlerResult = result;
             if (result !== undefined) {
                 if (!result?.handlerChain) {
-                    result.handlerChain = [getHandlerResult.name];
+                    result.handlerChain = [refinedRequest.slashCommand || "unknown"];
                 } else {
-                    result.handlerChain.unshift(getHandlerResult.name);
+                    result.handlerChain.unshift(refinedRequest.slashCommand || "unknown");
                 }
             }
             return result;
@@ -106,40 +102,52 @@ export class SlashCommandsOwner {
         }
     }
 
-    private async _getSlashCommandHandlerForRequest(request: vscode.ChatAgentRequest, context: vscode.ChatAgentContext, progress: vscode.Progress<vscode.ChatAgentExtendedProgress>, token: vscode.CancellationToken, skipIntentDetection?: boolean): Promise<{ name: string, prompt: string, handler: SlashCommandHandler | undefined }> {
-        const { prompt: prompt, command: parsedCommand } = this._preProcessPrompt(request.prompt);
+    private async _getSlashCommandHandlerForRequest(request: AgentRequest, skipIntentDetection?: boolean): Promise<{ refinedRequest: AgentRequest, handler: SlashCommandHandler | undefined }> {
+        const { prompt: prompt, command: parsedCommand } = this._preProcessPrompt(request.userPrompt);
 
         // trust VS Code to parse the command out for us, but also look for a parsed command for any "hidden" commands that VS Code doesn't know to parse out.
-        const command = request.slashCommand?.name || parsedCommand;
+        const command = request.slashCommand || parsedCommand;
 
-        let result: { name: string, prompt: string, handler: SlashCommandHandler | undefined } | undefined;
+        let result: { refinedRequest: AgentRequest, handler: SlashCommandHandler | undefined } | undefined;
 
         if (!result && prompt === "" && !command) {
-            result = { name: "noInput", prompt: prompt, handler: this._fallbackSlashCommands.noInput };
+            result = {
+                refinedRequest: { ...request, slashCommand: "noInput", userPrompt: prompt, },
+                handler: this._fallbackSlashCommands.noInput
+            };
         }
 
         if (!result && !!command) {
             const slashCommand = this._invokeableSlashCommands.get(command);
             if (slashCommand !== undefined) {
-                result = { name: command, prompt: prompt, handler: slashCommand.handler };
+                result = {
+                    refinedRequest: { ...request, slashCommand: command, userPrompt: prompt, },
+                    handler: slashCommand.handler
+                };
             }
         }
 
         if (!result && skipIntentDetection !== true) {
             const intentDetectionTargets = Array.from(this._invokeableSlashCommands.entries())
                 .map(([name, config]) => ({ name: name, intentDetectionDescription: config.intentDescription || config.shortDescription }));
-            const detectedTarget = await detectIntent(prompt, intentDetectionTargets, context, progress, token);
+            const detectedTarget = await detectIntent(intentDetectionTargets, request);
             if (detectedTarget !== undefined) {
                 const command = detectedTarget.name;
                 const slashCommand = this._invokeableSlashCommands.get(command);
                 if (slashCommand !== undefined) {
-                    result = { name: command, prompt: prompt, handler: slashCommand.handler };
+                    result = {
+                        refinedRequest: { ...request, slashCommand: command, userPrompt: prompt, },
+                        handler: slashCommand.handler
+                    };
                 }
             }
         }
 
         if (!result) {
-            result = { name: "default", prompt: prompt, handler: this._fallbackSlashCommands.default };
+            result = {
+                refinedRequest: { ...request, slashCommand: "default", userPrompt: prompt, },
+                handler: this._fallbackSlashCommands.default
+            };
         }
 
         return result;

@@ -4,6 +4,9 @@
  *--------------------------------------------------------------------------------------------*/
 
 import * as vscode from "vscode";
+import { AgentRequest } from "./agent";
+
+export type CopilotInteractionResult = { copilotResponded: true, copilotResponse: string } | { copilotResponded: false, copilotResponse: undefined };
 
 const maxCachedAccessAge = 1000 * 30;
 let cachedAccess: { access: vscode.ChatAccess, requestedAt: number } | undefined;
@@ -16,7 +19,7 @@ async function getChatAccess(): Promise<vscode.ChatAccess> {
 }
 
 const showDebugCopilotInteractionAsProgress = false;
-export function debugCopilotInteraction(progress: vscode.Progress<vscode.ChatAgentExtendedProgress>, msg: string) {
+function debugCopilotInteraction(progress: vscode.Progress<vscode.ChatAgentExtendedProgress>, msg: string) {
     if (showDebugCopilotInteractionAsProgress) {
         progress.report({ content: `\n\n${new Date().toISOString()} >> \`${msg.replace(/\n/g, "").trim()}\`\n\n` });
     }
@@ -26,34 +29,38 @@ export function debugCopilotInteraction(progress: vscode.Progress<vscode.ChatAge
 /**
  * Feeds {@link systemPrompt} and {@link userContent} to Copilot and redirects the response directly to ${@link progress}.
  */
-export async function verbatimCopilotInteraction(systemPrompt: string, userContent: string, progress: vscode.Progress<vscode.ChatAgentExtendedProgress>, token: vscode.CancellationToken): Promise<{ copilotResponded: boolean, copilotResponse: string }> {
+export async function verbatimCopilotInteraction(systemPrompt: string, request: AgentRequest): Promise<CopilotInteractionResult> {
     let joinedFragements = "";
     await queueCopilotInteraction((fragment) => {
         joinedFragements += fragment;
-        progress.report({ content: fragment });
-    }, systemPrompt, userContent, progress, token);
-    return { copilotResponded: true, copilotResponse: joinedFragements };
+        request.progress.report({ content: fragment });
+    }, systemPrompt, request);
+    if (joinedFragements === "") {
+        return { copilotResponded: false, copilotResponse: undefined };
+    } else {
+        return { copilotResponded: true, copilotResponse: joinedFragements };
+    }
 }
 
 /**
  * Feeds {@link systemPrompt} and {@link userContent} to Copilot and directly returns its response.
  */
-export async function getResponseAsStringCopilotInteraction(systemPrompt: string, userContent: string, progress: vscode.Progress<vscode.ChatAgentExtendedProgress>, token: vscode.CancellationToken): Promise<string | undefined> {
+export async function getResponseAsStringCopilotInteraction(systemPrompt: string, request: AgentRequest): Promise<string | undefined> {
     let joinedFragements = "";
     await queueCopilotInteraction((fragment) => {
         joinedFragements += fragment;
-    }, systemPrompt, userContent, progress, token);
-    debugCopilotInteraction(progress, `Copilot response:\n\n${joinedFragements}\n`);
+    }, systemPrompt, request);
+    debugCopilotInteraction(request.progress, `Copilot response:\n\n${joinedFragements}\n`);
     return joinedFragements;
 }
 
 let copilotInteractionQueueRunning = false;
-type CopilotInteractionQueueItem = { onResponseFragment: (fragment: string) => void, systemPrompt: string, userContent: string, progress: vscode.Progress<vscode.ChatAgentExtendedProgress>, token: vscode.CancellationToken, resolve: () => void };
+type CopilotInteractionQueueItem = { onResponseFragment: (fragment: string) => void, systemPrompt: string, request: AgentRequest, resolve: () => void };
 const copilotInteractionQueue: CopilotInteractionQueueItem[] = [];
 
-export async function queueCopilotInteraction(onResponseFragment: (fragment: string) => void, systemPrompt: string, userContent: string, progress: vscode.Progress<vscode.ChatAgentExtendedProgress>, token: vscode.CancellationToken): Promise<void> {
+export async function queueCopilotInteraction(onResponseFragment: (fragment: string) => void, systemPrompt: string, request: AgentRequest): Promise<void> {
     return new Promise<void>((resolve) => {
-        copilotInteractionQueue.push({ onResponseFragment, systemPrompt, userContent, progress, token, resolve });
+        copilotInteractionQueue.push({ onResponseFragment: onResponseFragment, systemPrompt: systemPrompt, request: request, resolve: resolve });
         if (!copilotInteractionQueueRunning) {
             copilotInteractionQueueRunning = true;
             void runCopilotInteractionQueue();
@@ -77,13 +84,13 @@ async function runCopilotInteractionQueue() {
 
         lastCopilotInteractionRunTime = Date.now();
 
-        await doCopilotInteraction(queueItem.onResponseFragment, queueItem.systemPrompt, queueItem.userContent, queueItem.progress, queueItem.token);
+        await doCopilotInteraction(queueItem.onResponseFragment, queueItem.systemPrompt, queueItem.request);
         queueItem.resolve();
     }
     copilotInteractionQueueRunning = false;
 }
 
-async function doCopilotInteraction(onResponseFragment: (fragment: string) => void, systemPrompt: string, userContent: string, progress: vscode.Progress<vscode.ChatAgentExtendedProgress>, token: vscode.CancellationToken): Promise<void> {
+async function doCopilotInteraction(onResponseFragment: (fragment: string) => void, systemPrompt: string, agentRequest: AgentRequest): Promise<void> {
     try {
         const access = await getChatAccess();
         const messages = [
@@ -93,19 +100,19 @@ async function doCopilotInteraction(onResponseFragment: (fragment: string) => vo
             },
             {
                 role: vscode.ChatMessageRole.User,
-                content: userContent
+                content: agentRequest.userPrompt
             },
         ];
 
-        debugCopilotInteraction(progress, `System Prompt:\n\n${systemPrompt}\n`);
-        debugCopilotInteraction(progress, `User Content:\n\n${userContent}\n`);
+        debugCopilotInteraction(agentRequest.progress, `System Prompt:\n\n${systemPrompt}\n`);
+        debugCopilotInteraction(agentRequest.progress, `User Content:\n\n${agentRequest.userPrompt}\n`);
 
-        const request = access.makeRequest(messages, {}, token);
+        const request = access.makeRequest(messages, {}, agentRequest.token);
         for await (const fragment of request.response) {
             onResponseFragment(fragment);
         }
     } catch (e) {
-        debugCopilotInteraction(progress, `Failed to do copilot interaction with system prompt '${systemPrompt}'. Error: ${JSON.stringify(e)}`);
+        debugCopilotInteraction(agentRequest.progress, `Failed to do copilot interaction with system prompt '${systemPrompt}'. Error: ${JSON.stringify(e)}`);
     }
 }
 

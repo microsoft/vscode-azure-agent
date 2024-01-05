@@ -4,15 +4,17 @@
  *--------------------------------------------------------------------------------------------*/
 
 import * as vscode from "vscode";
+import { AgentRequest } from "./agent";
 import { agentName } from "./agentConsts";
 import { IExtensionCommandSchemaProvider } from "./commandSchema/commandSchema";
 import { getResponseAsStringCopilotInteraction, getStringFieldFromCopilotResponseMaybeWithStrJson } from "./copilotInteractions";
 import { detectIntent } from "./intentDetection";
 
-export async function generateExtensionCommandFollowUps(apiProvider: IExtensionCommandSchemaProvider, _userContent: string, copilotContent: string, _ctx: vscode.ChatAgentContext, progress: vscode.Progress<vscode.ChatAgentExtendedProgress>, token: vscode.CancellationToken): Promise<vscode.InteractiveSessionReplyFollowup[]> {
+export async function generateExtensionCommandFollowUps(copilotContent: string, apiProvider: IExtensionCommandSchemaProvider, request: AgentRequest): Promise<vscode.InteractiveSessionReplyFollowup[]> {
+    const copilotContentAgentRequest: AgentRequest = { ...request, userPrompt: copilotContent, }
     const availableCommands = await apiProvider.getCommandSchemas();
     const intentDetectionTargets = availableCommands.map((command) => ({ name: command.name, intentDetectionDescription: command.copilotStrings.intentDescription }));
-    const detectedIntentionTarget = await detectIntent(copilotContent, intentDetectionTargets, _ctx, progress, token);
+    const detectedIntentionTarget = await detectIntent(intentDetectionTargets, copilotContentAgentRequest);
     const detectedCommand = availableCommands.find((command) => command.name === detectedIntentionTarget?.name);
     if (!!detectedCommand) {
         return [{ message: `@${agentName} ${detectedCommand.userStrings.actionBlurb}` }]
@@ -20,8 +22,9 @@ export async function generateExtensionCommandFollowUps(apiProvider: IExtensionC
     return [];
 }
 
-export async function generateNextQuestionsFollowUps(_userContent: string, copilotContent: string, _ctx: vscode.ChatAgentContext, progress: vscode.Progress<vscode.ChatAgentExtendedProgress>, token: vscode.CancellationToken): Promise<vscode.InteractiveSessionReplyFollowup[]> {
-    const maybeJsonCopilotResponseLanguage = await getResponseAsStringCopilotInteraction(generateNextQuestionsFollowUpsSystemPrompt1, copilotContent, progress, token);
+export async function generateNextQuestionsFollowUps(copilotContent: string, request: AgentRequest): Promise<vscode.InteractiveSessionReplyFollowup[]> {
+    const copilotContentAgentRequest: AgentRequest = { ...request, userPrompt: copilotContent, }
+    const maybeJsonCopilotResponseLanguage = await getResponseAsStringCopilotInteraction(generateNextQuestionsFollowUpsSystemPrompt1, copilotContentAgentRequest);
     const copilotGeneratedFollowUpQuestions = [
         getStringFieldFromCopilotResponseMaybeWithStrJson(maybeJsonCopilotResponseLanguage, "followUpOne")?.trim(),
         getStringFieldFromCopilotResponseMaybeWithStrJson(maybeJsonCopilotResponseLanguage, "followUpTwo")?.trim(),

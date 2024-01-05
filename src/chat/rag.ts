@@ -8,8 +8,8 @@ import { ClientSecretCredential } from "@azure/identity";
 import { AzureKeyCredential, OpenAIClient } from "@azure/openai";
 import { AzExtRequestPrepareOptions, sendRequestWithTimeout } from "@microsoft/vscode-azext-azureutils";
 import { IActionContext } from "@microsoft/vscode-azext-utils";
-import * as vscode from "vscode";
 import { ext } from "../extensionVariables";
+import { AgentRequest } from "./agent";
 import { SlashCommand, SlashCommandHandlerResult } from "./slashCommands";
 
 const microsoftLearnEndpoint = "https://learn.microsoft.com/api/knowledge/vector/document/relevantItems";
@@ -60,9 +60,9 @@ export const toggleRagSlashCommand: SlashCommand = [
         shortDescription: "Toggle RAG on or off",
         longDescription: "Toggle RAG on or off",
         intentDescription: "Toggle RAG on or off",
-        handler: async (_userContent: string, _ctx: vscode.ChatAgentContext, progress: vscode.Progress<vscode.ChatAgentExtendedProgress>, _token: vscode.CancellationToken): Promise<SlashCommandHandlerResult> => {
+        handler: async (request: AgentRequest): Promise<SlashCommandHandlerResult> => {
             const newState = await toggleRag();
-            progress.report({ content: `RAG is now ${newState ? "on" : "off"}.` });
+            request.progress.report({ content: `RAG is now ${newState ? "on" : "off"}.` });
             return undefined;
         },
     }

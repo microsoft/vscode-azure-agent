@@ -3,7 +3,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import * as vscode from "vscode";
+import { AgentRequest } from "./agent";
 import { IExtensionCommandSchemaProvider } from "./commandSchema/commandSchema";
 import { NoCommandsExtension } from "./commandSchema/noCommandsExtension";
 import { slashCommandFromCommandSchema } from "./commandSchema/slashCommandFromCommandSchema";
@@ -49,9 +49,9 @@ export class ExtensionSlashCommandsOwner {
         ]
     }
 
-    private async _handleExtensionSlashCommand(userContent: string, _ctx: vscode.ChatAgentContext, progress: vscode.Progress<vscode.ChatAgentExtendedProgress>, token: vscode.CancellationToken): Promise<SlashCommandHandlerResult> {
+    private async _handleExtensionSlashCommand(request: AgentRequest): Promise<SlashCommandHandlerResult> {
         const extensionLevelSlashCommandsOwner = await this._getExtensionSlashCommandsOwner();
-        return await extensionLevelSlashCommandsOwner.handleRequestOrPrompt(userContent, _ctx, progress, token);
+        return await extensionLevelSlashCommandsOwner.handleRequestOrPrompt(request);
     }
 
     private async _getExtensionSlashCommandsOwner(): Promise<SlashCommandsOwner> {

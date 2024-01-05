@@ -3,6 +3,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
+import { AgentRequest } from "../agent";
 import { getResponseAsStringCopilotInteraction, getStringFieldFromCopilotResponseMaybeWithStrJson } from "../copilotInteractions";
 import { SlashCommand, SlashCommandHandlerResult } from "../slashCommands";
 import { ExtensionCommandParameterSchema, ExtensionCommandParameters, ExtensionCommandSchema, IExtensionCommandSchemaProvider } from "./commandSchema";
@@ -14,13 +15,13 @@ export function slashCommandFromCommandSchema(api: ExtensionCommandSchema, apiPr
             shortDescription: api.userStrings.shortDescription,
             longDescription: api.userStrings.longDescription,
             intentDescription: api.copilotStrings.intentDescription,
-            handler: async (userContent: string, _ctx: any, progress: any, token: any): Promise<SlashCommandHandlerResult> => {
+            handler: async (request: AgentRequest): Promise<SlashCommandHandlerResult> => {
                 let validatedParameters: ExtensionCommandParameters = {};
                 let nextParametersToDetermine: ExtensionCommandParameterSchema[] = api.initialParameters;
                 let parametersToSubmit: ExtensionCommandParameters = {};
                 let moreParameters: ExtensionCommandParameterSchema[] = [];
                 do {
-                    parametersToSubmit = await determineParameterValues(userContent, _ctx, progress, token, nextParametersToDetermine);
+                    parametersToSubmit = await determineParameterValues(request, nextParametersToDetermine);
                     const response = await apiProvider.submitParameters(api, { ...validatedParameters, ...parametersToSubmit });
                     if (response.type === "done") {
                         nextParametersToDetermine = [];
@@ -48,7 +49,7 @@ export function slashCommandFromCommandSchema(api: ExtensionCommandSchema, apiPr
                     markdownResponseLines.push(`For now, I need to know more about:`);
                     markdownResponseLines.push(...moreParameters.map((parameter) => `- **${parameter.userStrings.title}**: ${parameter.userStrings.description}`));
                 }
-                progress.report({ content: markdownResponseLines.join("\n") });
+                request.progress.report({ content: markdownResponseLines.join("\n") });
 
                 return {
                     chatAgentResult: {},
@@ -59,10 +60,10 @@ export function slashCommandFromCommandSchema(api: ExtensionCommandSchema, apiPr
     ]
 }
 
-async function determineParameterValues(userContent: string, _ctx: any, progress: any, token: any, parameters: ExtensionCommandParameterSchema[]): Promise<ExtensionCommandParameters> {
+async function determineParameterValues(request: AgentRequest, parameters: ExtensionCommandParameterSchema[]): Promise<ExtensionCommandParameters> {
     const copilotDeterminedParameterValues = await Promise.all(parameters.map<Promise<ExtensionCommandParameters>>(async (parameter) => {
         const systemPrompt = getParameterSystemPrompt1(parameter);
-        const maybeJsonCopilotResponse = await getResponseAsStringCopilotInteraction(systemPrompt, userContent, progress, token);
+        const maybeJsonCopilotResponse = await getResponseAsStringCopilotInteraction(systemPrompt, request);
         const copilotDeterminedParameterValue = getStringFieldFromCopilotResponseMaybeWithStrJson(maybeJsonCopilotResponse, [parameter.name, "parameterValue", "value", "parameter"]);
 
         if (!!copilotDeterminedParameterValue) {

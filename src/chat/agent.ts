@@ -18,6 +18,16 @@ import {
     SlashCommandsOwner
 } from "./slashCommands";
 
+export type AgentRequest = {
+    slashCommand?: string;
+    userPrompt: string;
+    variables: Record<string, vscode.ChatVariableValue[]>;
+
+    context: vscode.ChatAgentContext;
+    progress: vscode.Progress<vscode.ChatAgentExtendedProgress>;
+    token: vscode.CancellationToken;
+}
+
 const agentSlashCommands: InvokeableSlashCommands = new Map([
     functionsExtensionSlashCommandsOwner.getTopLevelSlashCommand(),
     storageExtensionSlashCommandsOwner.getTopLevelSlashCommand(),
@@ -45,8 +55,9 @@ export function registerChatAgent() {
 }
 
 async function handler(request: vscode.ChatAgentRequest, context: vscode.ChatAgentContext, progress: vscode.Progress<vscode.ChatAgentExtendedProgress>, token: vscode.CancellationToken): Promise<vscode.ChatAgentResult2 | undefined> {
-    const handleResult = await agentBenchmarker.handleRequestOrPrompt(request, context, progress, token) ||
-        await agentSlashCommandsOwner.handleRequestOrPrompt(request, context, progress, token);
+    const agentRequest: AgentRequest = { slashCommand: request.slashCommand?.name, userPrompt: request.prompt, variables: request.variables, context: context, progress: progress, token: token, };
+    const handleResult = await agentBenchmarker.handleRequestOrPrompt(agentRequest) ||
+        await agentSlashCommandsOwner.handleRequestOrPrompt(agentRequest);
 
     if (handleResult !== undefined) {
         handleResult.followUp = handleResult.followUp?.slice(0, maxFollowUps);
@@ -66,20 +77,20 @@ function getSlashCommands(_token: vscode.CancellationToken): vscode.ProviderResu
         .map(([name, config]) => ({ name: name, description: config.shortDescription }))
 }
 
-async function defaultHandler(userContent: string, _ctx: vscode.ChatAgentContext, progress: vscode.Progress<vscode.ChatAgentExtendedProgress>, token: vscode.CancellationToken): Promise<SlashCommandHandlerResult> {
+async function defaultHandler(request: AgentRequest): Promise<SlashCommandHandlerResult> {
     const defaultSystemPrompt1 = `You are an expert in using the Azure Extensions for VS Code. The user needs your help with something related to either Azure, VS Code, and/or the Azure Extensions for VS Code. Do your best to answer their question. The user is currently using VS Code and has one or more Azure Extensions for VS Code installed. Do not overwhelm the user with too much information. Keep responses short and sweet.`;
 
-    const { copilotResponded } = await verbatimCopilotInteraction(defaultSystemPrompt1, userContent, progress, token);
+    const { copilotResponded } = await verbatimCopilotInteraction(defaultSystemPrompt1, request);
     if (!copilotResponded) {
-        progress.report({ content: vscode.l10n.t("Sorry, I can't help with that right now.\n") });
+        request.progress.report({ content: vscode.l10n.t("Sorry, I can't help with that right now.\n") });
         return { chatAgentResult: {}, followUp: [], };
     } else {
         return { chatAgentResult: {}, followUp: [], };
     }
 }
 
-async function noInputHandler(_userContent: string, _ctx: vscode.ChatAgentContext, progress: vscode.Progress<vscode.ChatAgentExtendedProgress>, _token: vscode.CancellationToken): Promise<SlashCommandHandlerResult> {
+async function noInputHandler(request: AgentRequest): Promise<SlashCommandHandlerResult> {
     const slashCommandsMarkdown = Array.from(agentSlashCommands).map(([name, config]) => `- \`/${name}\` - ${config.longDescription || config.shortDescription}`).join("\n");
-    progress.report({ content: `Hi! I can help you with tasks related to Azure Functions development. If you know what you'd like to do, you can use the following commands to ask me for help:\n\n${slashCommandsMarkdown}\n\nOtherwise feel free to ask or tell me anything and I'll do my best to help.` });
+    request.progress.report({ content: `Hi! I can help you with tasks related to Azure Functions development. If you know what you'd like to do, you can use the following commands to ask me for help:\n\n${slashCommandsMarkdown}\n\nOtherwise feel free to ask or tell me anything and I'll do my best to help.` });
     return { chatAgentResult: {}, followUp: [] };
 }
