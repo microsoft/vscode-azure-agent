@@ -4,7 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 import * as vscode from "vscode";
-import { AgentRequest } from "../agent";
+import { AgentRequest, IAgentRequestHandler } from "../agent";
 import { agentName } from "../agentConsts";
 import { FallbackSlashCommandHandlers, SlashCommand, SlashCommandConfig, SlashCommandHandlerResult, SlashCommandsOwner } from "../slashCommands";
 import { functionsBenchmarks } from "./functionsBenchmarks";
@@ -57,7 +57,7 @@ const benchmarksRunsStats: AgentBenchmarkRunStats[][] = benchmarks.map(() => [])
 const benchmarkCommandName = "benchmark";
 const benchmarkStatsCommandName = "benchmarkStats";
 
-export class AgentBenchmarker {
+export class AgentBenchmarker implements IAgentRequestHandler {
     private _agentSlashCommandsOwner: SlashCommandsOwner;
     private _benchmarkerSlashCommandsOwner: SlashCommandsOwner;
     private _continuationIndex: number;
@@ -67,13 +67,13 @@ export class AgentBenchmarker {
 
         const slashCommands = new Map([this._getBenchmarkSlashCommand(), this._getBenchmarkStatsSlashCommand()]);
         const fallbackSlashCommandHandlers: FallbackSlashCommandHandlers = { noInput: undefined, default: undefined };
-        this._benchmarkerSlashCommandsOwner = new SlashCommandsOwner(slashCommands, fallbackSlashCommandHandlers);
+        this._benchmarkerSlashCommandsOwner = new SlashCommandsOwner(slashCommands, fallbackSlashCommandHandlers, { disableIntentDetection: true });
 
         this._continuationIndex = 0;
     }
 
     public handleRequestOrPrompt(request: AgentRequest): Promise<SlashCommandHandlerResult> {
-        return this._benchmarkerSlashCommandsOwner.handleRequestOrPrompt(request, true);
+        return this._benchmarkerSlashCommandsOwner.handleRequestOrPrompt(request);
     }
 
 

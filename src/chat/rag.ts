@@ -10,6 +10,7 @@ import { AzExtRequestPrepareOptions, sendRequestWithTimeout } from "@microsoft/v
 import { IActionContext } from "@microsoft/vscode-azext-utils";
 import { ext } from "../extensionVariables";
 import { AgentRequest } from "./agent";
+import { agentName } from "./agentConsts";
 import { SlashCommand, SlashCommandHandlerResult } from "./slashCommands";
 
 const microsoftLearnEndpoint = "https://learn.microsoft.com/api/knowledge/vector/document/relevantItems";
@@ -54,8 +55,11 @@ async function toggleRag(): Promise<boolean> {
     return ragEnabled;
 }
 
+const toggleRagCommand = "toggleRag";
+const getRagStatusCommand = "getRagStatus";
+
 export const toggleRagSlashCommand: SlashCommand = [
-    "toggleRag",
+    toggleRagCommand,
     {
         shortDescription: "Toggle RAG on or off",
         longDescription: "Toggle RAG on or off",
@@ -63,7 +67,25 @@ export const toggleRagSlashCommand: SlashCommand = [
         handler: async (request: AgentRequest): Promise<SlashCommandHandlerResult> => {
             const newState = await toggleRag();
             request.progress.report({ content: `RAG is now ${newState ? "on" : "off"}.` });
-            return undefined;
+            return { chatAgentResult: {}, followUp: [{ message: `@${agentName} /${getRagStatusCommand}` }] };
+        },
+    }
+]
+
+export const getRagStatusSlashCommand: SlashCommand = [
+    getRagStatusCommand,
+    {
+        shortDescription: "Get RAG status",
+        longDescription: "Get RAG status",
+        intentDescription: "Get RAG status",
+        handler: async (request: AgentRequest): Promise<SlashCommandHandlerResult> => {
+            const extensionIdentity = getExtensionIdentity();
+            const openAiConfigEndpoint = getOpenAiConfigEndpoint();
+            request.progress.report({ content: `Status:\n` });
+            request.progress.report({ content: `- RAG is ${ragEnabled ? "on" : "off"}.\n` });
+            request.progress.report({ content: `- Extension identity is ${extensionIdentity ? "present" : "missing"}.\n` });
+            request.progress.report({ content: `- OpenAI config endpoint is ${openAiConfigEndpoint ? "present" : "missing"}.\n` });
+            return { chatAgentResult: {}, followUp: [{ message: `@${agentName} /${toggleRagCommand}` }] };
         },
     }
 ]
