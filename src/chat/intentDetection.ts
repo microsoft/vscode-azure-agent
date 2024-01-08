@@ -3,7 +3,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import * as vscode from "vscode";
+import { AgentRequest } from "./agent";
 import { getResponseAsStringCopilotInteraction, getStringFieldFromCopilotResponseMaybeWithStrJson } from "./copilotInteractions";
 
 export type IntentDetectionTarget = {
@@ -11,9 +11,9 @@ export type IntentDetectionTarget = {
     intentDetectionDescription: string,
 }
 
-export async function detectIntent(userContent: string, targets: IntentDetectionTarget[], _ctx: vscode.ChatAgentContext, progress: vscode.Progress<vscode.ChatAgentExtendedProgress>, token: vscode.CancellationToken): Promise<IntentDetectionTarget | undefined> {
+export async function detectIntent(targets: IntentDetectionTarget[], request: AgentRequest): Promise<IntentDetectionTarget | undefined> {
     const systemPrompt = getDetectIntentSystemPrompt1(targets);
-    const maybeJsonCopilotResponse = await getResponseAsStringCopilotInteraction(systemPrompt, userContent, progress, token);
+    const maybeJsonCopilotResponse = await getResponseAsStringCopilotInteraction(systemPrompt, request);
     const determinedOption =
         getStringFieldFromCopilotResponseMaybeWithStrJson(maybeJsonCopilotResponse, "option") ||
         getStringFieldFromCopilotResponseMaybeWithStrJson(maybeJsonCopilotResponse, "intent");

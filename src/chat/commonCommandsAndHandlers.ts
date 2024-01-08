@@ -5,6 +5,7 @@
 
 import { callWithTelemetryAndErrorHandling } from "@microsoft/vscode-azext-utils";
 import * as vscode from "vscode";
+import { AgentRequest } from "./agent";
 import { agentName } from "./agentConsts";
 import { IExtensionCommandSchemaProvider } from "./commandSchema/commandSchema";
 import { verbatimCopilotInteraction } from "./copilotInteractions";
@@ -25,28 +26,28 @@ export function getBrainstormCommand(config: BrainstormCommandConfig): SlashComm
             shortDescription: `Brainstorm about how you can use ${config.shortTopic}`,
             longDescription: `Brainstorm about how you can use ${config.longTopic} to help you solve a problem or accomplish a task.`,
             intentDescription: `This is best when users have a question about, or want to know if or how ${config.longTopic}, can help them solve a problem or accomplish a task. For example, if they are saying phrases like 'how do I', 'is it possible', or 'how can it', this is probably the best choice.`,
-            handler: (userContent, ctx, progress, token) => brainstormHandler(config, userContent, ctx, progress, token)
+            handler: (request) => brainstormHandler(config, request)
         }];
 }
 
-function brainstormHandler(config: BrainstormCommandConfig, userContent: string, _ctx: vscode.ChatAgentContext, progress: vscode.Progress<vscode.ChatAgentExtendedProgress>, token: vscode.CancellationToken): Promise<SlashCommandHandlerResult> {
+function brainstormHandler(config: BrainstormCommandConfig, request: AgentRequest): Promise<SlashCommandHandlerResult> {
     return callWithTelemetryAndErrorHandling("brainstormHandler", async (actionContext) => {
-        if (userContent.length === 0) {
-            progress.report({ content: `If you'd like to brainstorm about how you can use ${config.longTopic} to help you solve a problem or accomplish a task, let me know what it is you would like to do.\n` });
+        if (request.userPrompt.length === 0) {
+            request.progress.report({ content: `If you'd like to brainstorm about how you can use ${config.longTopic} to help you solve a problem or accomplish a task, let me know what it is you would like to do.\n` });
             return { chatAgentResult: {}, followUp: config.noInputSuggestions.map((suggestion) => ({ message: `@${agentName} ${suggestion}` })), };
         } else {
-            const ragContent = await getMicrosoftLearnRagContent(actionContext, userContent);
-            const { copilotResponded, copilotResponse } = await verbatimCopilotInteraction(getBrainstormSystemPrompt(config, ragContent?.content), userContent, progress, token);
+            const ragContent = await getMicrosoftLearnRagContent(actionContext, request.userPrompt);
+            const { copilotResponded, copilotResponse } = await verbatimCopilotInteraction(getBrainstormSystemPrompt(config, ragContent?.content), request);
             if (!copilotResponded) {
-                progress.report({ content: "Sorry, I can't help with that right now.\n" });
+                request.progress.report({ content: "Sorry, I can't help with that right now.\n" });
                 return { chatAgentResult: {}, followUp: [], };
             } else {
                 if (!!ragContent) {
-                    progress.report({ reference: vscode.Uri.parse(ragContent.contentUrl) });
+                    request.progress.report({ reference: vscode.Uri.parse(ragContent.contentUrl) });
                 }
                 const followUps = [
-                    ...(!!config.followUpApiProvider ? await generateExtensionCommandFollowUps(config.followUpApiProvider, userContent, copilotResponse, _ctx, progress, token) : []),
-                    ...(await generateNextQuestionsFollowUps(userContent, copilotResponse, _ctx, progress, token))
+                    ...(!!config.followUpApiProvider ? await generateExtensionCommandFollowUps(copilotResponse, config.followUpApiProvider, request) : []),
+                    ...(await generateNextQuestionsFollowUps(copilotResponse, request))
                 ];
                 return { chatAgentResult: {}, followUp: followUps, };
             }
@@ -73,28 +74,28 @@ export function getLearnCommand(config: LearnCommandConfig): SlashCommand {
             shortDescription: `Learn about how you can use ${config.shortTopic}`,
             longDescription: `Learn more information about ${config.longTopic}`,
             intentDescription: `This is best when users want to know general information, or have basic questions, about ${config.longTopic}`,
-            handler: (userContent, ctx, progress, token) => learnHandler(config, userContent, ctx, progress, token)
+            handler: (request: AgentRequest) => learnHandler(config, request)
         }];
 }
 
-function learnHandler(config: LearnCommandConfig, userContent: string, _ctx: vscode.ChatAgentContext, progress: vscode.Progress<vscode.ChatAgentExtendedProgress>, token: vscode.CancellationToken): Promise<SlashCommandHandlerResult> {
+function learnHandler(config: LearnCommandConfig, request: AgentRequest): Promise<SlashCommandHandlerResult> {
     return callWithTelemetryAndErrorHandling("learnHandler", async (actionContext) => {
-        if (userContent.length === 0) {
-            progress.report({ content: `If you want to learn more about ${config.longTopic}, simply ask me what it is you'd like to learn.\n` });
+        if (request.userPrompt.length === 0) {
+            request.progress.report({ content: `If you want to learn more about ${config.longTopic}, simply ask me what it is you'd like to learn.\n` });
             return { chatAgentResult: {}, followUp: config.noInputSuggestions.map((suggestion) => ({ message: `@${agentName} ${suggestion}` })), };
         } else {
-            const ragContent = await getMicrosoftLearnRagContent(actionContext, userContent);
-            const { copilotResponded, copilotResponse } = await verbatimCopilotInteraction(getLearnSystemPrompt(config, ragContent?.content), userContent, progress, token);
+            const ragContent = await getMicrosoftLearnRagContent(actionContext, request.userPrompt);
+            const { copilotResponded, copilotResponse } = await verbatimCopilotInteraction(getLearnSystemPrompt(config, ragContent?.content), request);
             if (!copilotResponded) {
-                progress.report({ content: "Sorry, I can't help with that right now.\n" });
+                request.progress.report({ content: "Sorry, I can't help with that right now.\n" });
                 return { chatAgentResult: {}, followUp: [], };
             } else {
                 if (!!ragContent) {
-                    progress.report({ reference: vscode.Uri.parse(ragContent.contentUrl) });
+                    request.progress.report({ reference: vscode.Uri.parse(ragContent.contentUrl) });
                 }
                 const followUps = [
-                    ...(!!config.followUpApiProvider ? await generateExtensionCommandFollowUps(config.followUpApiProvider, userContent, copilotResponse, _ctx, progress, token) : []),
-                    ...(await generateNextQuestionsFollowUps(userContent, copilotResponse, _ctx, progress, token))
+                    ...(!!config.followUpApiProvider ? await generateExtensionCommandFollowUps(copilotResponse, config.followUpApiProvider, request) : []),
+                    ...(await generateNextQuestionsFollowUps(copilotResponse, request))
                 ];
                 return { chatAgentResult: {}, followUp: followUps, };
             }
@@ -114,8 +115,8 @@ export type MightBeInterestedHandlerConfig = {
 }
 
 export function getMightBeInterestedHandler(config: MightBeInterestedHandlerConfig): SlashCommandHandler {
-    return async (_userContent: string, _ctx: vscode.ChatAgentContext, progress: vscode.Progress<vscode.ChatAgentExtendedProgress>, _token: vscode.CancellationToken) => {
-        progress.report({ content: `Hi! It sounds like you might be interested in the ${config.topic}, however, I can't quite help with what you're asking about. Try asking something else.` });
+    return async (request: AgentRequest) => {
+        request.progress.report({ content: `Hi! It sounds like you might be interested in the ${config.topic}, however, I can't quite help with what you're asking about. Try asking something else.` });
         return {
             chatAgentResult: {},
             followUp: config.suggestions.map((suggestion) => ({ message: `@${agentName} ${suggestion}` }))

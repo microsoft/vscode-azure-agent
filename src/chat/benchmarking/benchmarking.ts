@@ -4,6 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 import * as vscode from "vscode";
+import { AgentRequest } from "../agent";
 import { agentName } from "../agentConsts";
 import { FallbackSlashCommandHandlers, SlashCommand, SlashCommandConfig, SlashCommandHandlerResult, SlashCommandsOwner } from "../slashCommands";
 import { functionsBenchmarks } from "./functionsBenchmarks";
@@ -71,8 +72,8 @@ export class AgentBenchmarker {
         this._continuationIndex = 0;
     }
 
-    public handleRequestOrPrompt(request: vscode.ChatAgentRequest | string, context: vscode.ChatAgentContext, progress: vscode.Progress<vscode.ChatAgentExtendedProgress>, token: vscode.CancellationToken): Promise<SlashCommandHandlerResult> {
-        return this._benchmarkerSlashCommandsOwner.handleRequestOrPrompt(request, context, progress, token, true);
+    public handleRequestOrPrompt(request: AgentRequest): Promise<SlashCommandHandlerResult> {
+        return this._benchmarkerSlashCommandsOwner.handleRequestOrPrompt(request, true);
     }
 
 
@@ -80,23 +81,23 @@ export class AgentBenchmarker {
         return this._benchmarkerSlashCommandsOwner.getFollowUpForLastHandledSlashCommand(result, token);
     }
 
-    private async _benchmarkAgent(userContent: string, ctx: vscode.ChatAgentContext, progress: vscode.Progress<vscode.ChatAgentExtendedProgress>, token: vscode.CancellationToken): Promise<SlashCommandHandlerResult> {
+    private async _benchmarkAgent(request: AgentRequest): Promise<SlashCommandHandlerResult> {
         const followUps: vscode.ChatAgentFollowup[] = [];
 
-        const requestedBenchmarkIndex = parseInt(userContent);
+        const requestedBenchmarkIndex = parseInt(request.userPrompt);
 
         if (isNaN(requestedBenchmarkIndex) || requestedBenchmarkIndex >= benchmarks.length) {
-            await this._runBenchmark(this._continuationIndex, ctx, progress, token);
+            await this._runBenchmark(this._continuationIndex, request);
             this._continuationIndex++;
 
             if (this._continuationIndex === benchmarks.length) {
-                this._debugBenchmarking(progress, `🎉 Done benchmarking!`);
+                this._debugBenchmarking(request.progress, `🎉 Done benchmarking!`);
                 followUps.push({ message: `@${agentName} /${benchmarkStatsCommandName}` });
                 this._continuationIndex = 0;
             }
             followUps.push({ message: `@${agentName} /${benchmarkCommandName}` });
         } else {
-            await this._runBenchmark(requestedBenchmarkIndex, ctx, progress, token);
+            await this._runBenchmark(requestedBenchmarkIndex, request);
 
             followUps.push({ message: `@${agentName} /${benchmarkCommandName}` });
             followUps.push({ message: `@${agentName} /${benchmarkCommandName} ${requestedBenchmarkIndex}` });
@@ -110,14 +111,15 @@ export class AgentBenchmarker {
         };
     }
 
-    private async _runBenchmark(benchmarkIdx: number, ctx: vscode.ChatAgentContext, progress: vscode.Progress<vscode.ChatAgentExtendedProgress>, token: vscode.CancellationToken): Promise<void> {
+    private async _runBenchmark(benchmarkIdx: number, request: AgentRequest): Promise<void> {
 
         const benchmark = benchmarks[benchmarkIdx];
 
-        this._debugBenchmarking(progress, `📋 Benchmark (${this._continuationIndex}/${benchmarks.length}): ${benchmark.name}\n💭 Prompt: '${benchmark.prompt}'...`);
+        this._debugBenchmarking(request.progress, `📋 Benchmark (${this._continuationIndex}/${benchmarks.length}): ${benchmark.name}\n💭 Prompt: '${benchmark.prompt}'...`);
 
         const startTime = Date.now();
-        const handleResult = await this._agentSlashCommandsOwner.handleRequestOrPrompt({ prompt: benchmark.prompt, variables: {}, }, ctx, progress, token);
+        const benchmarkRequest: AgentRequest = { ...request, userPrompt: benchmark.prompt, };
+        const handleResult = await this._agentSlashCommandsOwner.handleRequestOrPrompt(benchmarkRequest);
         const endTime = Date.now();
 
         if (handleResult) {
@@ -127,7 +129,7 @@ export class AgentBenchmarker {
 
             const followUps = handleResult.followUp || [];
             if (followUps.length > 0) {
-                this._debugBenchmarking(progress, `⏭️ Follow Ups:\n${followUps.map((followUp) => JSON.stringify(followUp)).join("\n")}`);
+                this._debugBenchmarking(request.progress, `⏭️ Follow Ups:\n${followUps.map((followUp) => JSON.stringify(followUp)).join("\n")}`);
             }
 
             const followUpValidation = benchmark.followUps;
@@ -135,7 +137,7 @@ export class AgentBenchmarker {
             validationString += allRequiredFollowUpsFound ? `✅ All required follow ups found.\n` : `❌ Not all required follow ups found.\n`;
             validationString += allFollowUpsRequiredOrAcceptable ? `✅ All follow ups required or acceptable.\n` : `❌ Not all follow ups required or acceptable.\n`;
 
-            this._debugBenchmarking(progress, validationString);
+            this._debugBenchmarking(request.progress, validationString);
 
             const stats: AgentBenchmarkRunStats = {
                 startTime: startTime,
@@ -150,7 +152,7 @@ export class AgentBenchmarker {
         }
     }
 
-    private async _benchmarkStats(_userContent: string, _ctx: vscode.ChatAgentContext, progress: vscode.Progress<vscode.ChatAgentExtendedProgress>, _token: vscode.CancellationToken): Promise<SlashCommandHandlerResult> {
+    private async _benchmarkStats(request: AgentRequest): Promise<SlashCommandHandlerResult> {
         benchmarks.forEach((benchmark, benchmarkIdx) => {
             const benchmarkRunStats = benchmarksRunsStats[benchmarkIdx];
 
@@ -170,7 +172,7 @@ export class AgentBenchmarker {
                 `🔍 All required follow ups found: ${allRequiredFollowUpsFoundCount} (${getColorEmojiForPercentage(allRequiredFollowUpsFoundPercentage)} ${allRequiredFollowUpsFoundPercentage * 100}%)\n` +
                 `🔍 All follow ups required or acceptable: ${allFollowUpsRequiredOrAcceptableCount} (${getColorEmojiForPercentage(allFollowUpsRequiredOrAcceptablePercentage)} ${allFollowUpsRequiredOrAcceptablePercentage * 100}%)\n`;
 
-            this._debugBenchmarking(progress, statsString);
+            this._debugBenchmarking(request.progress, statsString);
         });
         return {
             chatAgentResult: {},
@@ -183,7 +185,7 @@ export class AgentBenchmarker {
             shortDescription: "",
             longDescription: "",
             intentDescription: "",
-            handler: (userContent: string, ctx: vscode.ChatAgentContext, progress: vscode.Progress<vscode.ChatAgentExtendedProgress>, token: vscode.CancellationToken) => this._benchmarkAgent(userContent, ctx, progress, token),
+            handler: (request: AgentRequest) => this._benchmarkAgent(request),
         };
         return [benchmarkCommandName, config];
     }
@@ -193,7 +195,7 @@ export class AgentBenchmarker {
             shortDescription: "",
             longDescription: "",
             intentDescription: "",
-            handler: (userContent: string, ctx: vscode.ChatAgentContext, progress: vscode.Progress<vscode.ChatAgentExtendedProgress>, token: vscode.CancellationToken) => this._benchmarkStats(userContent, ctx, progress, token),
+            handler: (request: AgentRequest) => this._benchmarkStats(request),
         };
         return [benchmarkStatsCommandName, config];
     }
