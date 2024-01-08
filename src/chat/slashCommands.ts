@@ -4,7 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 import * as vscode from "vscode";
-import { AgentRequest } from "./agent";
+import { AgentRequest, IAgentRequestHandler } from "./agent";
 import { detectIntent } from "./intentDetection";
 
 /**
@@ -58,21 +58,27 @@ export type SlashCommand = [SlashCommandName, SlashCommandConfig];
 
 export type InvokeableSlashCommands = Map<string, SlashCommandConfig>;
 
-export type FallbackSlashCommandHandlers = { noInput?: SlashCommandHandler, default?: SlashCommandHandler, }
+export type FallbackSlashCommandHandlers = { noInput?: SlashCommandHandler, default?: SlashCommandHandler, };
 
-export class SlashCommandsOwner {
+export type SlashCommmandOwnerOptions = {
+    disableIntentDetection?: boolean;
+};
+
+export class SlashCommandsOwner implements IAgentRequestHandler {
     private _invokeableSlashCommands: InvokeableSlashCommands;
     private _fallbackSlashCommands: FallbackSlashCommandHandlers;
+    private _disableIntentDetection: boolean;
 
     private _previousSlashCommandHandlerResult: SlashCommandHandlerResult;
 
-    constructor(invokableSlashCommands: InvokeableSlashCommands, fallbackSlashCommands: FallbackSlashCommandHandlers) {
+    constructor(invokableSlashCommands: InvokeableSlashCommands, fallbackSlashCommands: FallbackSlashCommandHandlers, options?: SlashCommmandOwnerOptions) {
         this._invokeableSlashCommands = invokableSlashCommands;
         this._fallbackSlashCommands = fallbackSlashCommands;
+        this._disableIntentDetection = options?.disableIntentDetection || false;
     }
 
-    public async handleRequestOrPrompt(request: AgentRequest, skipIntentDetection?: boolean): Promise<SlashCommandHandlerResult> {
-        const getHandlerResult = await this._getSlashCommandHandlerForRequest(request, skipIntentDetection);
+    public async handleRequestOrPrompt(request: AgentRequest): Promise<SlashCommandHandlerResult> {
+        const getHandlerResult = await this._getSlashCommandHandlerForRequest(request);
         if (getHandlerResult.handler !== undefined) {
             const handler = getHandlerResult.handler;
             const refinedRequest = getHandlerResult.refinedRequest;
@@ -102,7 +108,11 @@ export class SlashCommandsOwner {
         }
     }
 
-    private async _getSlashCommandHandlerForRequest(request: AgentRequest, skipIntentDetection?: boolean): Promise<{ refinedRequest: AgentRequest, handler: SlashCommandHandler | undefined }> {
+    public getSlashCommands(): ([string, SlashCommandConfig])[] {
+        return Array.from(this._invokeableSlashCommands.entries());
+    }
+
+    private async _getSlashCommandHandlerForRequest(request: AgentRequest): Promise<{ refinedRequest: AgentRequest, handler: SlashCommandHandler | undefined }> {
         const { prompt: prompt, command: parsedCommand } = this._preProcessPrompt(request.userPrompt);
 
         // trust VS Code to parse the command out for us, but also look for a parsed command for any "hidden" commands that VS Code doesn't know to parse out.
@@ -127,7 +137,7 @@ export class SlashCommandsOwner {
             }
         }
 
-        if (!result && skipIntentDetection !== true) {
+        if (!result && this._disableIntentDetection !== true) {
             const intentDetectionTargets = Array.from(this._invokeableSlashCommands.entries())
                 .map(([name, config]) => ({ name: name, intentDetectionDescription: config.intentDescription || config.shortDescription }));
             const detectedTarget = await detectIntent(intentDetectionTargets, request);
