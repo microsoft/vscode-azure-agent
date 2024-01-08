@@ -28,19 +28,7 @@ let config = dev.getDefaultWebpackConfig({
         '../build/default/validation': 'commonjs ../build/default/validation',
         '../build/Release/bufferutil': 'commonjs ../build/Release/bufferutil',
         '../build/default/bufferutil': 'commonjs ../build/default/bufferutil',
-
-        // ./getCoreNodeModule.js (path from windowsProcessTree.ts) uses a dynamic require which can't be webpacked
-        './getCoreNodeModule': 'commonjs getCoreNodeModule',
     },
-    plugins: [
-        // Copy files to dist folder where the runtime can find them
-        new CopyWebpackPlugin({
-            patterns: [
-                // getCoreNodeModule.js -> dist/node_modules/getCoreNodeModule.js
-                { from: './out/src/utils/getCoreNodeModule.js', to: 'node_modules' }
-            ]
-        })
-    ]
 });
 
 if (DEBUG_WEBPACK) {
