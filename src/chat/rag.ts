@@ -6,19 +6,19 @@
 import { createHttpHeaders } from "@azure/core-rest-pipeline";
 import { ClientSecretCredential } from "@azure/identity";
 import { AzureKeyCredential, OpenAIClient } from "@azure/openai";
-import  { type AzExtRequestPrepareOptions} from "@microsoft/vscode-azext-azureutils";
-import { sendRequestWithTimeout } from "@microsoft/vscode-azext-azureutils";
-import  { type IActionContext } from "@microsoft/vscode-azext-utils";
+import { sendRequestWithTimeout, type AzExtRequestPrepareOptions } from "@microsoft/vscode-azext-azureutils";
+import { type IActionContext } from "@microsoft/vscode-azext-utils";
 import { ext } from "../extensionVariables";
-import  { type AgentRequest } from "./agent";
+import { type AgentRequest } from "./agent";
 import { agentName } from "./agentConsts";
-import  { type SlashCommand, type SlashCommandHandlerResult } from "./slashCommands";
+import { type SlashCommand, type SlashCommandHandlerResult } from "./slashCommands";
 
 const microsoftLearnEndpoint = "https://learn.microsoft.com/api/knowledge/vector/document/relevantItems";
 const microsoftLearnScopes = ["api://5405974b-a0ac-4de0-80e0-9efe337ea291/.default"];
 
+const expectedOpenAiConfigVersion = "1.0";
 type OpenAiConfig = {
-    version: "1.0";
+    version: typeof expectedOpenAiConfigVersion;
     endpoint: string;
     embeddingModel: {
         name: string;
@@ -34,9 +34,15 @@ type ExtensionIdentity = {
     tenant: string;
 };
 
+const expectedExtensionIdentityConfigVersion = "1.0";
+type ExtensionIdentityConfig = {
+    version: typeof expectedExtensionIdentityConfigVersion;
+    identity: ExtensionIdentity;
+};
+
 type PackageJsonWithRagConnectionInfo = {
     openAiConfigEndpoint?: string;
-    extensionIdentity?: string;
+    extensionIdentityConfigEndpoint?: string;
 };
 
 export type MicrosoftLearnKnowledgeServiceQueryResponse = {
@@ -85,12 +91,12 @@ export const getRagStatusSlashCommand: SlashCommand = [
         longDescription: "Get RAG status",
         intentDescription: "Get RAG status",
         handler: async (request: AgentRequest): Promise<SlashCommandHandlerResult> => {
-            const extensionIdentity = getExtensionIdentity();
+            const extensionIdentityConfigEndpoint = getExtensionIdentityConfigEndpoint();
             const openAiConfigEndpoint = getOpenAiConfigEndpoint();
             request.progress.report({ content: `Status:\n` });
             request.progress.report({ content: `- RAG is ${ragEnabled ? "on" : "off"}.\n` });
-            request.progress.report({ content: `- Extension identity is ${extensionIdentity ? "present" : "missing"}.\n` });
-            request.progress.report({ content: `- OpenAI config endpoint is ${openAiConfigEndpoint ? "present" : "missing"}.\n` });
+            request.progress.report({ content: `- Extension identity config endpoint is: ${extensionIdentityConfigEndpoint ? extensionIdentityConfigEndpoint : "missing"}.\n` });
+            request.progress.report({ content: `- OpenAI config endpoint is: ${openAiConfigEndpoint ? openAiConfigEndpoint : "missing"}.\n` });
             return { chatAgentResult: {}, followUp: [{ message: `@${agentName} /${toggleRagCommand}` }] };
         },
     }
@@ -118,11 +124,12 @@ export async function getMicrosoftLearnRagContent(context: IActionContext, input
 
 async function queryMicrosoftLearnKnowledgeService(context: IActionContext, inputEmbedding: number[]): Promise<MicrosoftLearnKnowledgeServiceDocument[]> {
     try {
-        const extensionIdentity = getExtensionIdentity();
-        if (!extensionIdentity) {
+        const extensionIdentityConfig = await getExtensionIdentityConfig(context);
+        if (!extensionIdentityConfig) {
             return [];
         }
 
+        const extensionIdentity = extensionIdentityConfig.identity;
         const credential = new ClientSecretCredential(extensionIdentity.tenant, extensionIdentity.clientId, extensionIdentity.secret);
         const bearerToken = await credential.getToken(microsoftLearnScopes);
         const requestTimeout = 2 * 1000;
@@ -164,7 +171,12 @@ async function getOpenAiConfig(context: IActionContext): Promise<OpenAiConfig | 
         const requestTimeout = 2 * 1000;
         const requestOptions: AzExtRequestPrepareOptions = { method: "GET", url: openAiConfigEndpoint };
         const response = await sendRequestWithTimeout(context, requestOptions, requestTimeout, undefined);
-        return response.parsedBody as OpenAiConfig | undefined;
+        const config = response.parsedBody as OpenAiConfig | undefined;
+        if (config?.version !== expectedOpenAiConfigVersion) {
+            return undefined;
+        } else {
+            return config;
+        }
     } catch (error) {
         console.error(error);
         return undefined;
@@ -172,24 +184,40 @@ async function getOpenAiConfig(context: IActionContext): Promise<OpenAiConfig | 
 }
 
 function getOpenAiConfigEndpoint(): string | undefined {
-    const envVar = process.env.VSCODE_AZURE_OPENAI_CONFIG_ENDPOINT as string | undefined;
+    const envVar = process.env.VSCODE_AZURE_AGENT_OPENAI_CONFIG_ENDPOINT as string | undefined;
     const packageJson = getPackageJson();
-
     return packageJson.openAiConfigEndpoint as string || envVar;
 }
 
-function getExtensionIdentity(): ExtensionIdentity | undefined {
-    const envVar = process.env.VSCODE_AZURE_AGENT_IDENTITY as string | undefined;
-    const packageJson = getPackageJson();
+async function getExtensionIdentityConfig(context: IActionContext): Promise<ExtensionIdentityConfig | undefined> {
+    const extensionIdentityConfigEndpoint: string | undefined = getExtensionIdentityConfigEndpoint();
+    if (!extensionIdentityConfigEndpoint) {
+        return undefined;
+    }
 
-    if (packageJson.extensionIdentity !== undefined) {
-        return JSON.parse(packageJson.extensionIdentity) as ExtensionIdentity;
-    } else if (envVar !== undefined) {
-        return JSON.parse(envVar) as ExtensionIdentity;
-    } else {
+    try {
+        const requestTimeout = 2 * 1000;
+        const requestOptions: AzExtRequestPrepareOptions = { method: "GET", url: extensionIdentityConfigEndpoint };
+        const response = await sendRequestWithTimeout(context, requestOptions, requestTimeout, undefined);
+        const config = response.parsedBody as ExtensionIdentityConfig | undefined;
+        if (config?.version !== expectedExtensionIdentityConfigVersion) {
+            return undefined;
+        } else {
+            return config;
+        }
+    } catch (error) {
+        console.error(error);
         return undefined;
     }
 }
+
+
+function getExtensionIdentityConfigEndpoint(): string | undefined {
+    const envVar = process.env.VSCODE_AZURE_AGENT_EXTENSION_IDENTITY_CONFIG_ENDPOINT as string | undefined;
+    const packageJson = getPackageJson();
+    return packageJson.extensionIdentityConfigEndpoint as string || envVar;
+}
+
 
 function getPackageJson(): PackageJsonWithRagConnectionInfo {
     return ext.context.extension.packageJSON as PackageJsonWithRagConnectionInfo;
