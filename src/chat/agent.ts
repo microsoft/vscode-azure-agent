@@ -9,10 +9,9 @@ import { ext } from '../extensionVariables';
 import { agentDescription, agentFullName, agentName, maxFollowUps } from "./agentConsts";
 import { AgentBenchmarker } from "./benchmarking/benchmarking";
 import { verbatimCopilotInteraction } from "./copilotInteractions";
-import { functionsExtensionSlashCommandsOwner, storageExtensionSlashCommandsOwner } from "./extensionSlashCommands";
+import { appServiceExtensionSlashCommandsOwner, functionsExtensionSlashCommandsOwner, storageExtensionSlashCommandsOwner } from "./extensionSlashCommands";
 import { getRagStatusSlashCommand, toggleRagSlashCommand } from "./rag";
-import  { type SlashCommandHandlerResult} from "./slashCommands";
-import { SlashCommandsOwner } from "./slashCommands";
+import { SlashCommandsOwner, type SlashCommandHandlerResult } from "./slashCommands";
 
 export type AgentRequest = {
     slashCommand?: string;
@@ -33,12 +32,16 @@ export interface IAgentRequestHandler {
  * Owns slash commands that are knowingly exposed to the user.
  */
 const agentSlashCommandsOwner = new SlashCommandsOwner(
-    new Map([functionsExtensionSlashCommandsOwner.getTopLevelSlashCommand(), storageExtensionSlashCommandsOwner.getTopLevelSlashCommand(),]),
+    new Map([
+        functionsExtensionSlashCommandsOwner.getTopLevelSlashCommand(),
+        storageExtensionSlashCommandsOwner.getTopLevelSlashCommand(),
+        appServiceExtensionSlashCommandsOwner.getTopLevelSlashCommand(),
+    ]),
     { noInput: noInputHandler, default: defaultHandler, }
 );
 
 /**
- * Owns slash commands related to benchmarking the agent.
+ * Owns slash commands that are hidden from the user and related to benchmarking the agent.
  */
 const agentBenchmarker = new AgentBenchmarker(agentSlashCommandsOwner);
 
