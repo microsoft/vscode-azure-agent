@@ -3,10 +3,10 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { AgentRequest } from "../agent";
+import  { type AgentRequest } from "../agent";
 import { getResponseAsStringCopilotInteraction, getStringFieldFromCopilotResponseMaybeWithStrJson } from "../copilotInteractions";
-import { SlashCommand, SlashCommandHandlerResult } from "../slashCommands";
-import { ExtensionCommandParameterSchema, ExtensionCommandParameters, ExtensionCommandSchema, IExtensionCommandSchemaProvider } from "./commandSchema";
+import  { type SlashCommand, type SlashCommandHandlerResult } from "../slashCommands";
+import  { type ExtensionCommandParameterSchema, type ExtensionCommandParameters, type ExtensionCommandSchema, type IExtensionCommandSchemaProvider } from "./commandSchema";
 
 export function slashCommandFromCommandSchema(api: ExtensionCommandSchema, apiProvider: IExtensionCommandSchemaProvider): SlashCommand {
     return [
@@ -66,7 +66,7 @@ async function determineParameterValues(request: AgentRequest, parameters: Exten
         const maybeJsonCopilotResponse = await getResponseAsStringCopilotInteraction(systemPrompt, request);
         const copilotDeterminedParameterValue = getStringFieldFromCopilotResponseMaybeWithStrJson(maybeJsonCopilotResponse, [parameter.name, "parameterValue", "value", "parameter"]);
 
-        if (!!copilotDeterminedParameterValue) {
+        if (copilotDeterminedParameterValue !== undefined) {
             return { [parameter.name]: copilotDeterminedParameterValue };
         } else {
             return {};
@@ -79,7 +79,7 @@ function getParameterSystemPrompt1(parameter: ExtensionCommandParameterSchema): 
     return [
         `You are an expert in determining the value of a '${parameter.name}' parameter based on user input.`,
         `This parameter is ${parameter.copilotStrings.description}.`,
-        !!parameter.values ? `The possible values for the parameter are: ${parameter.values.map((p) => `'${p}'`).join(", ")}.` : "",
+        parameter.values !== undefined ? `The possible values for the parameter are: ${parameter.values.map((p) => `'${p}'`).join(", ")}.` : "",
         `Given the user's input, your job is to determine a value for the parameter. Only repsond with a JSON summary of the value you determine. Do not respond in a coverstaional tone, only JSON. If the users input does not infer or specify a value for this parameter, then do not respond.`,
     ].filter(s => !!s).join(" ");
 

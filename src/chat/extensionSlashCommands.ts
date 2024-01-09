@@ -3,13 +3,15 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { AgentRequest } from "./agent";
-import { IExtensionCommandSchemaProvider } from "./commandSchema/commandSchema";
+import  { type AgentRequest } from "./agent";
+import  { type IExtensionCommandSchemaProvider } from "./commandSchema/commandSchema";
 import { NoCommandsExtension } from "./commandSchema/noCommandsExtension";
 import { slashCommandFromCommandSchema } from "./commandSchema/slashCommandFromCommandSchema";
-import { BrainstormCommandConfig, LearnCommandConfig, MightBeInterestedHandlerConfig, getBrainstormCommand, getLearnCommand, getMightBeInterestedHandler } from "./commonCommandsAndHandlers";
+import  { type BrainstormCommandConfig, type LearnCommandConfig, type MightBeInterestedHandlerConfig} from "./commonCommandsAndHandlers";
+import { getBrainstormCommand, getLearnCommand, getMightBeInterestedHandler } from "./commonCommandsAndHandlers";
 import { MockFunctionsExtension } from "./mockFunctionsExtension/mockFunctionsExtension";
-import { InvokeableSlashCommands, SlashCommand, SlashCommandHandlerResult, SlashCommandsOwner } from "./slashCommands";
+import  { type InvokeableSlashCommands, type SlashCommand, type SlashCommandHandlerResult} from "./slashCommands";
+import { SlashCommandsOwner } from "./slashCommands";
 
 export type CommonSlashCommandAndHandlerConfigs = {
     brainstorm: BrainstormCommandConfig;

@@ -3,8 +3,9 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { ExtensionCommandParameterSchema, ExtensionCommandParameters, ExtensionCommandSchema, ExtensionCommandSubmitParametersResponse } from "../commandSchema/commandSchema";
-import { WellKnownFunctionAppRuntime, isWellKnownFunctionAppRuntime } from "./wellKnownThings";
+import  { type ExtensionCommandParameterSchema, type ExtensionCommandParameters, type ExtensionCommandSchema, type ExtensionCommandSubmitParametersResponse } from "../commandSchema/commandSchema";
+import  { type WellKnownFunctionAppRuntime} from "./wellKnownThings";
+import { isWellKnownFunctionAppRuntime } from "./wellKnownThings";
 
 const subscriptionParameter: ExtensionCommandParameterSchema = {
     type: "string",
@@ -134,14 +135,14 @@ export async function createFunctionAppSubmitParameters(parameters: ExtensionCom
         return {
             type: "needMoreParameters",
             validatedParameters: {
-                ...(!!wellKnownRuntime ? { runtime: wellKnownRuntime } : {}),
-                ...(!!region ? { region: region } : {}),
-                ...(!!subscription ? { subscription: subscription } : {}),
+                ...(wellKnownRuntime !== undefined ? { runtime: wellKnownRuntime } : {}),
+                ...(region !== undefined ? { region: region } : {}),
+                ...(subscription !== undefined ? { subscription: subscription } : {}),
             },
             moreParameters: [
-                ...(!!wellKnownRuntime ? [] : [runtimeParameter]),
-                ...(!!region ? [] : [regionParameter]),
-                ...(!!subscription ? [] : [subscriptionParameter]),
+                ...(wellKnownRuntime !== undefined ? [] : [runtimeParameter]),
+                ...(region !== undefined ? [] : [regionParameter]),
+                ...(subscription !== undefined ? [] : [subscriptionParameter]),
             ]
         };
     } else {

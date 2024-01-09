@@ -3,8 +3,8 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import * as vscode from "vscode";
-import { AgentRequest, IAgentRequestHandler } from "./agent";
+import type * as vscode from "vscode";
+import  { type AgentRequest, type IAgentRequestHandler } from "./agent";
 import { detectIntent } from "./intentDetection";
 
 /**

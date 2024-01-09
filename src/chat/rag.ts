@@ -6,12 +6,13 @@
 import { createHttpHeaders } from "@azure/core-rest-pipeline";
 import { ClientSecretCredential } from "@azure/identity";
 import { AzureKeyCredential, OpenAIClient } from "@azure/openai";
-import { AzExtRequestPrepareOptions, sendRequestWithTimeout } from "@microsoft/vscode-azext-azureutils";
-import { IActionContext } from "@microsoft/vscode-azext-utils";
+import  { type AzExtRequestPrepareOptions} from "@microsoft/vscode-azext-azureutils";
+import { sendRequestWithTimeout } from "@microsoft/vscode-azext-azureutils";
+import  { type IActionContext } from "@microsoft/vscode-azext-utils";
 import { ext } from "../extensionVariables";
-import { AgentRequest } from "./agent";
+import  { type AgentRequest } from "./agent";
 import { agentName } from "./agentConsts";
-import { SlashCommand, SlashCommandHandlerResult } from "./slashCommands";
+import  { type SlashCommand, type SlashCommandHandlerResult } from "./slashCommands";
 
 const microsoftLearnEndpoint = "https://learn.microsoft.com/api/knowledge/vector/document/relevantItems";
 const microsoftLearnScopes = ["api://5405974b-a0ac-4de0-80e0-9efe337ea291/.default"];
@@ -31,6 +32,11 @@ type ExtensionIdentity = {
     clientId: string;
     secret: string;
     tenant: string;
+};
+
+type PackageJsonWithRagConnectionInfo = {
+    openAiConfigEndpoint?: string;
+    extensionIdentity?: string;
 };
 
 export type MicrosoftLearnKnowledgeServiceQueryResponse = {
@@ -166,16 +172,25 @@ async function getOpenAiConfig(context: IActionContext): Promise<OpenAiConfig | 
 }
 
 function getOpenAiConfigEndpoint(): string | undefined {
-    return ext.context.extension.packageJSON.openAiConfigEndpoint || process.env.OPENAI_CONFIG_ENDPOINT || undefined;
+    const envVar = process.env.VSCODE_AZURE_OPENAI_CONFIG_ENDPOINT as string | undefined;
+    const packageJson = getPackageJson();
+
+    return packageJson.openAiConfigEndpoint as string || envVar;
 }
 
 function getExtensionIdentity(): ExtensionIdentity | undefined {
-    const envVar = process.env.VSCODE_AZURE_AGENT_IDENTITY;
-    if (!!ext.context.extension.packageJSON.extensionIdentity) {
-        return ext.context.extension.packageJSON.extensionIdentity;
-    } else if (!!envVar) {
-        return JSON.parse(envVar);
+    const envVar = process.env.VSCODE_AZURE_AGENT_IDENTITY as string | undefined;
+    const packageJson = getPackageJson();
+
+    if (packageJson.extensionIdentity !== undefined) {
+        return JSON.parse(packageJson.extensionIdentity) as ExtensionIdentity;
+    } else if (envVar !== undefined) {
+        return JSON.parse(envVar) as ExtensionIdentity;
     } else {
         return undefined;
     }
+}
+
+function getPackageJson(): PackageJsonWithRagConnectionInfo {
+    return ext.context.extension.packageJSON as PackageJsonWithRagConnectionInfo;
 }
