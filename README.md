@@ -13,7 +13,10 @@ The Azure Agent for VS Code is your assistant for helping you use the [Azure Ext
 ## Installation
 
 1. Sign-up for [GitHub Copilot](https://github.com/features/copilot)
-1. Download [VS Code (Insiders)](https://code.visualstudio.com/insiders/) and install the [Azure Extensions for VS Code](https://code.visualstudio.com/docs/azure/extensions)
+1. Download [VS Code (Insiders)](https://code.visualstudio.com/insiders/) and install:
+   - One or more of the [Azure Extensions for VS Code](https://code.visualstudio.com/docs/azure/extensions) (not all extensions are currently supported by the Azure Agent)
+   - The [GitHub Copilot extension](https://marketplace.visualstudio.com/items?itemName=GitHub.copilot)
+   - The [GitHub Copilot Chat extension](https://marketplace.visualstudio.com/items?itemName=GitHub.copilot-chat)
 1. Install the [latest build](https://dev.azure.com/ms-azuretools/AzCode/_build/latest?definitionId=45&branchName=main) of the Azure Agent for VS Code
 
 <!-- region exclude-from-marketplace -->
