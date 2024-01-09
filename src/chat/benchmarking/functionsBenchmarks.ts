@@ -1,4 +1,4 @@
-import { AgentBenchmark } from "./benchmarking";
+import  { type AgentBenchmark } from "./benchmarking";
 
 export const functionsBenchmarks: AgentBenchmark[] = [
     {

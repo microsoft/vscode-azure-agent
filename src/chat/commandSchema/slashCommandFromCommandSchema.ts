@@ -3,10 +3,10 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { AgentRequest } from "../agent";
+import  { type AgentRequest } from "../agent";
 import { getResponseAsStringCopilotInteraction, getStringFieldFromCopilotResponseMaybeWithStrJson } from "../copilotInteractions";
-import { SlashCommand, SlashCommandHandlerResult } from "../slashCommands";
-import { ExtensionCommandParameterSchema, ExtensionCommandParameters, ExtensionCommandSchema, IExtensionCommandSchemaProvider } from "./commandSchema";
+import  { type SlashCommand, type SlashCommandHandlerResult } from "../slashCommands";
+import  { type ExtensionCommandParameterSchema, type ExtensionCommandParameters, type ExtensionCommandSchema, type IExtensionCommandSchemaProvider } from "./commandSchema";
 
 export function slashCommandFromCommandSchema(api: ExtensionCommandSchema, apiProvider: IExtensionCommandSchemaProvider): SlashCommand {
     return [

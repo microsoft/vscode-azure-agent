@@ -5,13 +5,13 @@
 
 import { callWithTelemetryAndErrorHandling } from "@microsoft/vscode-azext-utils";
 import * as vscode from "vscode";
-import { AgentRequest } from "./agent";
+import  { type AgentRequest } from "./agent";
 import { agentName } from "./agentConsts";
-import { IExtensionCommandSchemaProvider } from "./commandSchema/commandSchema";
+import  { type IExtensionCommandSchemaProvider } from "./commandSchema/commandSchema";
 import { verbatimCopilotInteraction } from "./copilotInteractions";
 import { generateExtensionCommandFollowUps, generateNextQuestionsFollowUps } from "./followUpGenerator";
 import { getMicrosoftLearnRagContent } from "./rag";
-import { SlashCommand, SlashCommandHandler, SlashCommandHandlerResult } from "./slashCommands";
+import  { type SlashCommand, type SlashCommandHandler, type SlashCommandHandlerResult } from "./slashCommands";
 
 export type BrainstormCommandConfig = {
     shortTopic: string;

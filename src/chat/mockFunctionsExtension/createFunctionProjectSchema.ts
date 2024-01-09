@@ -3,7 +3,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { ExtensionCommandParameterSchema, ExtensionCommandParameters, ExtensionCommandSchema, ExtensionCommandSubmitParametersResponse } from "../commandSchema/commandSchema";
+import  { type ExtensionCommandParameterSchema, type ExtensionCommandParameters, type ExtensionCommandSchema, type ExtensionCommandSubmitParametersResponse } from "../commandSchema/commandSchema";
 import { getWellKnownCSharpTemplate, getWellKnownTypeScriptTemplate, wellKnownCSharpTemplateDisplayNames, wellKnownTypeScriptTemplateDisplayNames } from "./wellKnownThings";
 
 const languageParameter: ExtensionCommandParameterSchema = {

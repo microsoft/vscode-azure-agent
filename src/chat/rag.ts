@@ -6,12 +6,13 @@
 import { createHttpHeaders } from "@azure/core-rest-pipeline";
 import { ClientSecretCredential } from "@azure/identity";
 import { AzureKeyCredential, OpenAIClient } from "@azure/openai";
-import { AzExtRequestPrepareOptions, sendRequestWithTimeout } from "@microsoft/vscode-azext-azureutils";
-import { IActionContext } from "@microsoft/vscode-azext-utils";
+import  { type AzExtRequestPrepareOptions} from "@microsoft/vscode-azext-azureutils";
+import { sendRequestWithTimeout } from "@microsoft/vscode-azext-azureutils";
+import  { type IActionContext } from "@microsoft/vscode-azext-utils";
 import { ext } from "../extensionVariables";
-import { AgentRequest } from "./agent";
+import  { type AgentRequest } from "./agent";
 import { agentName } from "./agentConsts";
-import { SlashCommand, SlashCommandHandlerResult } from "./slashCommands";
+import  { type SlashCommand, type SlashCommandHandlerResult } from "./slashCommands";
 
 const microsoftLearnEndpoint = "https://learn.microsoft.com/api/knowledge/vector/document/relevantItems";
 const microsoftLearnScopes = ["api://5405974b-a0ac-4de0-80e0-9efe337ea291/.default"];

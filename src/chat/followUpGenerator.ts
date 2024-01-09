@@ -3,10 +3,10 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import * as vscode from "vscode";
-import { AgentRequest } from "./agent";
+import type * as vscode from "vscode";
+import  { type AgentRequest } from "./agent";
 import { agentName } from "./agentConsts";
-import { IExtensionCommandSchemaProvider } from "./commandSchema/commandSchema";
+import  { type IExtensionCommandSchemaProvider } from "./commandSchema/commandSchema";
 import { getResponseAsStringCopilotInteraction, getStringFieldFromCopilotResponseMaybeWithStrJson } from "./copilotInteractions";
 import { detectIntent } from "./intentDetection";
 

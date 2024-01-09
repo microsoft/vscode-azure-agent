@@ -3,8 +3,9 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { ExtensionCommandParameterSchema, ExtensionCommandParameters, ExtensionCommandSchema, ExtensionCommandSubmitParametersResponse } from "../commandSchema/commandSchema";
-import { WellKnownFunctionAppRuntime, isWellKnownFunctionAppRuntime } from "./wellKnownThings";
+import  { type ExtensionCommandParameterSchema, type ExtensionCommandParameters, type ExtensionCommandSchema, type ExtensionCommandSubmitParametersResponse } from "../commandSchema/commandSchema";
+import  { type WellKnownFunctionAppRuntime} from "./wellKnownThings";
+import { isWellKnownFunctionAppRuntime } from "./wellKnownThings";
 
 const subscriptionParameter: ExtensionCommandParameterSchema = {
     type: "string",

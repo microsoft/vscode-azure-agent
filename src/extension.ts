@@ -6,8 +6,9 @@
 'use strict';
 
 import { registerAzureUtilsExtensionVariables } from '@microsoft/vscode-azext-azureutils';
-import { IActionContext, callWithTelemetryAndErrorHandling, createAzExtOutputChannel, registerUIExtensionVariables } from '@microsoft/vscode-azext-utils';
-import * as vscode from 'vscode';
+import  { type IActionContext} from '@microsoft/vscode-azext-utils';
+import { callWithTelemetryAndErrorHandling, createAzExtOutputChannel, registerUIExtensionVariables } from '@microsoft/vscode-azext-utils';
+import type * as vscode from 'vscode';
 import { registerChatAgent } from './chat/agent';
 import { ext } from './extensionVariables';
 
