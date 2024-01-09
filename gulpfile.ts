@@ -33,4 +33,5 @@ async function cleanReadme() {
 
 exports['webpack-dev'] = gulp.series(prepareForWebpack, () => gulp_webpack('development'));
 exports['webpack-prod'] = gulp.series(prepareForWebpack, () => gulp_webpack('production'));
+exports.preTest = gulp.series(async () => { console.log("nothing to do pretest") });
 exports.cleanReadme = cleanReadme;
