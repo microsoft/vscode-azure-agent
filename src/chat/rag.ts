@@ -33,6 +33,11 @@ type ExtensionIdentity = {
     tenant: string;
 };
 
+type PackageJsonWithRagConnectionInfo = {
+    openAiConfigEndpoint?: string;
+    extensionIdentity?: string;
+};
+
 export type MicrosoftLearnKnowledgeServiceQueryResponse = {
     count: number;
     items: MicrosoftLearnKnowledgeServiceDocument[];
@@ -166,16 +171,25 @@ async function getOpenAiConfig(context: IActionContext): Promise<OpenAiConfig | 
 }
 
 function getOpenAiConfigEndpoint(): string | undefined {
-    return ext.context.extension.packageJSON.openAiConfigEndpoint || process.env.OPENAI_CONFIG_ENDPOINT || undefined;
+    const envVar = process.env.VSCODE_AZURE_OPENAI_CONFIG_ENDPOINT as string | undefined;
+    const packageJson = getPackageJson();
+
+    return packageJson.openAiConfigEndpoint as string || envVar;
 }
 
 function getExtensionIdentity(): ExtensionIdentity | undefined {
-    const envVar = process.env.VSCODE_AZURE_AGENT_IDENTITY;
-    if (!!ext.context.extension.packageJSON.extensionIdentity) {
-        return ext.context.extension.packageJSON.extensionIdentity;
-    } else if (!!envVar) {
-        return JSON.parse(envVar);
+    const envVar = process.env.VSCODE_AZURE_AGENT_IDENTITY as string | undefined;
+    const packageJson = getPackageJson();
+
+    if (packageJson.extensionIdentity !== undefined) {
+        return JSON.parse(packageJson.extensionIdentity) as ExtensionIdentity;
+    } else if (envVar !== undefined) {
+        return JSON.parse(envVar) as ExtensionIdentity;
     } else {
         return undefined;
     }
+}
+
+function getPackageJson(): PackageJsonWithRagConnectionInfo {
+    return ext.context.extension.packageJSON as PackageJsonWithRagConnectionInfo;
 }

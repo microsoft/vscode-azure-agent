@@ -16,7 +16,7 @@ export async function generateExtensionCommandFollowUps(copilotContent: string, 
     const intentDetectionTargets = availableCommands.map((command) => ({ name: command.name, intentDetectionDescription: command.copilotStrings.intentDescription }));
     const detectedIntentionTarget = await detectIntent(intentDetectionTargets, copilotContentAgentRequest);
     const detectedCommand = availableCommands.find((command) => command.name === detectedIntentionTarget?.name);
-    if (!!detectedCommand) {
+    if (detectedCommand !== undefined) {
         return [{ message: `@${agentName} ${detectedCommand.userStrings.actionBlurb}` }]
     }
     return [];

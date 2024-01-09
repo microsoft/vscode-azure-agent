@@ -11,7 +11,6 @@
 
 const process = require('process');
 const dev = require("@microsoft/vscode-azext-dev");
-const CopyWebpackPlugin = require('copy-webpack-plugin');
 
 let DEBUG_WEBPACK = !/^(false|0)?$/i.test(process.env.DEBUG_WEBPACK || '');
 

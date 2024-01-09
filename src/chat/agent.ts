@@ -11,10 +11,7 @@ import { AgentBenchmarker } from "./benchmarking/benchmarking";
 import { verbatimCopilotInteraction } from "./copilotInteractions";
 import { functionsExtensionSlashCommandsOwner, storageExtensionSlashCommandsOwner } from "./extensionSlashCommands";
 import { getRagStatusSlashCommand, toggleRagSlashCommand } from "./rag";
-import {
-    SlashCommandHandlerResult,
-    SlashCommandsOwner
-} from "./slashCommands";
+import { SlashCommandHandlerResult, SlashCommandsOwner } from "./slashCommands";
 
 export type AgentRequest = {
     slashCommand?: string;

@@ -134,14 +134,14 @@ export async function createFunctionAppSubmitParameters(parameters: ExtensionCom
         return {
             type: "needMoreParameters",
             validatedParameters: {
-                ...(!!wellKnownRuntime ? { runtime: wellKnownRuntime } : {}),
-                ...(!!region ? { region: region } : {}),
-                ...(!!subscription ? { subscription: subscription } : {}),
+                ...(wellKnownRuntime !== undefined ? { runtime: wellKnownRuntime } : {}),
+                ...(region !== undefined ? { region: region } : {}),
+                ...(subscription !== undefined ? { subscription: subscription } : {}),
             },
             moreParameters: [
-                ...(!!wellKnownRuntime ? [] : [runtimeParameter]),
-                ...(!!region ? [] : [regionParameter]),
-                ...(!!subscription ? [] : [subscriptionParameter]),
+                ...(wellKnownRuntime !== undefined ? [] : [runtimeParameter]),
+                ...(region !== undefined ? [] : [regionParameter]),
+                ...(subscription !== undefined ? [] : [subscriptionParameter]),
             ]
         };
     } else {

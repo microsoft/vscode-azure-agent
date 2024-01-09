@@ -42,11 +42,11 @@ function brainstormHandler(config: BrainstormCommandConfig, request: AgentReques
                 request.progress.report({ content: "Sorry, I can't help with that right now.\n" });
                 return { chatAgentResult: {}, followUp: [], };
             } else {
-                if (!!ragContent) {
+                if (ragContent !== undefined) {
                     request.progress.report({ reference: vscode.Uri.parse(ragContent.contentUrl) });
                 }
                 const followUps = [
-                    ...(!!config.followUpApiProvider ? await generateExtensionCommandFollowUps(copilotResponse, config.followUpApiProvider, request) : []),
+                    ...(config.followUpApiProvider !== undefined ? await generateExtensionCommandFollowUps(copilotResponse, config.followUpApiProvider, request) : []),
                     ...(await generateNextQuestionsFollowUps(copilotResponse, request))
                 ];
                 return { chatAgentResult: {}, followUp: followUps, };
@@ -90,11 +90,11 @@ function learnHandler(config: LearnCommandConfig, request: AgentRequest): Promis
                 request.progress.report({ content: "Sorry, I can't help with that right now.\n" });
                 return { chatAgentResult: {}, followUp: [], };
             } else {
-                if (!!ragContent) {
+                if (ragContent !== undefined) {
                     request.progress.report({ reference: vscode.Uri.parse(ragContent.contentUrl) });
                 }
                 const followUps = [
-                    ...(!!config.followUpApiProvider ? await generateExtensionCommandFollowUps(copilotResponse, config.followUpApiProvider, request) : []),
+                    ...(config.followUpApiProvider !== undefined ? await generateExtensionCommandFollowUps(copilotResponse, config.followUpApiProvider, request) : []),
                     ...(await generateNextQuestionsFollowUps(copilotResponse, request))
                 ];
                 return { chatAgentResult: {}, followUp: followUps, };
