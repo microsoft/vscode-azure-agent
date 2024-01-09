@@ -3,15 +3,13 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import  { type AgentRequest } from "./agent";
-import  { type IExtensionCommandSchemaProvider } from "./commandSchema/commandSchema";
+import { type AgentRequest } from "./agent";
+import { type IExtensionCommandSchemaProvider } from "./commandSchema/commandSchema";
 import { NoCommandsExtension } from "./commandSchema/noCommandsExtension";
 import { slashCommandFromCommandSchema } from "./commandSchema/slashCommandFromCommandSchema";
-import  { type BrainstormCommandConfig, type LearnCommandConfig, type MightBeInterestedHandlerConfig} from "./commonCommandsAndHandlers";
-import { getBrainstormCommand, getLearnCommand, getMightBeInterestedHandler } from "./commonCommandsAndHandlers";
+import { getBrainstormCommand, getLearnCommand, getMightBeInterestedHandler, type BrainstormCommandConfig, type LearnCommandConfig, type MightBeInterestedHandlerConfig } from "./commonCommandsAndHandlers";
 import { MockFunctionsExtension } from "./mockFunctionsExtension/mockFunctionsExtension";
-import  { type InvokeableSlashCommands, type SlashCommand, type SlashCommandHandlerResult} from "./slashCommands";
-import { SlashCommandsOwner } from "./slashCommands";
+import { SlashCommandsOwner, type InvokeableSlashCommands, type SlashCommand, type SlashCommandHandlerResult } from "./slashCommands";
 
 export type CommonSlashCommandAndHandlerConfigs = {
     brainstorm: BrainstormCommandConfig;
@@ -148,4 +146,41 @@ export const storageExtensionSlashCommandsOwner: ExtensionSlashCommandsOwner = n
     "Azure Storage",
     "Azure Storage",
     storageCommonSlashCommandConfigs
+);
+
+const appServiceExtension = new NoCommandsExtension();
+const appServiceCommonSlashCommandConfigs: CommonSlashCommandAndHandlerConfigs = {
+    brainstorm: {
+        shortTopic: "Azure App Service",
+        longTopic: "Azure App Service and/or the Azure App Service extension for VS Code",
+        noInputSuggestions: [
+            "How can I use Azure App Service to host a website?",
+            "How can I use Azure App Service to host an API?",
+            "How can I use Azure App Service to host a web app?",
+        ]
+    },
+    learn: {
+        shortTopic: "Azure App Service",
+        longTopic: "Azure App Service and/or the Azure App Service extension for VS Code",
+        noInputSuggestions: [
+            "What is the difference between Azure App Service and Azure Functions?",
+            "How scalable is Azure App Service?",
+            "What programming languages can I use to create an Azure App Service?",
+        ]
+    },
+    mightBeInterested: {
+        topic: "Azure App Service extension for VS Code",
+        suggestions: [
+            "I want to use Azure App Service to host a website.",
+            "I want to use Azure App Service to host an API.",
+            "I want to use Azure App Service to host a web app.",
+        ]
+    }
+};
+export const appServiceExtensionSlashCommandsOwner: ExtensionSlashCommandsOwner = new ExtensionSlashCommandsOwner(
+    appServiceExtension,
+    "appservice",
+    "Azure App Service",
+    "Azure App Service",
+    appServiceCommonSlashCommandConfigs
 );
