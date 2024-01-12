@@ -37,9 +37,7 @@
         "chatAgents2Additions",
         "chatProvider",
         "chatRequestAccess",
-        "chatVariables",
-        "interactive",
-        "readonlyMessage"
+        "interactive"
     ],
     "main": "./main.js",
     "contributes": {},
