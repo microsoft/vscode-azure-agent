@@ -6,11 +6,13 @@
 'use strict';
 
 import { registerAzureUtilsExtensionVariables } from '@microsoft/vscode-azext-azureutils';
-import  { type IActionContext} from '@microsoft/vscode-azext-utils';
-import { callWithTelemetryAndErrorHandling, createAzExtOutputChannel, registerUIExtensionVariables } from '@microsoft/vscode-azext-utils';
+import { callWithTelemetryAndErrorHandling, createAzExtOutputChannel, registerUIExtensionVariables, type IActionContext } from '@microsoft/vscode-azext-utils';
 import type * as vscode from 'vscode';
 import { registerChatAgent } from './chat/agent';
+import { AgentWizardInput } from './chat/wizardBasedExtensionSchema/agentWizardInput';
 import { ext } from './extensionVariables';
+
+export const azureAgentWizardInput: AgentWizardInput = new AgentWizardInput();
 
 export async function activateInternal(context: vscode.ExtensionContext, perfStats: { loadStartTime: number; loadEndTime: number }, ignoreBundle?: boolean): Promise<void> {
     ext.context = context;
@@ -26,6 +28,8 @@ export async function activateInternal(context: vscode.ExtensionContext, perfSta
 
         registerChatAgent();
     });
+
+    // @todo: expose azureAgentWizardInput to other extensions via createApiProvider
 }
 
 // eslint-disable-next-line @typescript-eslint/no-empty-function
