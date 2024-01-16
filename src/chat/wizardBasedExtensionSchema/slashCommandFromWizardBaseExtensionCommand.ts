@@ -4,13 +4,12 @@
  *--------------------------------------------------------------------------------------------*/
 
 
-import { PromptResult } from "@microsoft/vscode-azext-utils";
+import { type IAzureUserInput, type PromptResult } from "@microsoft/vscode-azext-utils";
 import * as vscode from "vscode";
-import { azureAgentWizardInput } from "../../extension";
 import { type AgentRequest } from "../agent";
 import { getResponseAsStringCopilotInteraction, getStringFieldFromCopilotResponseMaybeWithStrJson } from "../copilotInteractions";
 import { type SlashCommand, type SlashCommandHandlerResult } from "../slashCommands";
-import { IWizardBasedExtension, WizardBasedExtensionCommand } from "./wizardBasedExtensionSchema";
+import { type IWizardBasedExtension, type WizardBasedExtensionCommand } from "./wizardBasedExtensionSchema";
 
 export function slashCommandFromWizardBasedExtensionCommand(command: WizardBasedExtensionCommand, extension: IWizardBasedExtension): SlashCommand {
     return [
@@ -24,7 +23,7 @@ export function slashCommandFromWizardBasedExtensionCommand(command: WizardBased
                 let lastUnfilfilledParameter: string | undefined = undefined;
 
                 const onDidFinishPromptEventEmitter = new vscode.EventEmitter<PromptResult>();
-                azureAgentWizardInput.setActiveWizardInputHandler({
+                const azureUserInput: IAzureUserInput = {
                     showQuickPick: async <T extends vscode.QuickPickItem>(items: T[] | Thenable<T[]>, options: vscode.QuickPickOptions): Promise<T | T[]> => {
                         if (!options.title) {
                             throw new Error("Quick pick title is required.");
@@ -49,9 +48,9 @@ export function slashCommandFromWizardBasedExtensionCommand(command: WizardBased
                         throw new Error("Method not implemented.");
                     },
                     onDidFinishPrompt: onDidFinishPromptEventEmitter.event
-                });
+                };
 
-                const result = await extension.runWizardForCommand(command);
+                const result = await extension.runWizardForCommand(command, azureUserInput);
 
                 const markdownResponseLines = [`Ok, I can help you with the '${command.displayName}' command from the '${extension.displayName}'.`];
                 if (Object.keys(pickedParameters).length > 0) {
@@ -87,7 +86,7 @@ async function pickQuickPickItem<T extends vscode.QuickPickItem>(request: AgentR
 }
 
 function getPickQuickPickItemSystemPrompt1(items: vscode.QuickPickItem[], options: vscode.QuickPickOptions): string {
-    const itemToString = (item: vscode.QuickPickItem): string => `${item.label} ${!!item.description ? `(${item.description || ""})` : ""}`;
+    const itemToString = (item: vscode.QuickPickItem): string => `${item.label} ${item.description ? `(${item.description || ""})` : ""}`;
     return [
         `You are an expert in determining the value of ${options.title || `something`} based on user input.`,
         `The possible values for the parameter are: ${items.map(itemToString).join(", ")}.`,

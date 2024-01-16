@@ -3,7 +3,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { AgentWizardInput } from "./agentWizardInput";
+import { type IAzureUserInput } from "@microsoft/vscode-azext-utils";
 
 export type WizardBasedExtensionCommand = {
     /**
@@ -42,7 +42,7 @@ export interface IWizardBasedExtension {
      */
     readonly displayName: string;
 
-    activate(agentWizardInput: AgentWizardInput): Promise<void>;
+    activate(): Promise<void>;
     getCommands(): Promise<WizardBasedExtensionCommand[]>;
-    runWizardForCommand(command: WizardBasedExtensionCommand): Promise<RunWizardForCommandResult>;
+    runWizardForCommand(command: WizardBasedExtensionCommand, agentWizardInput: IAzureUserInput): Promise<RunWizardForCommandResult>;
 }

@@ -28,8 +28,6 @@ export async function activateInternal(context: vscode.ExtensionContext, perfSta
 
         registerChatAgent();
     });
-
-    // @todo: expose azureAgentWizardInput to other extensions via createApiProvider
 }
 
 // eslint-disable-next-line @typescript-eslint/no-empty-function
