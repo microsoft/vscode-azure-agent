@@ -29,6 +29,9 @@ export type WizardBasedExtensionCommand = {
      * @example "??????"
      */
     intentDescription?: string;
+
+    // requiresWorkspaceOpen: boolean;
+    // requiesAzureLogin: boolean;
 };
 
 export type RunWizardForCommandResult =
