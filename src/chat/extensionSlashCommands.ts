@@ -8,7 +8,7 @@ import { getBrainstormCommand, getLearnCommand, getMightBeInterestedHandler, typ
 import { SlashCommandsOwner, type SlashCommand, type SlashCommandHandlerResult, type SlashCommands } from "./slashCommands";
 import { slashCommandFromWizardBasedExtensionCommand } from "./wizardBasedExtensionSchema/slashCommandFromWizardBaseExtensionCommand";
 import { type WizardBasedExtension } from "./wizardBasedExtensionSchema/wizardBasedExtensionSchema";
-import { getNoCommandsWizardExtensionConfig } from "./wizardBasedExtensionSchema/wizardExtensions";
+import { azureFunctionsWizardExtension, getNoCommandsWizardExtensionConfig } from "./wizardBasedExtensionSchema/wizardExtensions";
 
 export type CommonSlashCommandAndHandlerConfigs = {
     brainstorm: BrainstormCommandConfig;
@@ -75,7 +75,7 @@ export class ExtensionSlashCommandsOwner {
     }
 }
 
-const functionsExtension = getNoCommandsWizardExtensionConfig("Azure Functions", "ms-azuretools.vscode-azurefunctions");
+const functionsExtension = azureFunctionsWizardExtension;
 const functionsCommonSlashCommandConfigs: CommonSlashCommandAndHandlerConfigs = {
     brainstorm: {
         shortTopic: "Azure Functions",
