@@ -28,8 +28,8 @@ export class ExtensionSlashCommandsOwner {
      */
     private _extensionSlashCommandsOwner: SlashCommandsOwner | undefined;
 
-    constructor(_extension: IWizardBasedExtension, commandName: string, extensionName: string, azureServiceName: string, commonSlashCommandConfigs: CommonSlashCommandAndHandlerConfigs) {
-        this._extension = _extension;
+    constructor(extension: IWizardBasedExtension, commandName: string, extensionName: string, azureServiceName: string, commonSlashCommandConfigs: CommonSlashCommandAndHandlerConfigs) {
+        this._extension = extension;
         this._commandName = commandName;
         this._extensionName = extensionName;
         this._azureServiceName = azureServiceName;
@@ -59,6 +59,9 @@ export class ExtensionSlashCommandsOwner {
                 getBrainstormCommand(this._commonSlashCommandConfigs.brainstorm),
                 getLearnCommand(this._commonSlashCommandConfigs.learn),
             ]);
+
+            await this._extension.activate();
+
             const extensionCommandSchemas = await this._extension.getCommands();
             for (const commandSchema of extensionCommandSchemas) {
                 const slashCommand = slashCommandFromWizardBasedExtensionCommand(commandSchema, this._extension);
