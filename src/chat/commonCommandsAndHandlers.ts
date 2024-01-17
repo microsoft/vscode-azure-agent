@@ -5,19 +5,19 @@
 
 import { callWithTelemetryAndErrorHandling } from "@microsoft/vscode-azext-utils";
 import * as vscode from "vscode";
-import  { type AgentRequest } from "./agent";
+import { type AgentRequest } from "./agent";
 import { agentName } from "./agentConsts";
-import  { type IExtensionCommandSchemaProvider } from "./commandSchema/commandSchema";
 import { verbatimCopilotInteraction } from "./copilotInteractions";
 import { generateExtensionCommandFollowUps, generateNextQuestionsFollowUps } from "./followUpGenerator";
 import { getMicrosoftLearnRagContent } from "./rag";
-import  { type SlashCommand, type SlashCommandHandler, type SlashCommandHandlerResult } from "./slashCommands";
+import { type SlashCommand, type SlashCommandHandler, type SlashCommandHandlerResult } from "./slashCommands";
+import { type IWizardBasedExtension } from "./wizardBasedExtensionSchema/wizardBasedExtensionSchema";
 
 export type BrainstormCommandConfig = {
     shortTopic: string;
     longTopic: string;
     noInputSuggestions: string[];
-    followUpApiProvider?: IExtensionCommandSchemaProvider;
+    followUpApiProvider?: IWizardBasedExtension;
 }
 
 export function getBrainstormCommand(config: BrainstormCommandConfig): SlashCommand {
@@ -65,7 +65,7 @@ export type LearnCommandConfig = {
     shortTopic: string;
     longTopic: string;
     noInputSuggestions: string[];
-    followUpApiProvider?: IExtensionCommandSchemaProvider;
+    followUpApiProvider?: IWizardBasedExtension;
 }
 
 export function getLearnCommand(config: LearnCommandConfig): SlashCommand {
