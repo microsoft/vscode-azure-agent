@@ -41,7 +41,7 @@ export function slashCommandFromWizardBasedExtensionCommand(command: WizardBased
                     showInputBox: async (_options: vscode.InputBoxOptions): Promise<string> => {
                         throw new Error("Method not implemented.");
                     },
-                    showWarningMessage: async <T extends vscode.MessageItem>(_message: string, ..._args: any[]): Promise<T> => {
+                    showWarningMessage: async <T extends vscode.MessageItem>(_message: string): Promise<T> => {
                         throw new Error("Method not implemented.");
                     },
                     showOpenDialog: async (_options: vscode.OpenDialogOptions): Promise<vscode.Uri[]> => {

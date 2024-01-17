@@ -7,7 +7,7 @@ import { type AgentRequest } from "./agent";
 import { getBrainstormCommand, getLearnCommand, getMightBeInterestedHandler, type BrainstormCommandConfig, type LearnCommandConfig, type MightBeInterestedHandlerConfig } from "./commonCommandsAndHandlers";
 import { SlashCommandsOwner, type InvokeableSlashCommands, type SlashCommand, type SlashCommandHandlerResult } from "./slashCommands";
 import { slashCommandFromWizardBasedExtensionCommand } from "./wizardBasedExtensionSchema/slashCommandFromWizardBaseExtensionCommand";
-import { IWizardBasedExtension } from "./wizardBasedExtensionSchema/wizardBasedExtensionSchema";
+import { type IWizardBasedExtension } from "./wizardBasedExtensionSchema/wizardBasedExtensionSchema";
 import { getNoCommandsWizardExtension } from "./wizardBasedExtensionSchema/wizardExtensions";
 
 export type CommonSlashCommandAndHandlerConfigs = {

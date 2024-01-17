@@ -8,7 +8,7 @@ import { type AgentRequest } from "./agent";
 import { agentName } from "./agentConsts";
 import { getResponseAsStringCopilotInteraction, getStringFieldFromCopilotResponseMaybeWithStrJson } from "./copilotInteractions";
 import { detectIntent } from "./intentDetection";
-import { IWizardBasedExtension } from "./wizardBasedExtensionSchema/wizardBasedExtensionSchema";
+import { type IWizardBasedExtension } from "./wizardBasedExtensionSchema/wizardBasedExtensionSchema";
 
 export async function generateExtensionCommandFollowUps(copilotContent: string, apiProvider: IWizardBasedExtension, request: AgentRequest): Promise<vscode.InteractiveSessionReplyFollowup[]> {
     const copilotContentAgentRequest: AgentRequest = { ...request, userPrompt: copilotContent, }
