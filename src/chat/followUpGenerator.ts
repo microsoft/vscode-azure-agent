@@ -4,20 +4,20 @@
  *--------------------------------------------------------------------------------------------*/
 
 import type * as vscode from "vscode";
-import  { type AgentRequest } from "./agent";
+import { type AgentRequest } from "./agent";
 import { agentName } from "./agentConsts";
-import  { type IExtensionCommandSchemaProvider } from "./commandSchema/commandSchema";
 import { getResponseAsStringCopilotInteraction, getStringFieldFromCopilotResponseMaybeWithStrJson } from "./copilotInteractions";
 import { detectIntent } from "./intentDetection";
+import { IWizardBasedExtension } from "./wizardBasedExtensionSchema/wizardBasedExtensionSchema";
 
-export async function generateExtensionCommandFollowUps(copilotContent: string, apiProvider: IExtensionCommandSchemaProvider, request: AgentRequest): Promise<vscode.InteractiveSessionReplyFollowup[]> {
+export async function generateExtensionCommandFollowUps(copilotContent: string, apiProvider: IWizardBasedExtension, request: AgentRequest): Promise<vscode.InteractiveSessionReplyFollowup[]> {
     const copilotContentAgentRequest: AgentRequest = { ...request, userPrompt: copilotContent, }
-    const availableCommands = await apiProvider.getCommandSchemas();
-    const intentDetectionTargets = availableCommands.map((command) => ({ name: command.name, intentDetectionDescription: command.copilotStrings.intentDescription }));
+    const availableCommands = await apiProvider.getCommands();
+    const intentDetectionTargets = availableCommands.map((command) => ({ name: command.name, intentDetectionDescription: command.intentDescription || command.displayName }));
     const detectedIntentionTarget = await detectIntent(intentDetectionTargets, copilotContentAgentRequest);
     const detectedCommand = availableCommands.find((command) => command.name === detectedIntentionTarget?.name);
     if (detectedCommand !== undefined) {
-        return [{ message: `@${agentName} ${detectedCommand.userStrings.actionBlurb}` }]
+        return [{ message: `@${agentName} ${detectedCommand.displayName}` }]
     }
     return [];
 }

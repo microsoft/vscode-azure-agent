@@ -4,12 +4,11 @@
  *--------------------------------------------------------------------------------------------*/
 
 import { type AgentRequest } from "./agent";
-import { type IExtensionCommandSchemaProvider } from "./commandSchema/commandSchema";
-import { NoCommandsExtension } from "./commandSchema/noCommandsExtension";
-import { slashCommandFromCommandSchema } from "./commandSchema/slashCommandFromCommandSchema";
 import { getBrainstormCommand, getLearnCommand, getMightBeInterestedHandler, type BrainstormCommandConfig, type LearnCommandConfig, type MightBeInterestedHandlerConfig } from "./commonCommandsAndHandlers";
-import { MockFunctionsExtension } from "./mockFunctionsExtension/mockFunctionsExtension";
 import { SlashCommandsOwner, type InvokeableSlashCommands, type SlashCommand, type SlashCommandHandlerResult } from "./slashCommands";
+import { slashCommandFromWizardBasedExtensionCommand } from "./wizardBasedExtensionSchema/slashCommandFromWizardBaseExtensionCommand";
+import { IWizardBasedExtension } from "./wizardBasedExtensionSchema/wizardBasedExtensionSchema";
+import { getNoCommandsWizardExtension } from "./wizardBasedExtensionSchema/wizardExtensions";
 
 export type CommonSlashCommandAndHandlerConfigs = {
     brainstorm: BrainstormCommandConfig;
@@ -18,7 +17,7 @@ export type CommonSlashCommandAndHandlerConfigs = {
 }
 
 export class ExtensionSlashCommandsOwner {
-    private _extensionCommandSchemaProvider: IExtensionCommandSchemaProvider;
+    private _extension: IWizardBasedExtension;
     private _commandName: string;
     private _extensionName: string;
     private _azureServiceName: string;
@@ -29,8 +28,8 @@ export class ExtensionSlashCommandsOwner {
      */
     private _extensionSlashCommandsOwner: SlashCommandsOwner | undefined;
 
-    constructor(extensionCommandSchemaProvider: IExtensionCommandSchemaProvider, commandName: string, extensionName: string, azureServiceName: string, commonSlashCommandConfigs: CommonSlashCommandAndHandlerConfigs) {
-        this._extensionCommandSchemaProvider = extensionCommandSchemaProvider;
+    constructor(_extension: IWizardBasedExtension, commandName: string, extensionName: string, azureServiceName: string, commonSlashCommandConfigs: CommonSlashCommandAndHandlerConfigs) {
+        this._extension = _extension;
         this._commandName = commandName;
         this._extensionName = extensionName;
         this._azureServiceName = azureServiceName;
@@ -60,9 +59,9 @@ export class ExtensionSlashCommandsOwner {
                 getBrainstormCommand(this._commonSlashCommandConfigs.brainstorm),
                 getLearnCommand(this._commonSlashCommandConfigs.learn),
             ]);
-            const extensionCommandSchemas = await this._extensionCommandSchemaProvider.getCommandSchemas();
+            const extensionCommandSchemas = await this._extension.getCommands();
             for (const commandSchema of extensionCommandSchemas) {
-                const slashCommand = slashCommandFromCommandSchema(commandSchema, this._extensionCommandSchemaProvider);
+                const slashCommand = slashCommandFromWizardBasedExtensionCommand(commandSchema, this._extension);
                 extensionSlashCommands.set(slashCommand[0], slashCommand[1]);
             }
             const mightBeInterestedHandler = getMightBeInterestedHandler(this._commonSlashCommandConfigs.mightBeInterested);
@@ -72,7 +71,7 @@ export class ExtensionSlashCommandsOwner {
     }
 }
 
-const functionsExtension = new MockFunctionsExtension();
+const functionsExtension = getNoCommandsWizardExtension("Azure Functions");
 const functionsCommonSlashCommandConfigs: CommonSlashCommandAndHandlerConfigs = {
     brainstorm: {
         shortTopic: "Azure Functions",
@@ -111,7 +110,7 @@ export const functionsExtensionSlashCommandsOwner: ExtensionSlashCommandsOwner =
     functionsCommonSlashCommandConfigs
 );
 
-const storageExtension = new NoCommandsExtension();
+const storageExtension = getNoCommandsWizardExtension("Azure Storage");
 const storageCommonSlashCommandConfigs: CommonSlashCommandAndHandlerConfigs = {
     brainstorm: {
         shortTopic: "Azure Storage",
@@ -148,7 +147,7 @@ export const storageExtensionSlashCommandsOwner: ExtensionSlashCommandsOwner = n
     storageCommonSlashCommandConfigs
 );
 
-const appServiceExtension = new NoCommandsExtension();
+const appServiceExtension = getNoCommandsWizardExtension("Azure App Service");
 const appServiceCommonSlashCommandConfigs: CommonSlashCommandAndHandlerConfigs = {
     brainstorm: {
         shortTopic: "Azure App Service",
