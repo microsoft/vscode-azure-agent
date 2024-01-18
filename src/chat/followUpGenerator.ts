@@ -10,7 +10,7 @@ import { getResponseAsStringCopilotInteraction, getStringFieldFromCopilotRespons
 import { detectIntent } from "./intentDetection";
 import { type IWizardBasedExtension } from "./wizardBasedExtensionSchema/wizardBasedExtensionSchema";
 
-export async function generateExtensionCommandFollowUps(copilotContent: string, apiProvider: IWizardBasedExtension, request: AgentRequest): Promise<vscode.InteractiveSessionReplyFollowup[]> {
+export async function generateExtensionCommandFollowUps(copilotContent: string, apiProvider: IWizardBasedExtension, request: AgentRequest): Promise<vscode.ChatAgentReplyFollowup[]> {
     const copilotContentAgentRequest: AgentRequest = { ...request, userPrompt: copilotContent, }
     const availableCommands = await apiProvider.getCommands();
     const intentDetectionTargets = availableCommands.map((command) => ({ name: command.name, intentDetectionDescription: command.intentDescription || command.displayName }));
@@ -22,7 +22,7 @@ export async function generateExtensionCommandFollowUps(copilotContent: string, 
     return [];
 }
 
-export async function generateNextQuestionsFollowUps(copilotContent: string, request: AgentRequest): Promise<vscode.InteractiveSessionReplyFollowup[]> {
+export async function generateNextQuestionsFollowUps(copilotContent: string, request: AgentRequest): Promise<vscode.ChatAgentReplyFollowup[]> {
     const copilotContentAgentRequest: AgentRequest = { ...request, userPrompt: copilotContent, }
     const maybeJsonCopilotResponseLanguage = await getResponseAsStringCopilotInteraction(generateNextQuestionsFollowUpsSystemPrompt1, copilotContentAgentRequest);
     const copilotGeneratedFollowUpQuestions = [
@@ -38,7 +38,7 @@ export async function generateNextQuestionsFollowUps(copilotContent: string, req
                 return undefined;
             }
         })
-        .filter((q): q is vscode.InteractiveSessionReplyFollowup => q !== undefined);
+        .filter((q): q is vscode.ChatAgentReplyFollowup => q !== undefined);
 }
 
 const generateNextQuestionsFollowUpsSystemPrompt1 = `You are an expert in Azure development. Your job is to come up with follow up questions a user might have given the following information. Think about what the user might want to do next, or what they might want to know more about. Only focus on topics related to Azure. Suggest a up to three follow up questions. Only repsond with a JSON summary of the follow up questions. Do not respond in a coverstaional tone, only JSON.

@@ -68,7 +68,7 @@ export function registerChatAgent() {
 }
 
 async function handler(request: vscode.ChatAgentRequest, context: vscode.ChatAgentContext, progress: vscode.Progress<vscode.ChatAgentExtendedProgress>, token: vscode.CancellationToken): Promise<vscode.ChatAgentResult2 | undefined> {
-    const agentRequest: AgentRequest = { slashCommand: request.slashCommand?.name, userPrompt: request.prompt, variables: request.variables, context: context, progress: progress, token: token, };
+    const agentRequest: AgentRequest = { slashCommand: request.subCommand, userPrompt: request.prompt, variables: request.variables, context: context, progress: progress, token: token, };
     const handlers = [agentHiddenSlashCommandsOwner, agentBenchmarker, agentSlashCommandsOwner];
 
     let handleResult: SlashCommandHandlerResult | undefined;
