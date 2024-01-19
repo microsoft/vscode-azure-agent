@@ -48,12 +48,12 @@ export type WizardBasedExtensionCommandConfig = {
     /**
      * If the command requires that a workspace is currently open.
      */
-    requiresWorkspaceOpen: boolean;
+    requiresWorkspaceOpen?: boolean;
 
     /**
      * If the command requires that the user is logged into Azure.
      */
-    requiesAzureLogin: boolean;
+    requiesAzureLogin?: boolean;
 };
 
 export type WizardBasedExtensionConfig = {
@@ -74,7 +74,7 @@ export type WizardBasedExtensionConfig = {
      *
      * Note: the function type is only for testing in the agent extension itself.
      */
-    readonly getWizardCommandsCommandId: string;
+    readonly getWizardCommandsCommandId: string | (() => WizardBasedExtensionCommandConfig[]);
 
     /**
      * The VS Code command ID of a command that the extension implements which can be used to silently run the wizard associated
@@ -118,8 +118,11 @@ export class WizardBasedExtension {
     public async getWizardCommands(): Promise<WizardBasedExtensionCommandConfig[]> {
         if (this._config.getWizardCommandsCommandId === "") {
             return [];
+        } else if (typeof this._config.getWizardCommandsCommandId === "function") {
+            return this._config.getWizardCommandsCommandId();
+        } else {
+            return await vscode.commands.executeCommand<WizardBasedExtensionCommandConfig[]>(this._config.getWizardCommandsCommandId);
         }
-        return await vscode.commands.executeCommand<WizardBasedExtensionCommandConfig[]>(this._config.getWizardCommandsCommandId);
     }
 
     public async runWizardCommand(command: WizardBasedExtensionCommandConfig, agentAzureUserInput: IAgentUserInput): Promise<void> {
