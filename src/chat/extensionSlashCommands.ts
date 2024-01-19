@@ -7,8 +7,8 @@ import { type AgentRequest } from "./agent";
 import { getBrainstormCommand, getLearnCommand, getMightBeInterestedHandler, type BrainstormCommandConfig, type LearnCommandConfig, type MightBeInterestedHandlerConfig } from "./commonCommandsAndHandlers";
 import { SlashCommandsOwner, type InvokeableSlashCommands, type SlashCommand, type SlashCommandHandlerResult } from "./slashCommands";
 import { slashCommandFromWizardBasedExtensionCommand } from "./wizardBasedExtensionSchema/slashCommandFromWizardBaseExtensionCommand";
-import { type IWizardBasedExtension } from "./wizardBasedExtensionSchema/wizardBasedExtensionSchema";
-import { getNoCommandsWizardExtension } from "./wizardBasedExtensionSchema/wizardExtensions";
+import { type WizardBasedExtension } from "./wizardBasedExtensionSchema/wizardBasedExtensionSchema";
+import { getNoCommandsWizardExtensionConfig } from "./wizardBasedExtensionSchema/wizardExtensions";
 
 export type CommonSlashCommandAndHandlerConfigs = {
     brainstorm: BrainstormCommandConfig;
@@ -17,7 +17,7 @@ export type CommonSlashCommandAndHandlerConfigs = {
 }
 
 export class ExtensionSlashCommandsOwner {
-    private _extension: IWizardBasedExtension;
+    private _extension: WizardBasedExtension;
     private _commandName: string;
     private _extensionName: string;
     private _azureServiceName: string;
@@ -28,7 +28,7 @@ export class ExtensionSlashCommandsOwner {
      */
     private _extensionSlashCommandsOwner: SlashCommandsOwner | undefined;
 
-    constructor(extension: IWizardBasedExtension, commandName: string, extensionName: string, azureServiceName: string, commonSlashCommandConfigs: CommonSlashCommandAndHandlerConfigs) {
+    constructor(extension: WizardBasedExtension, commandName: string, extensionName: string, azureServiceName: string, commonSlashCommandConfigs: CommonSlashCommandAndHandlerConfigs) {
         this._extension = extension;
         this._commandName = commandName;
         this._extensionName = extensionName;
@@ -62,8 +62,8 @@ export class ExtensionSlashCommandsOwner {
 
             await this._extension.activate();
 
-            const extensionCommandSchemas = await this._extension.getCommands();
-            for (const commandSchema of extensionCommandSchemas) {
+            const extensionWizardCommands = await this._extension.getWizardCommands();
+            for (const commandSchema of extensionWizardCommands) {
                 const slashCommand = slashCommandFromWizardBasedExtensionCommand(commandSchema, this._extension);
                 extensionSlashCommands.set(slashCommand[0], slashCommand[1]);
             }
@@ -74,7 +74,7 @@ export class ExtensionSlashCommandsOwner {
     }
 }
 
-const functionsExtension = getNoCommandsWizardExtension("Azure Functions");
+const functionsExtension = getNoCommandsWizardExtensionConfig("Azure Functions");
 const functionsCommonSlashCommandConfigs: CommonSlashCommandAndHandlerConfigs = {
     brainstorm: {
         shortTopic: "Azure Functions",
@@ -113,7 +113,7 @@ export const functionsExtensionSlashCommandsOwner: ExtensionSlashCommandsOwner =
     functionsCommonSlashCommandConfigs
 );
 
-const storageExtension = getNoCommandsWizardExtension("Azure Storage");
+const storageExtension = getNoCommandsWizardExtensionConfig("Azure Storage");
 const storageCommonSlashCommandConfigs: CommonSlashCommandAndHandlerConfigs = {
     brainstorm: {
         shortTopic: "Azure Storage",
@@ -150,7 +150,7 @@ export const storageExtensionSlashCommandsOwner: ExtensionSlashCommandsOwner = n
     storageCommonSlashCommandConfigs
 );
 
-const appServiceExtension = getNoCommandsWizardExtension("Azure App Service");
+const appServiceExtension = getNoCommandsWizardExtensionConfig("Azure App Service");
 const appServiceCommonSlashCommandConfigs: CommonSlashCommandAndHandlerConfigs = {
     brainstorm: {
         shortTopic: "Azure App Service",

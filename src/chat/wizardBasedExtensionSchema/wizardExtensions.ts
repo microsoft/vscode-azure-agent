@@ -3,17 +3,14 @@
 *  Licensed under the MIT License. See License.txt in the project root for license information.
 *--------------------------------------------------------------------------------------------*/
 
-import { type IWizardBasedExtension } from "./wizardBasedExtensionSchema";
+import { WizardBasedExtension } from "./wizardBasedExtensionSchema";
 
-export function getNoCommandsWizardExtension(displayName: string): IWizardBasedExtension {
-    return {
+export function getNoCommandsWizardExtensionConfig(displayName: string): WizardBasedExtension {
+    return new WizardBasedExtension({
+        extensionId: "",
         displayName: displayName,
-        activate: async () => {
-            // handle later
-        },
-        getCommands: async () => [],
-        runWizardForCommand: async () => {
-            throw new Error("No commands");
-        }
-    }
+        getWizardCommandsCommandId: "",
+        runWizardCommandId: "",
+        runWizardCommandWithInputsCommandId: "",
+    });
 }
