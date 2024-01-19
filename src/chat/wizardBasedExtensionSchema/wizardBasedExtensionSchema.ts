@@ -3,6 +3,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
+/* eslint-disable-next-line @typescript-eslint/no-unused-vars */
 import { type IAzureUserInput } from "@microsoft/vscode-azext-utils";
 
 export type WizardBasedExtensionCommand = {
@@ -26,26 +27,69 @@ export type WizardBasedExtensionCommand = {
 
     /**
      * A sentence description that helps a LLM understand when the command should be used.
-     * @example "??????"
+     *
+     * The description should give an understanding of what a user prompt which matches to this
+     * command would look like. Give examples of terminology that the user might use, the type of
+     * statements they might make, and the type of questions they might ask. Also consider giving
+     * examples of what terminology or types of statements would not match to this command.
+     *
+     * For example:
+     *
+     * *This is best when users ask to create a Function App resource in Azure. They may refer
+     * to a Function App as 'Function App', 'function', 'function resource', 'function app
+     * resource', 'function app' etc. This command is not useful if the user is asking how to do something, or
+     * if something is possible.*
      */
     intentDescription?: string;
 
-    // requiresWorkspaceOpen: boolean;
-    // requiesAzureLogin: boolean;
+    /**
+     * If the command requires that a workspace is currently open.
+     */
+    requiresWorkspaceOpen: boolean;
+
+    /**
+     * If the command requires that the user is logged into Azure.
+     */
+    requiesAzureLogin: boolean;
 };
 
-export type RunWizardForCommandResult =
-    { type: "done"; } |
-    { type: "moreWizardStepsExist"; };
-
 export interface IWizardBasedExtension {
+    /**
+     * The ID of the extension.
+     */
+    extensionId: string;
+
+    /**
+     * The VS Code command ID of a command that the extension implements which can be used to get the list
+     * of{@link WizardBasedExtensionCommand}s that the extension implements.
+     *
+     * Note: the function type is only for testing in the agent extension itself.
+     */
+    readonly getWizardCommandsCommandId: string | (() => Promise<WizardBasedExtensionCommand[]>);
+
     /**
      * The display name of the extension.
      * @example "Azure Functions Extension"
      */
     readonly displayName: string;
 
-    activate(): Promise<void>;
-    getCommands(): Promise<WizardBasedExtensionCommand[]>;
-    runWizardForCommand(command: WizardBasedExtensionCommand, agentWizardInput: IAzureUserInput): Promise<RunWizardForCommandResult>;
+    /**
+     * The VS Code command ID of a command that the extension implements which can be used to silently run the wizard associated
+     * with a {@link WizardBasedExtensionCommand}. The wizard should not result in any actual changes being made.
+     *
+     * The command should take two parameters:
+     * - A {@link WizardBasedExtensionCommand}: the command that should be run.
+     * - A {@link IAzureUserInput}: the user input that the command should use when needing to present user input.
+     */
+    readonly runWizardCommandId: string;
+
+    /**
+     * The VS Code command ID of a command that the extension implements which can be used to run a {@link WizardBasedExtensionCommand} with
+     * a predefined set of inputs.
+     *
+     * The command should take two parameters:
+     * - A {@link WizardBasedExtensionCommand}: the command that should be run.
+     * - A {@link AzureUserInputQueue}: the inputs that the command should use when needing to present user input.
+     */
+    readonly runWizardWithInputsCommandId: string;
 }

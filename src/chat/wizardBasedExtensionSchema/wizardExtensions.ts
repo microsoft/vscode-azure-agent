@@ -7,13 +7,10 @@ import { type IWizardBasedExtension } from "./wizardBasedExtensionSchema";
 
 export function getNoCommandsWizardExtension(displayName: string): IWizardBasedExtension {
     return {
+        extensionId: "",
         displayName: displayName,
-        activate: async () => {
-            // handle later
-        },
-        getCommands: async () => [],
-        runWizardForCommand: async () => {
-            throw new Error("No commands");
-        }
+        getWizardCommandsCommandId: async () => [],
+        runWizardCommandId: "",
+        runWizardWithInputsCommandId: "",
     }
 }
