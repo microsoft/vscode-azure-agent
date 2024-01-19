@@ -3,7 +3,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import * as vscode from "vscode";
+import type * as vscode from "vscode";
 /* eslint-disable-next-line @typescript-eslint/no-unused-vars */
 import { type AzExtInputBoxOptions, type IAzureQuickPickOptions, type IAzureUserInput, type PromptResult } from "@microsoft/vscode-azext-utils";
 

@@ -11,13 +11,13 @@ import { verbatimCopilotInteraction } from "./copilotInteractions";
 import { generateExtensionCommandFollowUps, generateNextQuestionsFollowUps } from "./followUpGenerator";
 import { getMicrosoftLearnRagContent } from "./rag";
 import { type SlashCommand, type SlashCommandHandler, type SlashCommandHandlerResult } from "./slashCommands";
-import { type IWizardBasedExtension } from "./wizardBasedExtensionSchema/wizardBasedExtensionSchema";
+import { type WizardBasedExtension } from "./wizardBasedExtensionSchema/wizardBasedExtensionSchema";
 
 export type BrainstormCommandConfig = {
     shortTopic: string;
     longTopic: string;
     noInputSuggestions: string[];
-    followUpApiProvider?: IWizardBasedExtension;
+    followUpApiProvider?: WizardBasedExtension;
 }
 
 export function getBrainstormCommand(config: BrainstormCommandConfig): SlashCommand {
@@ -65,7 +65,7 @@ export type LearnCommandConfig = {
     shortTopic: string;
     longTopic: string;
     noInputSuggestions: string[];
-    followUpApiProvider?: IWizardBasedExtension;
+    followUpApiProvider?: WizardBasedExtension;
 }
 
 export function getLearnCommand(config: LearnCommandConfig): SlashCommand {

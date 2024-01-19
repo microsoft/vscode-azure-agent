@@ -8,10 +8,10 @@ import * as vscode from "vscode";
 import { type AgentRequest } from "../agent";
 import { getResponseAsStringCopilotInteraction, getStringFieldFromCopilotResponseMaybeWithStrJson } from "../copilotInteractions";
 import { type SlashCommand, type SlashCommandHandlerResult } from "../slashCommands";
-import { AgentInputBoxOptions, AgentQuickPickItem, AgentQuickPickOptions, IAgentUserInput } from "./AgentUserInput";
-import { type IWizardBasedExtension, type WizardBasedExtensionCommand } from "./wizardBasedExtensionSchema";
+import { type AgentInputBoxOptions, type AgentQuickPickItem, type AgentQuickPickOptions, type AzureUserInputQueue, type IAgentUserInput } from "./AgentUserInput";
+import { type WizardBasedExtension, type WizardBasedExtensionCommandConfig } from "./wizardBasedExtensionSchema";
 
-export function slashCommandFromWizardBasedExtensionCommand(command: WizardBasedExtensionCommand, extension: IWizardBasedExtension): SlashCommand {
+export function slashCommandFromWizardBasedExtensionCommand(command: WizardBasedExtensionCommandConfig, extension: WizardBasedExtension): SlashCommand {
     return [
         command.name,
         {
@@ -22,7 +22,7 @@ export function slashCommandFromWizardBasedExtensionCommand(command: WizardBased
                 request.progress.report({ message: "Analyzing conversation..." });
 
                 const agentAzureUserInput = new AgentAzureUserInput(request);
-                await vscode.commands.executeCommand(extension.runWizardCommandId, command, agentAzureUserInput);
+                await extension.runWizardCommand(command, agentAzureUserInput);
 
                 const { pickedParameters, unfilfilledParameters, inputQueue } = agentAzureUserInput.getInteractionResults();
 
@@ -52,7 +52,7 @@ export function slashCommandFromWizardBasedExtensionCommand(command: WizardBased
                     chatAgentResult: {},
                     followUp: [{
                         title: command.displayName,
-                        commandId: extension.runWizardWithInputsCommandId,
+                        commandId: extension.runWizardCommandWithInputsCommandId,
                         args: [command, inputQueue]
                     }]
                 };
@@ -94,21 +94,19 @@ function getPickQuickPickItemSystemPrompt1(items: AgentQuickPickItem[], options:
     ].filter(s => !!s).join(" ");
 }
 
-export type InputQueue = (vscode.QuickPickItem | string | vscode.MessageItem | vscode.Uri[] | undefined)[];
-
 type AzureAgentUserInputPickedParameters = { [parameterName: string]: string };
 type AzureAgentUserInputUnfilfilledParameters = string[];
 type AzureAgentUserInputResults = {
     pickedParameters: AzureAgentUserInputPickedParameters;
     unfilfilledParameters: AzureAgentUserInputUnfilfilledParameters;
-    inputQueue: InputQueue;
+    inputQueue: AzureUserInputQueue;
 };
 
 class AgentAzureUserInput implements IAgentUserInput {
     private _request: AgentRequest;
     private _pickedParameters: AzureAgentUserInputPickedParameters;
     private _unfilfilledParameters: AzureAgentUserInputUnfilfilledParameters;
-    private _userInputReturnValueQueue: InputQueue;
+    private _userInputReturnValueQueue: AzureUserInputQueue;
     private _onDidFinishPromptEventEmitter: vscode.EventEmitter<PromptResult>;
 
     constructor(request: AgentRequest) {

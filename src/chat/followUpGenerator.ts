@@ -8,11 +8,11 @@ import { type AgentRequest } from "./agent";
 import { agentName } from "./agentConsts";
 import { getResponseAsStringCopilotInteraction, getStringFieldFromCopilotResponseMaybeWithStrJson } from "./copilotInteractions";
 import { detectIntent } from "./intentDetection";
-import { type IWizardBasedExtension } from "./wizardBasedExtensionSchema/wizardBasedExtensionSchema";
+import { type WizardBasedExtension } from "./wizardBasedExtensionSchema/wizardBasedExtensionSchema";
 
-export async function generateExtensionCommandFollowUps(copilotContent: string, apiProvider: IWizardBasedExtension, request: AgentRequest): Promise<vscode.ChatAgentReplyFollowup[]> {
+export async function generateExtensionCommandFollowUps(copilotContent: string, apiProvider: WizardBasedExtension, request: AgentRequest): Promise<vscode.ChatAgentReplyFollowup[]> {
     const copilotContentAgentRequest: AgentRequest = { ...request, userPrompt: copilotContent, }
-    const availableCommands = await apiProvider.getCommands();
+    const availableCommands = await apiProvider.getWizardCommands();
     const intentDetectionTargets = availableCommands.map((command) => ({ name: command.name, intentDetectionDescription: command.intentDescription || command.displayName }));
     const detectedIntentionTarget = await detectIntent(intentDetectionTargets, copilotContentAgentRequest);
     const detectedCommand = availableCommands.find((command) => command.name === detectedIntentionTarget?.name);
