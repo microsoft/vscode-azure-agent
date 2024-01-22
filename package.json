@@ -1,7 +1,7 @@
 {
-    "name": "vscode-azext-agent",
-    "displayName": "Azure Extensions Agent",
-    "description": "The Azure Extensions agent helps you use Azure extensions via GitHub Copilot Chat.",
+    "name": "vscode-azure-agent",
+    "displayName": "Azure Agent",
+    "description": "The Azure agent helps you develop code for Azure, learn about Azure, and use the Azure Extensions for VS Code, all via GitHub Copilot Chat.",
     "version": "0.1.0",
     "publisher": "ms-azuretools",
     "icon": "resources/azure-color.png",
@@ -11,13 +11,13 @@
     },
     "repository": {
         "type": "git",
-        "url": "https://github.com/microsoft/vscode-azext-agent"
+        "url": "https://github.com/microsoft/vscode-azure-agent"
     },
     "galleryBanner": {
         "color": "#3a3d41",
         "theme": "dark"
     },
-    "homepage": "https://github.com/microsoft/vscode-azext-agent/blob/main/README.md",
+    "homepage": "https://github.com/microsoft/vscode-azure-agent/blob/main/README.md",
     "license": "SEE LICENSE IN LICENSE.md",
     "categories": [
         "Azure"
