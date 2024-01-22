@@ -106,7 +106,7 @@ function getSubCommands(_token: vscode.CancellationToken): vscode.ProviderResult
 }
 
 async function defaultHandler(request: AgentRequest): Promise<SlashCommandHandlerResult> {
-    const defaultSystemPrompt1 = `You are an expert in using the all things Azure. The user needs your help with something related to either Azure and/or the Azure Extensions for VS Code. Do your best to answer their question. The user is currently using VS Code and has one or more Azure Extensions for VS Code installed. Do not overwhelm the user with too much information. Keep responses short and sweet.`;
+    const defaultSystemPrompt1 = `You are an expert in all things Azure. The user needs your help with something related to either Azure and/or the Azure Extensions for VS Code. Do your best to answer their question. The user is currently using VS Code and has one or more Azure Extensions for VS Code installed. Do not overwhelm the user with too much information. Keep responses short and sweet.`;
 
     const { copilotResponded } = await verbatimCopilotInteraction(defaultSystemPrompt1, request);
     if (!copilotResponded) {
