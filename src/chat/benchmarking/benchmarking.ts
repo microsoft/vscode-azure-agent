@@ -67,7 +67,9 @@ export class AgentBenchmarker implements IAgentRequestHandler {
 
         const slashCommands = new Map([this._getBenchmarkSlashCommand(), this._getBenchmarkStatsSlashCommand()]);
         const fallbackSlashCommandHandlers: FallbackSlashCommandHandlers = { noInput: undefined, default: undefined };
-        this._benchmarkerSlashCommandsOwner = new SlashCommandsOwner(slashCommands, fallbackSlashCommandHandlers, { disableIntentDetection: true });
+
+        this._benchmarkerSlashCommandsOwner = new SlashCommandsOwner(fallbackSlashCommandHandlers, { disableIntentDetection: true });
+        this._benchmarkerSlashCommandsOwner.addInvokeableSlashCommands(slashCommands);
 
         this._continuationIndex = 0;
     }
