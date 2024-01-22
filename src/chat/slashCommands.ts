@@ -4,7 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 import type * as vscode from "vscode";
-import  { type AgentRequest, type IAgentRequestHandler } from "./agent";
+import { type AgentRequest, type IAgentRequestHandler } from "./agent";
 import { detectIntent } from "./intentDetection";
 
 /**
@@ -56,25 +56,48 @@ export type SlashCommandConfig = {
 
 export type SlashCommand = [SlashCommandName, SlashCommandConfig];
 
-export type InvokeableSlashCommands = Map<string, SlashCommandConfig>;
+export type SlashCommands = Map<string, SlashCommandConfig>;
 
-export type FallbackSlashCommandHandlers = { noInput?: SlashCommandHandler, default?: SlashCommandHandler, };
+export type FallbackSlashCommandHandlers = {
+    /**
+     * The slash command to use when the user doesn't provide any input. If a string, then
+     * it is the name of the slash command to use. If a function, then it is the handler to use.
+     */
+    noInput?: SlashCommandHandler | string;
+
+    /**
+     * The slash command to use when the user provides input without a slash command specified and
+     * intent detection cannot find a slash command to use. If a string, then it is the name of the
+     * slash command to use. If a function, then it is the handler to use.
+     */
+    default?: SlashCommandHandler | string;
+};
 
 export type SlashCommmandOwnerOptions = {
+    /**
+     * If true, then intent detection will not be used to find a slash command to use in the case that
+     * the user provides input without a slash command specified.
+     */
     disableIntentDetection?: boolean;
 };
 
 export class SlashCommandsOwner implements IAgentRequestHandler {
-    private _invokeableSlashCommands: InvokeableSlashCommands;
+    private _invokeableSlashCommands: SlashCommands;
     private _fallbackSlashCommands: FallbackSlashCommandHandlers;
     private _disableIntentDetection: boolean;
 
     private _previousSlashCommandHandlerResult: SlashCommandHandlerResult;
 
-    constructor(invokableSlashCommands: InvokeableSlashCommands, fallbackSlashCommands: FallbackSlashCommandHandlers, options?: SlashCommmandOwnerOptions) {
-        this._invokeableSlashCommands = invokableSlashCommands;
+    constructor(fallbackSlashCommands: FallbackSlashCommandHandlers, options?: SlashCommmandOwnerOptions) {
+        this._invokeableSlashCommands = new Map();
         this._fallbackSlashCommands = fallbackSlashCommands;
         this._disableIntentDetection = options?.disableIntentDetection || false;
+    }
+
+    public addInvokeableSlashCommands(slashCommands: SlashCommands): void {
+        for (const slashCommand of slashCommands.entries()) {
+            this._invokeableSlashCommands.set(slashCommand[0], slashCommand[1]);
+        }
     }
 
     public async handleRequestOrPrompt(request: AgentRequest): Promise<SlashCommandHandlerResult> {
@@ -123,7 +146,9 @@ export class SlashCommandsOwner implements IAgentRequestHandler {
         if (!result && prompt === "" && !command) {
             result = {
                 refinedRequest: { ...request, slashCommand: "noInput", userPrompt: prompt, },
-                handler: this._fallbackSlashCommands.noInput
+                handler: typeof this._fallbackSlashCommands.noInput === "string" ?
+                    this._invokeableSlashCommands.get(this._fallbackSlashCommands.noInput)?.handler :
+                    this._fallbackSlashCommands.noInput
             };
         }
 
@@ -156,7 +181,9 @@ export class SlashCommandsOwner implements IAgentRequestHandler {
         if (!result) {
             result = {
                 refinedRequest: { ...request, slashCommand: "default", userPrompt: prompt, },
-                handler: this._fallbackSlashCommands.default
+                handler: typeof this._fallbackSlashCommands.default === "string" ?
+                    this._invokeableSlashCommands.get(this._fallbackSlashCommands.default)?.handler :
+                    this._fallbackSlashCommands.default
             };
         }
 

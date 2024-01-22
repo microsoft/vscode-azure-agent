@@ -5,7 +5,7 @@
 
 import { type AgentRequest } from "./agent";
 import { getBrainstormCommand, getLearnCommand, getMightBeInterestedHandler, type BrainstormCommandConfig, type LearnCommandConfig, type MightBeInterestedHandlerConfig } from "./commonCommandsAndHandlers";
-import { SlashCommandsOwner, type InvokeableSlashCommands, type SlashCommand, type SlashCommandHandlerResult } from "./slashCommands";
+import { SlashCommandsOwner, type SlashCommand, type SlashCommandHandlerResult, type SlashCommands } from "./slashCommands";
 import { slashCommandFromWizardBasedExtensionCommand } from "./wizardBasedExtensionSchema/slashCommandFromWizardBaseExtensionCommand";
 import { type WizardBasedExtension } from "./wizardBasedExtensionSchema/wizardBasedExtensionSchema";
 import { getNoCommandsWizardExtensionConfig } from "./wizardBasedExtensionSchema/wizardExtensions";
@@ -41,7 +41,7 @@ export class ExtensionSlashCommandsOwner {
             this._commandName,
             {
                 shortDescription: `Work with the ${this._extensionName} extension for VS Code and/or ${this._azureServiceName}`,
-                longDescription: `Use this command when you want to work with the ${this._extensionName} extension for VS Code and ${this._azureServiceName}.`,
+                longDescription: `Use the command when you want to learn about or work with ${this._azureServiceName} or the ${this._extensionName} extension for VS Code.`,
                 intentDescription: `This is best when a user prompt could be related to the ${this._extensionName} extension for VS Code or ${this._azureServiceName}.`,
                 handler: (...args) => this._handleExtensionSlashCommand(...args),
             }
@@ -55,7 +55,7 @@ export class ExtensionSlashCommandsOwner {
 
     private async _getExtensionSlashCommandsOwner(): Promise<SlashCommandsOwner> {
         if (!this._extensionSlashCommandsOwner) {
-            const extensionSlashCommands: InvokeableSlashCommands = new Map([
+            const extensionSlashCommands: SlashCommands = new Map([
                 getBrainstormCommand(this._commonSlashCommandConfigs.brainstorm),
                 getLearnCommand(this._commonSlashCommandConfigs.learn),
             ]);
@@ -68,7 +68,8 @@ export class ExtensionSlashCommandsOwner {
                 extensionSlashCommands.set(slashCommand[0], slashCommand[1]);
             }
             const mightBeInterestedHandler = getMightBeInterestedHandler(this._commonSlashCommandConfigs.mightBeInterested);
-            this._extensionSlashCommandsOwner = new SlashCommandsOwner(extensionSlashCommands, { noInput: mightBeInterestedHandler, default: mightBeInterestedHandler });
+            this._extensionSlashCommandsOwner = new SlashCommandsOwner({ noInput: mightBeInterestedHandler, default: mightBeInterestedHandler });
+            this._extensionSlashCommandsOwner.addInvokeableSlashCommands(extensionSlashCommands);
         }
         return this._extensionSlashCommandsOwner;
     }
