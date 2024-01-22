@@ -60,7 +60,7 @@ export function registerChatAgent() {
         agent2.description = agentDescription;
         agent2.fullName = agentFullName;
         agent2.iconPath = vscode.Uri.joinPath(ext.context.extensionUri, "resources", "azure-color.svg");
-        agent2.slashCommandProvider = { provideSlashCommands: getSlashCommands };
+        agent2.subCommandProvider = { provideSubCommands: getSubCommands };
         agent2.followupProvider = { provideFollowups: followUpProvider };
     } catch (e) {
         console.log(e);
@@ -100,7 +100,7 @@ function followUpProvider(result: vscode.ChatAgentResult2, token: vscode.Cancell
     return followUp || [];
 }
 
-function getSlashCommands(_token: vscode.CancellationToken): vscode.ProviderResult<vscode.ChatAgentSlashCommand[]> {
+function getSubCommands(_token: vscode.CancellationToken): vscode.ProviderResult<vscode.ChatAgentSubCommand[]> {
     return agentSlashCommandsOwner.getSlashCommands().map(([name, config]) => ({ name: name, description: config.shortDescription }))
 }
 
