@@ -7,6 +7,8 @@
 import { type IAzureUserInput } from "@microsoft/vscode-azext-utils";
 import * as vscode from "vscode";
 /* eslint-disable-next-line @typescript-eslint/no-unused-vars */
+import { type AgentRequest } from "../agent";
+/* eslint-disable-next-line @typescript-eslint/no-unused-vars */
 import { type AzureUserInputQueue, type IAgentUserInput } from "./AgentUserInput";
 
 export type WizardBasedExtensionCommandConfig = {
@@ -98,20 +100,35 @@ export type WizardBasedExtensionConfig = {
 }
 
 export class WizardBasedExtension {
+    public readonly extensionId: string;
     public readonly displayName: string;
     public readonly runWizardCommandWithInputsCommandId: string;
 
-    private _config: WizardBasedExtensionConfig;
+    private readonly _config: WizardBasedExtensionConfig;
+    private _extension: vscode.Extension<object> | undefined;
 
     constructor(config: WizardBasedExtensionConfig) {
+        this.extensionId = config.extensionId;
         this.displayName = config.displayName;
         this.runWizardCommandWithInputsCommandId = config.runWizardCommandWithInputsCommandId;
         this._config = config;
     }
 
-    public async activate(): Promise<void> {
+    public isInstalled(): boolean {
         if (this._config.extensionId !== "") {
-            await vscode.extensions.getExtension(this._config.extensionId)?.activate();
+            this._extension = this._extension || vscode.extensions.getExtension(this._config.extensionId);
+            return !!this._extension;
+        }
+        return true;
+    }
+
+    public async activate(request: AgentRequest): Promise<void> {
+        if (this._config.extensionId !== "") {
+            this._extension = this._extension || vscode.extensions.getExtension(this._config.extensionId);
+            if (this._extension !== undefined) {
+                request.progress.report({ message: `Activating the ${this._config.displayName} extension...` })
+                await this._extension.activate();
+            }
         }
     }
 
@@ -121,7 +138,12 @@ export class WizardBasedExtension {
         } else if (typeof this._config.getWizardCommandsCommandId === "function") {
             return this._config.getWizardCommandsCommandId();
         } else {
-            return await vscode.commands.executeCommand<WizardBasedExtensionCommandConfig[]>(this._config.getWizardCommandsCommandId);
+            try {
+                return await vscode.commands.executeCommand<WizardBasedExtensionCommandConfig[]>(this._config.getWizardCommandsCommandId);
+            } catch (error) {
+                console.log(`Error getting wizard commands from ${this._config.displayName} extension: ${JSON.stringify(error)}`);
+                return [];
+            }
         }
     }
 

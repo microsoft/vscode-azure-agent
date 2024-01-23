@@ -17,7 +17,7 @@ export type BrainstormCommandConfig = {
     shortTopic: string;
     longTopic: string;
     noInputSuggestions: string[];
-    followUpApiProvider?: WizardBasedExtension;
+    associatedExtension?: WizardBasedExtension;
 }
 
 export function getBrainstormCommand(config: BrainstormCommandConfig): SlashCommand {
@@ -45,10 +45,15 @@ function brainstormHandler(config: BrainstormCommandConfig, request: AgentReques
                 if (ragContent !== undefined) {
                     request.progress.report({ reference: vscode.Uri.parse(ragContent.contentUrl) });
                 }
-                const followUps = [
-                    ...(config.followUpApiProvider !== undefined ? await generateExtensionCommandFollowUps(copilotResponse, config.followUpApiProvider, request) : []),
-                    ...(await generateNextQuestionsFollowUps(copilotResponse, request))
-                ];
+                const followUps: vscode.ChatAgentFollowup[] = [];
+                if (config.associatedExtension !== undefined && config.associatedExtension.isInstalled()) {
+                    followUps.push(...(await generateExtensionCommandFollowUps(copilotResponse, config.associatedExtension, request)));
+                } else if (config.associatedExtension !== undefined && !config.associatedExtension.isInstalled()) {
+                    request.progress.report({ content: `\n\nFor additional help related to ${config.longTopic}, install the ${config.associatedExtension.displayName} extension for VS Code.` });
+                    followUps.push({ commandId: "workbench.extensions.search", args: [config.associatedExtension.extensionId], title: `Install ${config.associatedExtension.displayName}` });
+                }
+                followUps.push(...(await generateNextQuestionsFollowUps(copilotResponse, request)));
+
                 return { chatAgentResult: {}, followUp: followUps, };
             }
         }
@@ -65,7 +70,7 @@ export type LearnCommandConfig = {
     shortTopic: string;
     longTopic: string;
     noInputSuggestions: string[];
-    followUpApiProvider?: WizardBasedExtension;
+    associatedExtension?: WizardBasedExtension;
 }
 
 export function getLearnCommand(config: LearnCommandConfig): SlashCommand {
@@ -93,10 +98,15 @@ function learnHandler(config: LearnCommandConfig, request: AgentRequest): Promis
                 if (ragContent !== undefined) {
                     request.progress.report({ reference: vscode.Uri.parse(ragContent.contentUrl) });
                 }
-                const followUps = [
-                    ...(config.followUpApiProvider !== undefined ? await generateExtensionCommandFollowUps(copilotResponse, config.followUpApiProvider, request) : []),
-                    ...(await generateNextQuestionsFollowUps(copilotResponse, request))
-                ];
+                const followUps: vscode.ChatAgentFollowup[] = [];
+                if (config.associatedExtension !== undefined && config.associatedExtension.isInstalled()) {
+                    followUps.push(...(await generateExtensionCommandFollowUps(copilotResponse, config.associatedExtension, request)));
+                } else if (config.associatedExtension !== undefined && !config.associatedExtension.isInstalled()) {
+                    request.progress.report({ content: `\n\nFor additional help related to ${config.longTopic}, install the ${config.associatedExtension.displayName} extension for VS Code.` });
+                    followUps.push({ commandId: "workbench.extensions.search", args: [config.associatedExtension.extensionId], title: `Install the ${config.associatedExtension.displayName} Extension` });
+                }
+                followUps.push(...(await generateNextQuestionsFollowUps(copilotResponse, request)));
+
                 return { chatAgentResult: {}, followUp: followUps, };
             }
         }
@@ -112,11 +122,19 @@ function getLearnSystemPrompt(config: LearnCommandConfig, ragContent: string | u
 export type MightBeInterestedHandlerConfig = {
     topic: string;
     suggestions: string[];
+    associatedExtension?: WizardBasedExtension;
 }
 
 export function getMightBeInterestedHandler(config: MightBeInterestedHandlerConfig): SlashCommandHandler {
     return async (request: AgentRequest) => {
         request.progress.report({ content: `Hi! It sounds like you might be interested in the ${config.topic}, however, I can't quite help with what you're asking about. Try asking something else.` });
+
+        const followUps: vscode.ChatAgentFollowup[] = [];
+        if (config.associatedExtension !== undefined && !config.associatedExtension.isInstalled()) {
+            request.progress.report({ content: `\n\nFor additional help related to ${config.topic}, install the ${config.associatedExtension.displayName} extension for VS Code.` });
+            followUps.push({ commandId: "workbench.extensions.search", args: [config.associatedExtension.extensionId], title: `Install ${config.associatedExtension.displayName}` });
+        }
+
         return {
             chatAgentResult: {},
             followUp: config.suggestions.map((suggestion) => ({ message: `@${agentName} ${suggestion}` }))

@@ -49,18 +49,18 @@ export class ExtensionSlashCommandsOwner {
     }
 
     private async _handleExtensionSlashCommand(request: AgentRequest): Promise<SlashCommandHandlerResult> {
-        const extensionLevelSlashCommandsOwner = await this._getExtensionSlashCommandsOwner();
+        const extensionLevelSlashCommandsOwner = await this._getExtensionSlashCommandsOwner(request);
         return await extensionLevelSlashCommandsOwner.handleRequestOrPrompt(request);
     }
 
-    private async _getExtensionSlashCommandsOwner(): Promise<SlashCommandsOwner> {
+    private async _getExtensionSlashCommandsOwner(request: AgentRequest): Promise<SlashCommandsOwner> {
         if (!this._extensionSlashCommandsOwner) {
+            await this._extension.activate(request);
+
             const extensionSlashCommands: SlashCommands = new Map([
                 getBrainstormCommand(this._commonSlashCommandConfigs.brainstorm),
                 getLearnCommand(this._commonSlashCommandConfigs.learn),
             ]);
-
-            await this._extension.activate();
 
             const extensionWizardCommands = await this._extension.getWizardCommands();
             for (const commandSchema of extensionWizardCommands) {
@@ -75,7 +75,7 @@ export class ExtensionSlashCommandsOwner {
     }
 }
 
-const functionsExtension = getNoCommandsWizardExtensionConfig("Azure Functions");
+const functionsExtension = getNoCommandsWizardExtensionConfig("Azure Functions", "ms-azuretools.vscode-azurefunctions");
 const functionsCommonSlashCommandConfigs: CommonSlashCommandAndHandlerConfigs = {
     brainstorm: {
         shortTopic: "Azure Functions",
@@ -85,7 +85,7 @@ const functionsCommonSlashCommandConfigs: CommonSlashCommandAndHandlerConfigs = 
             "How can I use Azure Functions to run background jobs or scheduled tasks?",
             "How can I use Azure Functions to process files as soon as they are uploaded?",
         ],
-        followUpApiProvider: functionsExtension,
+        associatedExtension: functionsExtension,
     },
     learn: {
         shortTopic: "Azure Functions",
@@ -95,15 +95,16 @@ const functionsCommonSlashCommandConfigs: CommonSlashCommandAndHandlerConfigs = 
             "How scalable is Azure functions?",
             "Is Azure functions serverless?",
         ],
-        followUpApiProvider: functionsExtension,
+        associatedExtension: functionsExtension,
     },
     mightBeInterested: {
-        topic: "Azure Functions extension for VS Code",
+        topic: "Azure Functions and/or the Azure Functions extension for VS Code",
         suggestions: [
             "I want to use Azure Functions to serve dynamic content and APIs.",
             "I want to use Azure Functions to run background jobs or scheduled tasks.",
             "I want to use Azure Functions to process files as soon as they are uploaded.",
-        ]
+        ],
+        associatedExtension: functionsExtension,
     }
 }
 export const functionsExtensionSlashCommandsOwner: ExtensionSlashCommandsOwner = new ExtensionSlashCommandsOwner(
@@ -114,7 +115,7 @@ export const functionsExtensionSlashCommandsOwner: ExtensionSlashCommandsOwner =
     functionsCommonSlashCommandConfigs
 );
 
-const storageExtension = getNoCommandsWizardExtensionConfig("Azure Storage");
+const storageExtension = getNoCommandsWizardExtensionConfig("Azure Storage", "ms-azuretools.vscode-azurestorage");
 const storageCommonSlashCommandConfigs: CommonSlashCommandAndHandlerConfigs = {
     brainstorm: {
         shortTopic: "Azure Storage",
@@ -123,7 +124,8 @@ const storageCommonSlashCommandConfigs: CommonSlashCommandAndHandlerConfigs = {
             "How can I use Azure Storage to store files?",
             "How can I use Azure Storage to communicate tasks between services?",
             "How can I use Azure Storage to store tabular data?",
-        ]
+        ],
+        associatedExtension: storageExtension,
     },
     learn: {
         shortTopic: "Azure Storage",
@@ -132,15 +134,17 @@ const storageCommonSlashCommandConfigs: CommonSlashCommandAndHandlerConfigs = {
             "What is the difference between Azure Storage and Azure CosmosDB?",
             "How scalable is Azure Storage?",
             "What developer tooling exists for Azure Storage?",
-        ]
+        ],
+        associatedExtension: storageExtension,
     },
     mightBeInterested: {
-        topic: "Azure Storage extension for VS Code",
+        topic: "Azure Storage and/or the Azure Storage extension for VS Code",
         suggestions: [
             "I want to use Azure Storage to to store files.",
             "I want to use Azure Storage to communicate tasks between services.",
             "I want to use Azure Storage to store tabular data.",
-        ]
+        ],
+        associatedExtension: storageExtension,
     }
 }
 export const storageExtensionSlashCommandsOwner: ExtensionSlashCommandsOwner = new ExtensionSlashCommandsOwner(
@@ -151,7 +155,7 @@ export const storageExtensionSlashCommandsOwner: ExtensionSlashCommandsOwner = n
     storageCommonSlashCommandConfigs
 );
 
-const appServiceExtension = getNoCommandsWizardExtensionConfig("Azure App Service");
+const appServiceExtension = getNoCommandsWizardExtensionConfig("Azure App Service", "ms-azuretools.vscode-azureappservice");
 const appServiceCommonSlashCommandConfigs: CommonSlashCommandAndHandlerConfigs = {
     brainstorm: {
         shortTopic: "Azure App Service",
@@ -160,7 +164,8 @@ const appServiceCommonSlashCommandConfigs: CommonSlashCommandAndHandlerConfigs =
             "How can I use Azure App Service to host a website?",
             "How can I use Azure App Service to host an API?",
             "How can I use Azure App Service to host a web app?",
-        ]
+        ],
+        associatedExtension: appServiceExtension,
     },
     learn: {
         shortTopic: "Azure App Service",
@@ -169,15 +174,17 @@ const appServiceCommonSlashCommandConfigs: CommonSlashCommandAndHandlerConfigs =
             "What is the difference between Azure App Service and Azure Functions?",
             "How scalable is Azure App Service?",
             "What programming languages can I use to create an Azure App Service?",
-        ]
+        ],
+        associatedExtension: appServiceExtension,
     },
     mightBeInterested: {
-        topic: "Azure App Service extension for VS Code",
+        topic: "Azure App Service and/or the Azure App Service extension for VS Code",
         suggestions: [
             "I want to use Azure App Service to host a website.",
             "I want to use Azure App Service to host an API.",
             "I want to use Azure App Service to host a web app.",
-        ]
+        ],
+        associatedExtension: appServiceExtension,
     }
 };
 export const appServiceExtensionSlashCommandsOwner: ExtensionSlashCommandsOwner = new ExtensionSlashCommandsOwner(
