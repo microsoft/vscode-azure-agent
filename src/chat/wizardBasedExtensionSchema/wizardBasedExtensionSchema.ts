@@ -7,7 +7,8 @@
 import { type IAzureUserInput } from "@microsoft/vscode-azext-utils";
 import * as vscode from "vscode";
 /* eslint-disable-next-line @typescript-eslint/no-unused-vars */
-import { AgentRequest } from "../agent";
+import { type AgentRequest } from "../agent";
+/* eslint-disable-next-line @typescript-eslint/no-unused-vars */
 import { type AzureUserInputQueue, type IAgentUserInput } from "./AgentUserInput";
 
 export type WizardBasedExtensionCommandConfig = {
@@ -104,7 +105,7 @@ export class WizardBasedExtension {
     public readonly runWizardCommandWithInputsCommandId: string;
 
     private readonly _config: WizardBasedExtensionConfig;
-    private _extension: vscode.Extension<any> | undefined;
+    private _extension: vscode.Extension<object> | undefined;
 
     constructor(config: WizardBasedExtensionConfig) {
         this.extensionId = config.extensionId;
