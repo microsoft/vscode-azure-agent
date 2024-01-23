@@ -98,12 +98,13 @@ const functionsCommonSlashCommandConfigs: CommonSlashCommandAndHandlerConfigs = 
         associatedExtension: functionsExtension,
     },
     mightBeInterested: {
-        topic: "Azure Functions extension for VS Code",
+        topic: "Azure Functions and/or the Azure Functions extension for VS Code",
         suggestions: [
             "I want to use Azure Functions to serve dynamic content and APIs.",
             "I want to use Azure Functions to run background jobs or scheduled tasks.",
             "I want to use Azure Functions to process files as soon as they are uploaded.",
-        ]
+        ],
+        associatedExtension: functionsExtension,
     }
 }
 export const functionsExtensionSlashCommandsOwner: ExtensionSlashCommandsOwner = new ExtensionSlashCommandsOwner(
@@ -137,12 +138,13 @@ const storageCommonSlashCommandConfigs: CommonSlashCommandAndHandlerConfigs = {
         associatedExtension: storageExtension,
     },
     mightBeInterested: {
-        topic: "Azure Storage extension for VS Code",
+        topic: "Azure Storage and/or the Azure Storage extension for VS Code",
         suggestions: [
             "I want to use Azure Storage to to store files.",
             "I want to use Azure Storage to communicate tasks between services.",
             "I want to use Azure Storage to store tabular data.",
-        ]
+        ],
+        associatedExtension: storageExtension,
     }
 }
 export const storageExtensionSlashCommandsOwner: ExtensionSlashCommandsOwner = new ExtensionSlashCommandsOwner(
@@ -176,12 +178,13 @@ const appServiceCommonSlashCommandConfigs: CommonSlashCommandAndHandlerConfigs =
         associatedExtension: appServiceExtension,
     },
     mightBeInterested: {
-        topic: "Azure App Service extension for VS Code",
+        topic: "Azure App Service and/or the Azure App Service extension for VS Code",
         suggestions: [
             "I want to use Azure App Service to host a website.",
             "I want to use Azure App Service to host an API.",
             "I want to use Azure App Service to host a web app.",
-        ]
+        ],
+        associatedExtension: appServiceExtension,
     }
 };
 export const appServiceExtensionSlashCommandsOwner: ExtensionSlashCommandsOwner = new ExtensionSlashCommandsOwner(
