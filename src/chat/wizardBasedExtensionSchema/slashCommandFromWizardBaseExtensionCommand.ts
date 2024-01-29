@@ -3,12 +3,11 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { UserCancelledError, type PromptResult } from "@microsoft/vscode-azext-utils";
+import { UserCancelledError, type AgentInputBoxOptions, type AgentQuickPickItem, type AgentQuickPickOptions, type AzureUserInputQueue, type IAzureAgentInput, type ParameterAgentMetadata, type PromptResult } from "@microsoft/vscode-azext-utils";
 import * as vscode from "vscode";
 import { type AgentRequest } from "../agent";
 import { getResponseAsStringCopilotInteraction, getStringFieldFromCopilotResponseMaybeWithStrJson } from "../copilotInteractions";
 import { type SlashCommand, type SlashCommandHandlerResult } from "../slashCommands";
-import { type AgentInputBoxOptions, type AgentQuickPickItem, type AgentQuickPickOptions, type AzureUserInputQueue, type IAgentUserInput } from "./AgentUserInput";
 import { type WizardBasedExtension, type WizardBasedExtensionCommandConfig } from "./wizardBasedExtensionSchema";
 
 export function slashCommandFromWizardBasedExtensionCommand(command: WizardBasedExtensionCommandConfig, extension: WizardBasedExtension): SlashCommand {
@@ -24,25 +23,25 @@ export function slashCommandFromWizardBasedExtensionCommand(command: WizardBased
                 const agentAzureUserInput = new AgentAzureUserInput(request);
                 await extension.runWizardCommand(command, agentAzureUserInput);
 
-                const { pickedParameters, unfilfilledParameters, inputQueue } = agentAzureUserInput.getInteractionResults();
+                const { pickedParameters, unfulfilledParameters, inputQueue } = agentAzureUserInput.getInteractionResults();
 
                 const markdownResponseLines = [`Ok, I can help you by using the the **${command.displayName}** command from the **${extension.displayName}** extension.`];
 
                 if (Object.keys(pickedParameters).length > 0) {
                     markdownResponseLines.push(`I have determined the following information needed for **${command.displayName}** based on our conversation:`);
-                    markdownResponseLines.push(...Object.keys(pickedParameters).map((parameterName) => `- ${pickedParameters[parameterName].parameterTitle}: ${pickedParameters[parameterName].pickedValueLabel}`));
+                    markdownResponseLines.push(...Object.keys(pickedParameters).map((parameterName) => `- ${pickedParameters[parameterName].parameterDisplayTitle}: ${pickedParameters[parameterName].pickedValueLabel}`));
                     markdownResponseLines.push(`\nIf any of that information is incorrect, feel free to ask me to change it or start over.`);
                     markdownResponseLines.push(`\nOtherwise, you can go ahead and start with that by clicking the **${command.displayName}** button below.`);
-                    if (Object.keys(unfilfilledParameters).length > 0) {
+                    if (Object.keys(unfulfilledParameters).length > 0) {
                         markdownResponseLines.push(`\nYou can also provide me more information. I am at least interested in knowing:`);
-                        markdownResponseLines.push(...Object.keys(unfilfilledParameters).map((parameterName) => `- ${unfilfilledParameters[parameterName].parameterTitle}: ${unfilfilledParameters[parameterName].parameterDescription}`));
+                        markdownResponseLines.push(...Object.keys(unfulfilledParameters).map((parameterName) => `- ${unfulfilledParameters[parameterName].parameterDisplayTitle}: ${unfulfilledParameters[parameterName].parameterDisplayDescription}`));
                     }
                 } else {
                     markdownResponseLines.push(`\nI was not able to determine any of the information needed for **${command.displayName}** based on our conversation.`);
                     markdownResponseLines.push(`\nYou can go ahead and click the **${command.displayName}** button below to get started, or provide me with more information.`);
-                    if (Object.keys(unfilfilledParameters).length > 0) {
+                    if (Object.keys(unfulfilledParameters).length > 0) {
                         markdownResponseLines.push(`\nIf you'd like to provide me with more information. I am at least interested in knowing:`);
-                        markdownResponseLines.push(...Object.keys(unfilfilledParameters).map((parameterName) => `- ${unfilfilledParameters[parameterName].parameterTitle}: ${unfilfilledParameters[parameterName].parameterDescription}`));
+                        markdownResponseLines.push(...Object.keys(unfulfilledParameters).map((parameterName) => `- ${unfulfilledParameters[parameterName].parameterDisplayTitle}: ${unfulfilledParameters[parameterName].parameterDisplayDescription}`));
                     }
                 }
 
@@ -94,25 +93,21 @@ function getPickQuickPickItemSystemPrompt1(items: AgentQuickPickItem[], options:
     ].filter(s => !!s).join(" ");
 }
 
-type AzureAgentUserInputPickedParameters = { [parameterName: string]: { parameterTitle: string, pickedValueLabel: string } };
-type AzureAgentUserInputUnfilfilledParameters = { [parameterName: string]: { parameterTitle: string, parameterDescription: string } };
-type AzureAgentUserInputResults = {
-    pickedParameters: AzureAgentUserInputPickedParameters;
-    unfilfilledParameters: AzureAgentUserInputUnfilfilledParameters;
-    inputQueue: AzureUserInputQueue;
-};
+type PickedParameters = { [parameterName: string]: ParameterAgentMetadata & { pickedValueLabel: string } };
+type UnfulfilledParameters = { [parameterName: string]: ParameterAgentMetadata };
+type AzureAgentUserInputResults = { pickedParameters: PickedParameters; unfulfilledParameters: UnfulfilledParameters; inputQueue: AzureUserInputQueue; };
 
-class AgentAzureUserInput implements IAgentUserInput {
+class AgentAzureUserInput implements IAzureAgentInput {
     private _request: AgentRequest;
-    private _pickedParameters: AzureAgentUserInputPickedParameters;
-    private _unfilfilledParameters: AzureAgentUserInputUnfilfilledParameters;
+    private _pickedParameters: PickedParameters;
+    private _unfulfilledParameters: UnfulfilledParameters;
     private _userInputReturnValueQueue: AzureUserInputQueue;
     private _onDidFinishPromptEventEmitter: vscode.EventEmitter<PromptResult>;
 
     constructor(request: AgentRequest) {
         this._request = request;
         this._pickedParameters = {};
-        this._unfilfilledParameters = {};
+        this._unfulfilledParameters = {};
         this._userInputReturnValueQueue = [];
         this._onDidFinishPromptEventEmitter = new vscode.EventEmitter<PromptResult>();
     }
@@ -134,18 +129,18 @@ class AgentAzureUserInput implements IAgentUserInput {
         const parameterName = options.agentMetadata.parameterName;
         const pickedItem = await pickQuickPickItem(this._request, items, options);
         if (pickedItem !== undefined) {
-            this._pickedParameters[parameterName] = { parameterTitle: options.agentMetadata.paramterNameTitle, pickedValueLabel: pickedItem.label };
+            this._pickedParameters[parameterName] = { ...options.agentMetadata, pickedValueLabel: pickedItem.label };
             this._userInputReturnValueQueue.push(pickedItem);
             this._onDidFinishPromptEventEmitter.fire({ value: pickedItem });
             return pickedItem;
         } else {
-            this._unfilfilledParameters[parameterName] = { parameterTitle: options.agentMetadata.paramterNameTitle, parameterDescription: options.agentMetadata.parameterDescription };
+            this._unfulfilledParameters[parameterName] = { ...options.agentMetadata };
             throw new UserCancelledError(parameterName);
         }
     }
 
     public async showInputBox(options: AgentInputBoxOptions): Promise<string> {
-        this._unfilfilledParameters[options.agentMetadata.parameterName] = { parameterTitle: options.agentMetadata.paramterNameTitle, parameterDescription: options.agentMetadata.parameterDescription };
+        this._unfulfilledParameters[options.agentMetadata.parameterName] = { ...options.agentMetadata };
         this._userInputReturnValueQueue.push(undefined);
         return "AGENTSKIPPING";
     }
@@ -165,7 +160,7 @@ class AgentAzureUserInput implements IAgentUserInput {
     public getInteractionResults(): AzureAgentUserInputResults {
         return {
             pickedParameters: this._pickedParameters,
-            unfilfilledParameters: this._unfilfilledParameters,
+            unfulfilledParameters: this._unfulfilledParameters,
             inputQueue: this._userInputReturnValueQueue,
         };
     }
