@@ -4,12 +4,11 @@
  *--------------------------------------------------------------------------------------------*/
 
 /* eslint-disable-next-line @typescript-eslint/no-unused-vars */
-import { type IAzureUserInput } from "@microsoft/vscode-azext-utils";
 import * as vscode from "vscode";
 /* eslint-disable-next-line @typescript-eslint/no-unused-vars */
 import { type AgentRequest } from "../agent";
 /* eslint-disable-next-line @typescript-eslint/no-unused-vars */
-import { type AzureUserInputQueue, type IAgentUserInput } from "./AgentUserInput";
+import { type AzureUserInputQueue, type IAzureAgentInput } from "@microsoft/vscode-azext-utils";
 
 export type WizardBasedExtensionCommandConfig = {
     /**
@@ -84,7 +83,7 @@ export type WizardBasedExtensionConfig = {
      *
      * The command should take two parameters:
      * - A {@link WizardBasedExtensionCommandConfig}: the command that should be run.
-     * - A {@link IAzureUserInput}: the user input that the command should use when needing to present user input.
+     * - A {@link IAzureAgentInput}: the user input that the command should use when needing to present user input.
      */
     readonly runWizardCommandId: string;
 
@@ -147,7 +146,7 @@ export class WizardBasedExtension {
         }
     }
 
-    public async runWizardCommand(command: WizardBasedExtensionCommandConfig, agentAzureUserInput: IAgentUserInput): Promise<void> {
+    public async runWizardCommand(command: WizardBasedExtensionCommandConfig, agentAzureUserInput: IAzureAgentInput): Promise<void> {
         if (this._config.runWizardCommandId !== "") {
             await vscode.commands.executeCommand(this._config.runWizardCommandId, command, agentAzureUserInput);
         }
