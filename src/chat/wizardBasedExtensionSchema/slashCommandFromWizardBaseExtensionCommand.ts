@@ -60,39 +60,6 @@ export function slashCommandFromWizardBasedExtensionCommand(command: WizardBased
     ]
 }
 
-async function pickQuickPickItem<T extends AgentQuickPickItem>(request: AgentRequest, items: T[] | Thenable<T[]>, options: AgentQuickPickOptions): Promise<T | undefined> {
-    const resolvedItems = await Promise.resolve(items);
-    resolvedItems.forEach((item) => item.agentMetadata = item.agentMetadata || {});
-
-    const systemPrompt = getPickQuickPickItemSystemPrompt1(resolvedItems, options);
-    const maybeJsonCopilotResponse = await getResponseAsStringCopilotInteraction(systemPrompt, request);
-    const copilotPickedItemTitle = getStringFieldFromCopilotResponseMaybeWithStrJson(maybeJsonCopilotResponse, ["value", "parameter", "parameterValue", options.agentMetadata.parameterName || "value"]);
-    return copilotPickedItemTitle === undefined ? undefined : resolvedItems.find((i) => i.label === copilotPickedItemTitle);
-}
-
-function getPickQuickPickItemSystemPrompt1(items: AgentQuickPickItem[], options: AgentQuickPickOptions): string {
-    const itemToString = (item: AgentQuickPickItem): string => `'${item.label}'${item.description ? ` (${item.description || ""})` : ""}`;
-    const itemsString = items
-        .filter((item) => item.kind !== vscode.QuickPickItemKind.Separator)
-        .filter((item) => item.agentMetadata.notApplicableToAgentPick !== true)
-        .map(itemToString).join(", ")
-        // remove all theme-icons (anything like $(<name>)) from the itemString
-        .replace(/\$\([^)]*\)/g, "")
-        // after removing theme icons, there may be empty parens, remove those
-        .replace(/\(\)/g, "")
-        // some item descriptions may already have parens, so we need to remove double open-parens
-        .replace(/\(\(/g, "(")
-        // some item descriptions may already have parens, so we need to remove double close-parens
-        .replace(/\)\)/g, ")");
-
-    return [
-        `You are an expert in determining the value of a '${options.agentMetadata.parameterName}' parameter based on user input.`,
-        `The possible values for the parameter are: ${itemsString}.`,
-        `Given the user's input, your job is to determine a value for '${options.agentMetadata.parameterName}'.`,
-        `Only repsond with a JSON summary (for example, '{value: "xyz"}') of the value you determine. Do not respond in a coverstaional tone, only JSON. If the users input does not infer or specify a value for this parameter, then do not respond.`,
-    ].filter(s => !!s).join(" ");
-}
-
 type PickedParameters = { [parameterName: string]: ParameterAgentMetadata & { pickedValueLabel: string } };
 type UnfulfilledParameters = { [parameterName: string]: ParameterAgentMetadata };
 type AzureAgentUserInputResults = { pickedParameters: PickedParameters; unfulfilledParameters: UnfulfilledParameters; inputQueue: AzureUserInputQueue; };
@@ -112,22 +79,18 @@ class AgentAzureUserInput implements IAzureAgentInput {
         this._onDidFinishPromptEventEmitter = new vscode.EventEmitter<PromptResult>();
     }
 
-    public async showQuickPick<T extends AgentQuickPickItem>(items: T[] | Thenable<T[]>, options: (AgentQuickPickOptions & { canPickMany: true }) | AgentQuickPickOptions): Promise<T | T[]> {
-        if (options.canPickMany) {
-            throw new Error("canPickMany is not supported.");
-        }
-
-        // Hack until Nathan or Alex go and add agentMetadata to wherever the heck subscription picks are defined
+    public async showQuickPick<T extends AgentQuickPickItem>(items: T[] | Promise<T[]>, options: (AgentQuickPickOptions & { canPickMany: true }) | AgentQuickPickOptions): Promise<T | T[]> {
+        // Hack until someone else goes and adds agentMetadata to wherever the heck subscription picks are defined
         if (options.placeHolder?.indexOf("subscription") !== -1) {
             options.agentMetadata = options.agentMetadata || {
-                paramterNameTitle: "Subscription",
                 parameterName: "subscription",
-                parameterDescription: "The subscription that the resource should be created in.",
+                parameterDisplayTitle: "Subscription",
+                parameterDisplayDescription: "The subscription that the resource should be created in.",
             }
         }
 
         const parameterName = options.agentMetadata.parameterName;
-        const pickedItem = await pickQuickPickItem(this._request, items, options);
+        const pickedItem = options.canPickMany ? undefined : await this._pickQuickPickItem(this._request, items, options);
         if (pickedItem !== undefined) {
             this._pickedParameters[parameterName] = { ...options.agentMetadata, pickedValueLabel: pickedItem.label };
             this._userInputReturnValueQueue.push(pickedItem);
@@ -140,17 +103,25 @@ class AgentAzureUserInput implements IAzureAgentInput {
     }
 
     public async showInputBox(options: AgentInputBoxOptions): Promise<string> {
-        this._unfulfilledParameters[options.agentMetadata.parameterName] = { ...options.agentMetadata };
-        this._userInputReturnValueQueue.push(undefined);
-        return "AGENTSKIPPING";
+        const parameterName = options.agentMetadata.parameterName;
+        const providedInput = await this._provideInput(this._request, options);
+        if (providedInput !== undefined) {
+            this._pickedParameters[parameterName] = { ...options.agentMetadata, pickedValueLabel: providedInput };
+            this._userInputReturnValueQueue.push(providedInput);
+            this._onDidFinishPromptEventEmitter.fire({ value: providedInput });
+            return providedInput;
+        } else {
+            this._unfulfilledParameters[parameterName] = { ...options.agentMetadata };
+            throw new UserCancelledError(parameterName);
+        }
     }
 
     public async showWarningMessage<T extends vscode.MessageItem>(_message: string, ..._items: T[]): Promise<T> {
-        throw new Error("Method not implemented.");
+        throw new UserCancelledError();
     }
 
     public async showOpenDialog(_options: vscode.OpenDialogOptions): Promise<vscode.Uri[]> {
-        throw new Error("Method not implemented.");
+        throw new UserCancelledError();
     }
 
     public get onDidFinishPrompt() {
@@ -163,5 +134,54 @@ class AgentAzureUserInput implements IAzureAgentInput {
             unfulfilledParameters: this._unfulfilledParameters,
             inputQueue: this._userInputReturnValueQueue,
         };
+    }
+
+    private async _pickQuickPickItem<T extends AgentQuickPickItem>(request: AgentRequest, items: T[] | Promise<T[]>, options: AgentQuickPickOptions): Promise<T | undefined> {
+        const resolvedItems = await Promise.resolve(items);
+        resolvedItems.forEach((item) => item.agentMetadata = item.agentMetadata || {});
+
+        const systemPrompt = this._getPickQuickPickItemSystemPrompt1(resolvedItems, options);
+        const maybeJsonCopilotResponse = await getResponseAsStringCopilotInteraction(systemPrompt, request);
+        const copilotPickedItemTitle = getStringFieldFromCopilotResponseMaybeWithStrJson(maybeJsonCopilotResponse, ["value", "parameter", "parameterValue", options.agentMetadata.parameterName || "value"]);
+        return copilotPickedItemTitle === undefined ? undefined : resolvedItems.find((i) => i.label === copilotPickedItemTitle);
+    }
+
+    private _getPickQuickPickItemSystemPrompt1(items: AgentQuickPickItem[], options: AgentQuickPickOptions): string {
+        const itemToString = (item: AgentQuickPickItem): string => `'${item.label}'${item.description ? ` (${item.description || ""})` : ""}`;
+        const itemsString = items
+            .filter((item) => item.kind !== vscode.QuickPickItemKind.Separator)
+            .filter((item) => item.agentMetadata.notApplicableToAgentPick !== true)
+            .map(itemToString).join(", ")
+            // remove all theme-icons (anything like $(<name>)) from the itemString
+            .replace(/\$\([^)]*\)/g, "")
+            // after removing theme icons, there may be empty parens, remove those
+            .replace(/\(\)/g, "")
+            // some item descriptions may already have parens, so we need to remove double open-parens
+            .replace(/\(\(/g, "(")
+            // some item descriptions may already have parens, so we need to remove double close-parens
+            .replace(/\)\)/g, ")");
+
+        return [
+            `You are an expert in determining the value of a '${options.agentMetadata.parameterName}' parameter based on user input.`,
+            `The possible values for the parameter are: ${itemsString}.`,
+            `Given the user's input, your job is to determine a value for '${options.agentMetadata.parameterName}'.`,
+            `Only repsond with a JSON summary (for example, '{value: "xyz"}') of the value you determine. Do not respond in a coverstaional tone, only JSON. If the users input does not infer or specify a value for this parameter, then do not respond.`,
+        ].filter(s => !!s).join(" ");
+    }
+
+    private async _provideInput(request: AgentRequest, options: AgentInputBoxOptions): Promise<string | undefined> {
+        const systemPrompt = this._getProvideInputSystemPrompt1(options);
+        const maybeJsonCopilotResponse = await getResponseAsStringCopilotInteraction(systemPrompt, request);
+        const copilotProvidedInput = getStringFieldFromCopilotResponseMaybeWithStrJson(maybeJsonCopilotResponse, ["value", "parameter", "parameterValue", options.agentMetadata.parameterName || "value"]);
+        return copilotProvidedInput;
+    }
+
+    private _getProvideInputSystemPrompt1(options: AgentInputBoxOptions): string {
+        return [
+            `You are an expert in determining the value of a '${options.agentMetadata.parameterName}' parameter based on user input.`,
+            `This parameter is a string input, for which you must come up with a value for.`,
+            `Given the user's input, your job is to determine a string value for '${options.agentMetadata.parameterName}'.`,
+            `Only repsond with a JSON summary (for example, '{value: "xyz"}') of the value you determine. Do not respond in a coverstaional tone, only JSON.`,
+        ].filter(s => !!s).join(" ");
     }
 }
