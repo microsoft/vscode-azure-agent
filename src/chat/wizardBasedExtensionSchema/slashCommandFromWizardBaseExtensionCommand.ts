@@ -137,20 +137,25 @@ class AgentAzureUserInput implements IAzureAgentInput {
     }
 
     private async _pickQuickPickItem<T extends AgentQuickPickItem>(request: AgentRequest, items: T[] | Promise<T[]>, options: AgentQuickPickOptions): Promise<T | undefined> {
-        const resolvedItems = await Promise.resolve(items);
-        resolvedItems.forEach((item) => item.agentMetadata = item.agentMetadata || {});
-
-        const systemPrompt = this._getPickQuickPickItemSystemPrompt1(resolvedItems, options);
-        const maybeJsonCopilotResponse = await getResponseAsStringCopilotInteraction(systemPrompt, request);
-        const copilotPickedItemTitle = getStringFieldFromCopilotResponseMaybeWithStrJson(maybeJsonCopilotResponse, ["value", "parameter", "parameterValue", options.agentMetadata.parameterName || "value"]);
-        return copilotPickedItemTitle === undefined ? undefined : resolvedItems.find((i) => i.label === copilotPickedItemTitle);
+        const resolvedApplicableItems = (await Promise.resolve(items))
+            .map((item) => ({ ...item, agentMetadata: options.agentMetadata || {} }))
+            .filter((item) => item.kind !== vscode.QuickPickItemKind.Separator)
+            .filter((item) => item.agentMetadata.notApplicableToAgentPick !== true);
+        if (resolvedApplicableItems.length === 0) {
+            return undefined;
+        } else if (resolvedApplicableItems.length === 1) {
+            return resolvedApplicableItems[0];
+        } else {
+            const systemPrompt = this._getPickQuickPickItemSystemPrompt1(resolvedApplicableItems, options);
+            const maybeJsonCopilotResponse = await getResponseAsStringCopilotInteraction(systemPrompt, request);
+            const copilotPickedItemTitle = getStringFieldFromCopilotResponseMaybeWithStrJson(maybeJsonCopilotResponse, ["value", "parameter", "parameterValue", options.agentMetadata.parameterName || "value"]);
+            return copilotPickedItemTitle === undefined ? undefined : resolvedApplicableItems.find((i) => i.label === copilotPickedItemTitle);
+        }
     }
 
     private _getPickQuickPickItemSystemPrompt1(items: AgentQuickPickItem[], options: AgentQuickPickOptions): string {
         const itemToString = (item: AgentQuickPickItem): string => `'${item.label}'${item.description ? ` (${item.description || ""})` : ""}`;
         const itemsString = items
-            .filter((item) => item.kind !== vscode.QuickPickItemKind.Separator)
-            .filter((item) => item.agentMetadata.notApplicableToAgentPick !== true)
             .map(itemToString).join(", ")
             // remove all theme-icons (anything like $(<name>)) from the itemString
             .replace(/\$\([^)]*\)/g, "")
