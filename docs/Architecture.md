@@ -40,14 +40,14 @@ Therefore, in the future, exposing commands as "wizard based" may not be the onl
 
 When a wizard based command's subcommand is executed, the following will essentially happen:
 
-1. The agent tells the associated Azure Extension for VS Code to execute the command, passing along an `IAzureAgentInput` object. This object will be used by the command's wizard instead of the typical `IAzureUserInput` object.
-1. The associated Azure Extension for VS Code will eventually run the wizard for the command. Anytime a wizard step calls a UI prompt method (e.g. `showQuickPick`), the provided `IAzureAgentInput` object will be used and result in a callback to the agent extension.
+1. The agent tells the associated Azure Extension for VS Code to execute the command in a way that results in no actual execution or changes, only prompting. As part of this request, the agent passes an `IAzureAgentInput` object. The extension will use this objectwhen executing the command's wizard instead of the typical `IAzureUserInput` object.
+1. The extension will eventually run the wizard for the command. Anytime a wizard step calls a UI prompt method (e.g. `showQuickPick`), the provided `IAzureAgentInput` object will be used, thus resulting in a callback to the agent extension.
 1. The agent extension will receive the request for a UI prompt, and given the information associated with the request, will invoke the GitHub Copilot LLM to determine how best to respond to the prompt.
-   1. If the agent can determine the best response, it will cache that value and use it to respond to the prompt, thus allowing the wizard to continue, thus returning to the earlier step.
+   1. If the agent can determine the best response, it will cache the response value and use it to respond to the prompt, thus allowing the wizard to continue until the next request for a UI prompt.
    1. If the agent cannot determine the best response, it will cache that it could not do so.
-      1. If the request gives information on a value which can be used to skip past the prompt, the agent will cache the fact that the prompt was not answered and use that value to respond to the prompt.
-      1. If the request does not give information on a value which can be used to skip past the prompt, the agent will cache that fact and terminate the wizard/command.
-1. If the wizard is able to reach completion, the command should terminate without doing any execution.
+      1. If the request for a UI prompt includes information on a value which can be used to skip past the prompt, the agent will cache the fact that the prompt was not answered and use that value to respond to the prompt, thus allowing the wizard to continue until the next request for a UI prompt.
+      1. If the request for a UI prompt does not include information on a value which can be used to skip past the prompt, the agent will cache that fact and terminate the wizard.
+1. If the wizard is able to reach completion, or if it is terminated by the agent, the command then terminates without doing any execution.
 
 Once the wizard/command terminates, the agent will present all the information it has gathered and present it to the user in a single message. This includes:
 - What command was chosen as the best command used to fulfill the user's prompt
