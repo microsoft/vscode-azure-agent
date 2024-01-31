@@ -11,9 +11,9 @@ import { agentDescription, agentFullName, agentName, maxFollowUps } from "./agen
 import { agentHelpCommandName, getAgentHelpCommand } from "./agentHelpSlashCommand";
 import { AgentBenchmarker } from "./benchmarking/benchmarking";
 import { verbatimCopilotInteraction } from "./copilotInteractions";
+import { appServiceExtensionSlashCommandsOwner, functionsExtensionSlashCommandsOwner, storageExtensionSlashCommandsOwner } from "./extensions/wizardExtensions";
 import { getRagStatusSlashCommand, toggleRagSlashCommand } from "./rag";
 import { SlashCommandsOwner, type SlashCommandHandlerResult } from "./slashCommands";
-import { appServiceExtensionSlashCommandsOwner, functionsExtensionSlashCommandsOwner, storageExtensionSlashCommandsOwner } from "./wizardBasedExtensionSchema/wizardExtensions";
 
 export type AgentRequest = {
     slashCommand?: string;
