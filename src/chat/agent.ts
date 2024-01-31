@@ -13,7 +13,7 @@ import { AgentBenchmarker } from "./benchmarking/benchmarking";
 import { verbatimCopilotInteraction } from "./copilotInteractions";
 import { getRagStatusSlashCommand, toggleRagSlashCommand } from "./rag";
 import { SlashCommandsOwner, type SlashCommandHandlerResult } from "./slashCommands";
-import { appServiceExtensionSlashCommandsOwner, functionsExtensionSlashCommandsOwner, storageExtensionSlashCommandsOwner } from "./wizardBasedExtensionSchema/knownWizardBasedExtensions";
+import { appServiceExtensionSlashCommandsOwner, functionsExtensionSlashCommandsOwner, storageExtensionSlashCommandsOwner } from "./wizardBasedExtensionSchema/wizardExtensions";
 
 export type AgentRequest = {
     slashCommand?: string;

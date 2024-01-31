@@ -11,7 +11,7 @@ import { verbatimCopilotInteraction } from "./copilotInteractions";
 import { generateExtensionCommandFollowUps, generateNextQuestionsFollowUps } from "./followUpGenerator";
 import { getMicrosoftLearnRagContent } from "./rag";
 import { type SlashCommand, type SlashCommandHandler, type SlashCommandHandlerResult } from "./slashCommands";
-import { type WizardBasedExtension } from "./wizardBasedExtensionSchema/wizardBasedExtension";
+import { type WizardBasedExtension } from "./wizardBasedExtensionSchema/wizardBasedExtensionSchema";
 
 export type BrainstormCommandConfig = {
     shortTopic: string;

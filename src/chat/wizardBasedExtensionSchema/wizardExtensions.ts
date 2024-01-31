@@ -4,7 +4,7 @@
 *--------------------------------------------------------------------------------------------*/
 
 import { ExtensionSlashCommandsOwner, type CommonSlashCommandAndHandlerConfigs } from "../extensionSlashCommands";
-import { WizardBasedExtension } from "./wizardBasedExtension";
+import { WizardBasedExtension } from "./wizardBasedExtensionSchema";
 
 const functionsExtension = new WizardBasedExtension("ms-azuretools.vscode-azurefunctions", "Azure Functions");
 const functionsCommonSlashCommandConfigs: CommonSlashCommandAndHandlerConfigs = {
