@@ -6,7 +6,7 @@
 import { ExtensionSlashCommandsOwner, type CommonSlashCommandAndHandlerConfigs } from "./extensionSlashCommands";
 import { WizardBasedExtension } from "./wizardBasedExtension";
 
-const functionsExtension = new WizardBasedExtension("ms-azuretools.vscode-azurefunctions", "Azure Functions");
+export const functionsExtension = new WizardBasedExtension("ms-azuretools.vscode-azurefunctions", "Azure Functions");
 const functionsCommonSlashCommandConfigs: CommonSlashCommandAndHandlerConfigs = {
     brainstorm: {
         shortTopic: "Azure Functions",
@@ -46,7 +46,7 @@ export const functionsExtensionSlashCommandsOwner: ExtensionSlashCommandsOwner =
     functionsCommonSlashCommandConfigs
 );
 
-const storageExtension = new WizardBasedExtension("ms-azuretools.vscode-azurestorage", "Azure Storage");
+export const storageExtension = new WizardBasedExtension("ms-azuretools.vscode-azurestorage", "Azure Storage");
 const storageCommonSlashCommandConfigs: CommonSlashCommandAndHandlerConfigs = {
     brainstorm: {
         shortTopic: "Azure Storage",
@@ -86,7 +86,7 @@ export const storageExtensionSlashCommandsOwner: ExtensionSlashCommandsOwner = n
     storageCommonSlashCommandConfigs
 );
 
-const appServiceExtension = new WizardBasedExtension("ms-azuretools.vscode-azureappservice", "Azure App Service");
+export const appServiceExtension = new WizardBasedExtension("ms-azuretools.vscode-azureappservice", "Azure App Service");
 const appServiceCommonSlashCommandConfigs: CommonSlashCommandAndHandlerConfigs = {
     brainstorm: {
         shortTopic: "Azure App Service",

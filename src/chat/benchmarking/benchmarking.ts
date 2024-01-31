@@ -3,44 +3,13 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
+import { type AgentBenchmarkConfig } from "@microsoft/vscode-azext-utils";
 import type * as vscode from "vscode";
 import { type AgentRequest, type IAgentRequestHandler } from "../agent";
 import { agentName } from "../agentConsts";
+import { type WizardBasedExtension } from "../extensions/wizardBasedExtension";
+import { appServiceExtension, functionsExtension, storageExtension } from "../extensions/wizardExtensions";
 import { SlashCommandsOwner, type FallbackSlashCommandHandlers, type SlashCommand, type SlashCommandConfig, type SlashCommandHandlerResult } from "../slashCommands";
-import { functionsBenchmarks } from "./functionsBenchmarks";
-
-export type AgentBenchmark = {
-    /**
-     * The name of the benchmark.
-     */
-    name: string,
-    /**
-     * The simulated user input.
-     */
-    prompt: string,
-    /**
-     * Acceptable handler chains for the `prompt`.
-     */
-    acceptableHandlerChains: string[][],
-    followUps?: {
-        /**
-         * Follow ups that must be returned for the `prompt`.
-         * - For command follow ups, it will be verified that the `commandId` matches EXACTLY.
-         * - For reply follow ups, it will be verified that the `message` contains the expected message.
-         */
-        required: ({ type: "command", commandId: string } | { type: "reply", message: string })[],
-        /**
-         * Follow ups that must be returned for the `prompt`.
-         * - For command follow ups, it will be verified that the `commandId` matches EXACTLY.
-         * - For reply follow ups, it will be verified that the `message` contains the expected message.
-         */
-        acceptable: ({ type: "command", commandId: string } | { type: "reply", message: string })[],
-    },
-};
-
-const benchmarks: AgentBenchmark[] = [
-    ...functionsBenchmarks
-];
 
 type AgentBenchmarkRunStats = {
     startTime: number,
@@ -48,11 +17,9 @@ type AgentBenchmarkRunStats = {
     handlerChainValid: boolean;
     followUps: {
         allRequiredFollowUpsFound: boolean,
-        allFollowUpsRequiredOrAcceptable: boolean,
+        allFollowUpsRequiredOrOptional: boolean,
     },
 };
-
-const benchmarksRunsStats: AgentBenchmarkRunStats[][] = benchmarks.map(() => []);
 
 const benchmarkCommandName = "benchmark";
 const benchmarkStatsCommandName = "benchmarkStats";
@@ -61,9 +28,19 @@ export class AgentBenchmarker implements IAgentRequestHandler {
     private _agentSlashCommandsOwner: SlashCommandsOwner;
     private _benchmarkerSlashCommandsOwner: SlashCommandsOwner;
     private _continuationIndex: number;
+    private _benchmarks: AgentBenchmarkConfig[];
+    private _extensionsToBenchmark: WizardBasedExtension[];
+    private _benchmarksRunsStats: AgentBenchmarkRunStats[][];
 
     constructor(agentSlashCommandsOwner: SlashCommandsOwner) {
         this._agentSlashCommandsOwner = agentSlashCommandsOwner;
+        this._benchmarks = [];
+        this._extensionsToBenchmark = [
+            functionsExtension,
+            storageExtension,
+            appServiceExtension,
+        ];
+        this._benchmarksRunsStats = [];
 
         const slashCommands = new Map([this._getBenchmarkSlashCommand(), this._getBenchmarkStatsSlashCommand()]);
         const fallbackSlashCommandHandlers: FallbackSlashCommandHandlers = { noInput: undefined, default: undefined };
@@ -74,25 +51,45 @@ export class AgentBenchmarker implements IAgentRequestHandler {
         this._continuationIndex = 0;
     }
 
-    public handleRequestOrPrompt(request: AgentRequest): Promise<SlashCommandHandlerResult> {
-        return this._benchmarkerSlashCommandsOwner.handleRequestOrPrompt(request);
+    public addExtensionsToBenchmark(extensions: WizardBasedExtension[]): void {
+        this._extensionsToBenchmark.push(...extensions);
     }
 
+    public async handleRequestOrPrompt(request: AgentRequest): Promise<SlashCommandHandlerResult> {
+        if (this._benchmarks.length === 0) {
+            for (const extension of this._extensionsToBenchmark) {
+                if (extension.isInstalled() && extension.isCompatible()) {
+                    request.progress.report({ message: `Activating ${extension.displayName}...` });
+                    await extension.activate(request);
+                    request.progress.report({ message: `Getting benchmark configs from ${extension.displayName}...` });
+                    const benchmarkConfigs = await extension.getAgentBenchmarkConfigs();
+                    this._benchmarks.push(...benchmarkConfigs);
+                    this._benchmarksRunsStats.push(...benchmarkConfigs.map(() => []));
+                } else {
+                    request.progress.report({ message: `Skipping getting benchmark configs from ${extension.displayName} as it is not ${extension.isInstalled() ? "compatible" : "installed"}...` });
+                }
+            }
+        }
+        return this._benchmarkerSlashCommandsOwner.handleRequestOrPrompt(request);
+    }
 
     public getFollowUpForLastHandledSlashCommand(result: vscode.ChatAgentResult2, token: vscode.CancellationToken): vscode.ChatAgentFollowup[] | undefined {
         return this._benchmarkerSlashCommandsOwner.getFollowUpForLastHandledSlashCommand(result, token);
     }
 
     private async _benchmarkAgent(request: AgentRequest): Promise<SlashCommandHandlerResult> {
+        if (this._benchmarks.length === 0) {
+            request.progress.report({ content: "No benchmarks to run. 😭" });
+            return { chatAgentResult: {}, followUp: [], };
+        }
+
         const followUps: vscode.ChatAgentFollowup[] = [];
-
         const requestedBenchmarkIndex = parseInt(request.userPrompt);
-
-        if (isNaN(requestedBenchmarkIndex) || requestedBenchmarkIndex >= benchmarks.length) {
+        if (isNaN(requestedBenchmarkIndex) || requestedBenchmarkIndex >= this._benchmarks.length) {
             await this._runBenchmark(this._continuationIndex, request);
             this._continuationIndex++;
 
-            if (this._continuationIndex === benchmarks.length) {
+            if (this._continuationIndex === this._benchmarks.length) {
                 this._debugBenchmarking(request.progress, `🎉 Done benchmarking!`);
                 followUps.push({ message: `@${agentName} /${benchmarkStatsCommandName}` });
                 this._continuationIndex = 0;
@@ -103,7 +100,7 @@ export class AgentBenchmarker implements IAgentRequestHandler {
 
             followUps.push({ message: `@${agentName} /${benchmarkCommandName}` });
             followUps.push({ message: `@${agentName} /${benchmarkCommandName} ${requestedBenchmarkIndex}` });
-            followUps.push({ message: `@${agentName} /${benchmarkCommandName} ${requestedBenchmarkIndex === benchmarks.length - 1 ? 0 : requestedBenchmarkIndex + 1}` });
+            followUps.push({ message: `@${agentName} /${benchmarkCommandName} ${requestedBenchmarkIndex === this._benchmarks.length - 1 ? 0 : requestedBenchmarkIndex + 1}` });
             followUps.push({ message: `@${agentName} /${benchmarkStatsCommandName}` });
         }
 
@@ -114,10 +111,9 @@ export class AgentBenchmarker implements IAgentRequestHandler {
     }
 
     private async _runBenchmark(benchmarkIdx: number, request: AgentRequest): Promise<void> {
+        const benchmark = this._benchmarks[benchmarkIdx];
 
-        const benchmark = benchmarks[benchmarkIdx];
-
-        this._debugBenchmarking(request.progress, `📋 Benchmark (${this._continuationIndex}/${benchmarks.length}): ${benchmark.name}\n💭 Prompt: '${benchmark.prompt}'...`);
+        this._debugBenchmarking(request.progress, `📋 Benchmark (${this._continuationIndex}/${this._benchmarks.length}): ${benchmark.name}\n💭 Prompt: '${benchmark.prompt}'...`);
 
         const startTime = Date.now();
         const benchmarkRequest: AgentRequest = { ...request, userPrompt: benchmark.prompt, };
@@ -126,8 +122,8 @@ export class AgentBenchmarker implements IAgentRequestHandler {
 
         if (handleResult) {
             let validationString = "🔍 Automated Validation:\n";
-            const handlerChainIsAcceptable = this._validateHandlerChain(handleResult.handlerChain || [], benchmark.acceptableHandlerChains);
-            validationString += handlerChainIsAcceptable ? `✅ Handler chain is acceptable (${JSON.stringify(handleResult.handlerChain)}).\n` : `❌ Handler chain is unacceptable. Expected one of: ${JSON.stringify(benchmark.acceptableHandlerChains)}, Actual: ${JSON.stringify(handleResult.handlerChain)}\n`;
+            const handlerChainIsOptional = this._validateHandlerChain(handleResult.handlerChain || [], benchmark.acceptableHandlerChains);
+            validationString += handlerChainIsOptional ? `✅ Handler chain is optional (${JSON.stringify(handleResult.handlerChain)}).\n` : `❌ Handler chain is unoptional. Expected one of: ${JSON.stringify(benchmark.acceptableHandlerChains)}, Actual: ${JSON.stringify(handleResult.handlerChain)}\n`;
 
             const followUps = handleResult.followUp || [];
             if (followUps.length > 0) {
@@ -135,44 +131,44 @@ export class AgentBenchmarker implements IAgentRequestHandler {
             }
 
             const followUpValidation = benchmark.followUps;
-            const { allFollowUpsRequiredOrAcceptable, allRequiredFollowUpsFound } = !followUpValidation ? { allFollowUpsRequiredOrAcceptable: true, allRequiredFollowUpsFound: true } : this._validateFollowUps(followUps, followUpValidation);
+            const { allFollowUpsRequiredOrOptional, allRequiredFollowUpsFound } = !followUpValidation ? { allFollowUpsRequiredOrOptional: true, allRequiredFollowUpsFound: true } : this._validateFollowUps(followUps, followUpValidation);
             validationString += allRequiredFollowUpsFound ? `✅ All required follow ups found.\n` : `❌ Not all required follow ups found.\n`;
-            validationString += allFollowUpsRequiredOrAcceptable ? `✅ All follow ups required or acceptable.\n` : `❌ Not all follow ups required or acceptable.\n`;
+            validationString += allFollowUpsRequiredOrOptional ? `✅ All follow ups required or optional.\n` : `❌ Not all follow ups required or optional.\n`;
 
             this._debugBenchmarking(request.progress, validationString);
 
             const stats: AgentBenchmarkRunStats = {
                 startTime: startTime,
                 endTime: endTime,
-                handlerChainValid: handlerChainIsAcceptable,
+                handlerChainValid: handlerChainIsOptional,
                 followUps: {
                     allRequiredFollowUpsFound: allRequiredFollowUpsFound,
-                    allFollowUpsRequiredOrAcceptable: allFollowUpsRequiredOrAcceptable,
+                    allFollowUpsRequiredOrOptional: allFollowUpsRequiredOrOptional,
                 }
             };
-            benchmarksRunsStats[benchmarkIdx].push(stats);
+            this._benchmarksRunsStats[benchmarkIdx].push(stats);
         }
     }
 
     private async _benchmarkStats(request: AgentRequest): Promise<SlashCommandHandlerResult> {
-        benchmarks.forEach((benchmark, benchmarkIdx) => {
-            const benchmarkRunStats = benchmarksRunsStats[benchmarkIdx];
+        this._benchmarks.forEach((benchmark, benchmarkIdx) => {
+            const benchmarkRunStats = this._benchmarksRunsStats[benchmarkIdx];
 
             const numRuns = benchmarkRunStats.length;
             const avgTime = benchmarkRunStats.reduce((acc, curr) => acc + curr.endTime - curr.startTime, 0) / numRuns;
             const handlerChainValidCount = benchmarkRunStats.filter((runStat) => runStat.handlerChainValid).length;
             const allRequiredFollowUpsFoundCount = benchmarkRunStats.filter((runStat) => runStat.followUps.allRequiredFollowUpsFound).length;
-            const allFollowUpsRequiredOrAcceptableCount = benchmarkRunStats.filter((runStat) => runStat.followUps.allFollowUpsRequiredOrAcceptable).length;
+            const allFollowUpsRequiredOrOptionalCount = benchmarkRunStats.filter((runStat) => runStat.followUps.allFollowUpsRequiredOrOptional).length;
 
             const handlerChainValidPercentage = handlerChainValidCount / numRuns;
             const allRequiredFollowUpsFoundPercentage = allRequiredFollowUpsFoundCount / numRuns;
-            const allFollowUpsRequiredOrAcceptablePercentage = allFollowUpsRequiredOrAcceptableCount / numRuns;
-            const statsString = `📋 Benchmark (${benchmarkIdx}/${benchmarks.length}): ${benchmark.name}\n` +
+            const allFollowUpsRequiredOrOptionalPercentage = allFollowUpsRequiredOrOptionalCount / numRuns;
+            const statsString = `📋 Benchmark (${benchmarkIdx}/${this._benchmarks.length}): ${benchmark.name}\n` +
                 `🔁 Number of runs: ${numRuns}\n` +
                 `⏱️ Average time to complete benchmark: ${avgTime}ms\n` +
                 `🔍 Handler chain valid: ${handlerChainValidCount} (${getColorEmojiForPercentage(handlerChainValidPercentage)} ${handlerChainValidPercentage * 100}%)\n` +
                 `🔍 All required follow ups found: ${allRequiredFollowUpsFoundCount} (${getColorEmojiForPercentage(allRequiredFollowUpsFoundPercentage)} ${allRequiredFollowUpsFoundPercentage * 100}%)\n` +
-                `🔍 All follow ups required or acceptable: ${allFollowUpsRequiredOrAcceptableCount} (${getColorEmojiForPercentage(allFollowUpsRequiredOrAcceptablePercentage)} ${allFollowUpsRequiredOrAcceptablePercentage * 100}%)\n`;
+                `🔍 All follow ups required or optional: ${allFollowUpsRequiredOrOptionalCount} (${getColorEmojiForPercentage(allFollowUpsRequiredOrOptionalPercentage)} ${allFollowUpsRequiredOrOptionalPercentage * 100}%)\n`;
 
             this._debugBenchmarking(request.progress, statsString);
         });
@@ -212,11 +208,11 @@ export class AgentBenchmarker implements IAgentRequestHandler {
     }
 
     private _validateHandlerChain(handlerChain: string[], acceptableHandlerChains: string[][]): boolean {
-        return acceptableHandlerChains.some((acceptableHandlerChain) => acceptableHandlerChain.every((acceptableHandler, index) => acceptableHandler === handlerChain[index]));
+        return acceptableHandlerChains.some((optionalHandlerChain) => optionalHandlerChain.every((optionalHandler, index) => optionalHandler === handlerChain[index]));
     }
 
-    private _validateFollowUps(followUps: vscode.ChatAgentFollowup[], followUpValidation: NonNullable<AgentBenchmark["followUps"]>): { allFollowUpsRequiredOrAcceptable: boolean, allRequiredFollowUpsFound: boolean } {
-        let allFollowUpsRequiredOrAcceptable = true;
+    private _validateFollowUps(followUps: vscode.ChatAgentFollowup[], followUpValidation: NonNullable<AgentBenchmarkConfig["followUps"]>): { allFollowUpsRequiredOrOptional: boolean, allRequiredFollowUpsFound: boolean } {
+        let allFollowUpsRequiredOrOptional = true;
         const foundRequiredFollowUps: boolean[] = new Array<boolean>(followUpValidation.required.length).fill(false);
         for (const followUp of followUps) {
             if (followUpIsCommandFollowUp(followUp)) {
@@ -224,9 +220,9 @@ export class AgentBenchmarker implements IAgentRequestHandler {
                 if (requiredFollowUpIndex !== -1) {
                     foundRequiredFollowUps[requiredFollowUpIndex] = true;
                 } else {
-                    const acceptableFollowUpIndex = followUpValidation.acceptable.findIndex((acceptableFollowUp) => acceptableFollowUp.type === "command" && acceptableFollowUp.commandId === followUp.commandId);
-                    if (acceptableFollowUpIndex === -1) {
-                        allFollowUpsRequiredOrAcceptable = false;
+                    const optionalFollowUpIndex = followUpValidation.optional.findIndex((optionalFollowUp) => optionalFollowUp.type === "command" && optionalFollowUp.commandId === followUp.commandId);
+                    if (optionalFollowUpIndex === -1) {
+                        allFollowUpsRequiredOrOptional = false;
                     }
                 }
             } else {
@@ -234,9 +230,9 @@ export class AgentBenchmarker implements IAgentRequestHandler {
                 if (requiredFollowUpIndex !== -1) {
                     foundRequiredFollowUps[requiredFollowUpIndex] = true;
                 } else {
-                    const acceptableFollowUpIndex = followUpValidation.acceptable.findIndex((acceptableFollowUp) => acceptableFollowUp.type === "reply" && followUp.message.includes(acceptableFollowUp.message));
-                    if (acceptableFollowUpIndex === -1) {
-                        allFollowUpsRequiredOrAcceptable = false;
+                    const optionalFollowUpIndex = followUpValidation.optional.findIndex((optionalFollowUp) => optionalFollowUp.type === "reply" && followUp.message.includes(optionalFollowUp.message));
+                    if (optionalFollowUpIndex === -1) {
+                        allFollowUpsRequiredOrOptional = false;
                     }
                 }
             }
@@ -244,7 +240,7 @@ export class AgentBenchmarker implements IAgentRequestHandler {
         const allRequiredFollowUpsFound = foundRequiredFollowUps.every((foundRequiredFollowUp) => foundRequiredFollowUp);
 
         return {
-            allFollowUpsRequiredOrAcceptable: allFollowUpsRequiredOrAcceptable,
+            allFollowUpsRequiredOrOptional: allFollowUpsRequiredOrOptional,
             allRequiredFollowUpsFound: allRequiredFollowUpsFound
         };
     }
