@@ -3,14 +3,14 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { UserCancelledError, type AgentInputBoxOptions, type AgentQuickPickItem, type AgentQuickPickOptions, type AzureUserInputQueue, type IAzureAgentInput, type ParameterAgentMetadata, type PromptResult } from "@microsoft/vscode-azext-utils";
+import { UserCancelledError, type AgentInputBoxOptions, type AgentQuickPickItem, type AgentQuickPickOptions, type AzureUserInputQueue, type IAzureAgentInput, type ParameterAgentMetadata, type PromptResult, type WizardBasedCommandConfig } from "@microsoft/vscode-azext-utils";
 import * as vscode from "vscode";
 import { type AgentRequest } from "../agent";
 import { getResponseAsStringCopilotInteraction, getStringFieldFromCopilotResponseMaybeWithStrJson } from "../copilotInteractions";
 import { type SlashCommand, type SlashCommandHandlerResult } from "../slashCommands";
-import { type WizardBasedExtension, type WizardBasedExtensionCommandConfig } from "./wizardBasedExtensionSchema";
+import { type WizardBasedExtension } from "./wizardBasedExtensionSchema";
 
-export function slashCommandFromWizardBasedExtensionCommand(command: WizardBasedExtensionCommandConfig, extension: WizardBasedExtension): SlashCommand {
+export function slashCommandFromWizardBasedExtensionCommand(command: WizardBasedCommandConfig, extension: WizardBasedExtension): SlashCommand {
     return [
         command.name,
         {
@@ -20,8 +20,16 @@ export function slashCommandFromWizardBasedExtensionCommand(command: WizardBased
             handler: async (request: AgentRequest): Promise<SlashCommandHandlerResult> => {
                 request.progress.report({ message: "Analyzing conversation..." });
 
+                // @todo: handle these cases
+                // if (command.requiesAzureLogin === true) {
+                //     // todo
+                // }
+                // if (command.requiresWorkspaceOpen === true) {
+                //     // todo
+                // }
+
                 const agentAzureUserInput = new AgentAzureUserInput(request);
-                await extension.runWizardCommand(command, agentAzureUserInput);
+                await extension.runWizardCommandWithoutExecutionId(command, agentAzureUserInput);
 
                 const { pickedParameters, unfulfilledParameters, inputQueue } = agentAzureUserInput.getInteractionResults();
 
@@ -47,14 +55,7 @@ export function slashCommandFromWizardBasedExtensionCommand(command: WizardBased
 
                 request.progress.report({ content: markdownResponseLines.join("\n") });
 
-                return {
-                    chatAgentResult: {},
-                    followUp: [{
-                        title: command.displayName,
-                        commandId: extension.runWizardCommandWithInputsCommandId,
-                        args: [command, inputQueue]
-                    }]
-                };
+                return { chatAgentResult: {}, followUp: [extension.getRunWizardCommandWithInputsFollowUp(command, inputQueue)] };
             }
         }
     ]
