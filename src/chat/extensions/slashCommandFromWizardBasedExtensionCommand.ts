@@ -8,7 +8,7 @@ import * as vscode from "vscode";
 import { type AgentRequest } from "../agent";
 import { getResponseAsStringCopilotInteraction, getStringFieldFromCopilotResponseMaybeWithStrJson } from "../copilotInteractions";
 import { type SlashCommand, type SlashCommandHandlerResult } from "../slashCommands";
-import { type WizardBasedExtension } from "./wizardBasedExtensionSchema";
+import { type WizardBasedExtension } from "./wizardBasedExtension";
 
 export function slashCommandFromWizardBasedExtensionCommand(command: WizardBasedCommandConfig, extension: WizardBasedExtension): SlashCommand {
     return [
