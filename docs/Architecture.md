@@ -32,8 +32,8 @@ For the handling of actionable prompts, the agent relies on existing functionali
 Wizard based commands are currently the only types of commands that extensions expose to the agent. The goal of exposing "wizard based commands" is to limit the amount of code changes that need to be made in the associated Azure Extension for VS Code to expose the command to the agent. This is possible because nearly all existing Azure Extension for VS Code commands are wizard based.
 
 Unfortunately, this technique:
-- Involves frequent back and forth between the agent extension and the associated Azure Extension for VS Code
-- Requires numerous calls to the GitHub Copilot LLM
+- Involves frequent back and forth between the agent extension and the associated Azure Extension for VS Code.
+- Requires numerous calls to the GitHub Copilot LLM.
 - Includes the potential for the agent to get stuck early on despite the user providing a non-trivial amount of information.
 
 Therefore, in the future, exposing commands as "wizard based" may not be the only way to expose commands to the agent.
