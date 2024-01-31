@@ -1,6 +1,6 @@
 # Azure Agent for VS Code Architecture
 
-The Azure Agent for VS Code (later referred to as "the agent") is an agent exposed via the VS Code GitHub Copilot chat. It is currently has two goals for how it should help users:
+The Azure Agent for VS Code (later referred to as "the agent") is an agent exposed via VS Code GitHub Copilot chat. It currently has two goals for how it should help users:
 
 1. Help users learn about and understand Azure - respond to informational prompts
 1. Help users do things with Azure - respond to actionable prompts
@@ -11,13 +11,13 @@ This document will help explain how those goals are accomplished.
 
 Agents for VS Code GitHub Copilot chat are invoked by using `@<agent name>` syntax followed by a prompt. Once the user submits their prompt the invoked agent's code handles it. Agents can also expose subcommands. These exist as an option to help guide users in what capabilities and agent has, and as an option for the user to be more explicit as to what the want the invoked agent to do when handling their prompt. Subcommands are exposed to the user by using `/<subcommand>` syntax after the `@<agent name>` syntax.
 
-The Azure Agent for VS Code currently exposes subcommands which roughly map to each Azure service supported by the Azure Extensions for VS Code. There is an additional `/help` subcommand which gives the user help information about the agent. Whenever the user enters a promp without a subcommand, the agent will attempt to use intent detection to determine which Azure service the user is wanting to learn about or do something with.
+The Azure Agent for VS Code currently exposes subcommands which roughly map to each Azure service supported by the Azure Extensions for VS Code. There is also a `/help` subcommand which gives the user help information about the agent. Whenever the user enters a prompt without a subcommand, the agent will attempt to use intent detection to determine what subcommand best matches their prompt. In the case of the subcommands which map to an Azure service, they will be picked if the user's prompt seems to be in regards to the service in question, whether that be for learning or doing.
 
-If an Azure service subcommand has been determined (either explicitly by the user or implicitly by the agent), the agent can then determine what to do next.
+If an Azure service subcommand has been determined (either explicitly by the user or implicitly by the agent), the handler for the service subcommand will then determine what to do next.
 
 ## Service Subcommands
 
-Behind each Azure service subcommand is another set of subcommands. These subcommands are effectively hidden from the user. Since the subcommands are hidden from the user, the agent will always be making use of intent detection to determine which subcommand to use. These subcommands provide the realization of the agent's goals, informational and actionable.
+Behind each Azure service subcommand is another set of subcommands. These subcommands are effectively hidden from the user. Since these subcommands are hidden from the user, the agent will always be making use of intent detection to determine which of these subcommands to use. These subcommands provide the realization of the agent's goals, informational and actionable.
 
 ### Informational Prompt Subcommands
 
