@@ -29,7 +29,7 @@ For the handling of actionable prompts, the agent relies on existing functionali
 
 #### Wizard Based Command Actionable Prompt Subcommands
 
-Wizard based commands are currently the only types of commands that extensions expose to the agent. The goal of exposing "wizard based commands" is to limit the amount of code changes that need to be made in the associated Azure Extension for VS Code to expose the command to the agent. This is possible because nearly all existing Azure Extension for VS Code commands are wizard based.
+Wizard based commands are currently the only types of commands that extensions expose to the agent. The decision to expose "wizard based commands" was made in order to limit the amount of code changes that need to be made in the various Azure Extensions for VS Code while also being able to quickly expose nearly any existing functionality.
 
 Unfortunately, this technique:
 - Involves frequent back and forth between the agent extension and the associated Azure Extension for VS Code.
