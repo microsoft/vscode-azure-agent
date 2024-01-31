@@ -7,7 +7,7 @@
 import * as vscode from "vscode";
 /* eslint-disable-next-line @typescript-eslint/no-unused-vars */
 import { type AzureUserInputQueue, type ExtensionAgentMetadata, type IAzureAgentInput, type WizardBasedCommandConfig } from "@microsoft/vscode-azext-utils";
-import { type AgentRequest } from "../../agent";
+import { type AgentRequest } from "../agent";
 
 export class WizardBasedExtension {
     public readonly extensionId: string;

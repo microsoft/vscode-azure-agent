@@ -5,9 +5,9 @@
 
 import { UserCancelledError, type AgentInputBoxOptions, type AgentQuickPickItem, type AgentQuickPickOptions, type AzureUserInputQueue, type IAzureAgentInput, type ParameterAgentMetadata, type PromptResult, type WizardBasedCommandConfig } from "@microsoft/vscode-azext-utils";
 import * as vscode from "vscode";
-import { type AgentRequest } from "../../agent";
-import { getResponseAsStringCopilotInteraction, getStringFieldFromCopilotResponseMaybeWithStrJson } from "../../copilotInteractions";
-import { type SlashCommand, type SlashCommandHandlerResult } from "../../slashCommands";
+import { type AgentRequest } from "../agent";
+import { getResponseAsStringCopilotInteraction, getStringFieldFromCopilotResponseMaybeWithStrJson } from "../copilotInteractions";
+import { type SlashCommand, type SlashCommandHandlerResult } from "../slashCommands";
 import { type WizardBasedExtension } from "./wizardBasedExtension";
 
 export function slashCommandFromWizardBasedExtensionCommand(command: WizardBasedCommandConfig, extension: WizardBasedExtension): SlashCommand {

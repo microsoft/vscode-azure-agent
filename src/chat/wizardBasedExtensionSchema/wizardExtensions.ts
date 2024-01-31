@@ -3,7 +3,7 @@
 *  Licensed under the MIT License. See License.txt in the project root for license information.
 *--------------------------------------------------------------------------------------------*/
 
-import { ExtensionSlashCommandsOwner, type CommonSlashCommandAndHandlerConfigs } from "../ExtensionSlashCommandsOwner";
+import { ExtensionSlashCommandsOwner, type CommonSlashCommandAndHandlerConfigs } from "../extensionSlashCommands";
 import { WizardBasedExtension } from "./wizardBasedExtension";
 
 const functionsExtension = new WizardBasedExtension("ms-azuretools.vscode-azurefunctions", "Azure Functions");

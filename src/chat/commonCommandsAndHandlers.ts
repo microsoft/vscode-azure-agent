@@ -8,10 +8,10 @@ import * as vscode from "vscode";
 import { type AgentRequest } from "./agent";
 import { agentName } from "./agentConsts";
 import { verbatimCopilotInteraction } from "./copilotInteractions";
-import { type WizardBasedExtension } from "./extensions/wizardBasedExtensions/wizardBasedExtension";
 import { generateExtensionCommandFollowUps, generateNextQuestionsFollowUps } from "./followUpGenerator";
 import { getMicrosoftLearnRagContent } from "./rag";
 import { type SlashCommand, type SlashCommandHandler, type SlashCommandHandlerResult } from "./slashCommands";
+import { type WizardBasedExtension } from "./wizardBasedExtensionSchema/wizardBasedExtension";
 
 export type BrainstormCommandConfig = {
     shortTopic: string;
