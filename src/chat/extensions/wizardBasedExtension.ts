@@ -6,8 +6,7 @@
 /* eslint-disable-next-line @typescript-eslint/no-unused-vars */
 import * as vscode from "vscode";
 /* eslint-disable-next-line @typescript-eslint/no-unused-vars */
-import  { type AgentBenchmarkConfig} from "@microsoft/vscode-azext-utils";
-import { type AzureUserInputQueue, type ExtensionAgentMetadata, type IAzureAgentInput, type WizardBasedCommandConfig } from "@microsoft/vscode-azext-utils";
+import { type AgentBenchmarkConfig, type AzureUserInputQueue, type ExtensionAgentMetadata, type IAzureAgentInput, type WizardBasedCommandConfig } from "@microsoft/vscode-azext-utils";
 import { type AgentRequest } from "../agent";
 
 export class WizardBasedExtension {
@@ -63,9 +62,7 @@ export class WizardBasedExtension {
             throw new Error(`Extension ${this.displayName} does not yet have extension agent metadata initialized`);
         }
 
-        if (this._extensionAgentMetadata.runWizardCommandWithoutExecutionId !== "") {
-            await vscode.commands.executeCommand(this._extensionAgentMetadata.runWizardCommandWithoutExecutionId, command, agentAzureUserInput);
-        }
+        await vscode.commands.executeCommand(this._extensionAgentMetadata.runWizardCommandWithoutExecutionCommandId, command, agentAzureUserInput);
     }
 
     public getRunWizardCommandWithInputsFollowUp(command: WizardBasedCommandConfig, inputQueue: AzureUserInputQueue): vscode.ChatAgentFollowup {

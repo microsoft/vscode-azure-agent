@@ -77,7 +77,7 @@
         "@azure/identity": "^4.0.0",
         "@azure/openai": "^1.0.0-beta.8",
         "@microsoft/vscode-azext-azureutils": "2.1.0-agent.3",
-        "@microsoft/vscode-azext-utils": "2.2.0-agent.6",
+        "@microsoft/vscode-azext-utils": "2.2.0-agent.8",
         "vscode-nls": "^4.1.1"
     },
     "extensionDependencies": [

@@ -21,7 +21,7 @@ export function slashCommandFromWizardBasedExtensionCommand(command: WizardBased
                 request.progress.report({ message: "Analyzing conversation..." });
 
                 // @todo: handle these cases
-                // if (command.requiesAzureLogin === true) {
+                // if (command.requiresAzureLogin === true) {
                 //     // todo
                 // }
                 // if (command.requiresWorkspaceOpen === true) {
