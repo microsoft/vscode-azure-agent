@@ -7,8 +7,8 @@ import { type AgentBenchmarkConfig } from "@microsoft/vscode-azext-utils";
 import type * as vscode from "vscode";
 import { type AgentRequest, type IAgentRequestHandler } from "../agent";
 import { agentName } from "../agentConsts";
+import { appServiceExtension, functionsExtension, storageExtension } from "../extensions/extensions";
 import { type WizardBasedExtension } from "../extensions/wizardBasedExtension";
-import { appServiceExtension, functionsExtension, storageExtension } from "../extensions/wizardExtensions";
 import { SlashCommandsOwner, type FallbackSlashCommandHandlers, type SlashCommand, type SlashCommandConfig, type SlashCommandHandlerResult } from "../slashCommands";
 
 type AgentBenchmarkRunStats = {
@@ -123,7 +123,7 @@ export class AgentBenchmarker implements IAgentRequestHandler {
         if (handleResult) {
             let validationString = "🔍 Automated Validation:\n";
             const handlerChainIsOptional = this._validateHandlerChain(handleResult.handlerChain || [], benchmark.acceptableHandlerChains);
-            validationString += handlerChainIsOptional ? `✅ Handler chain is optional (${JSON.stringify(handleResult.handlerChain)}).\n` : `❌ Handler chain is unoptional. Expected one of: ${JSON.stringify(benchmark.acceptableHandlerChains)}, Actual: ${JSON.stringify(handleResult.handlerChain)}\n`;
+            validationString += handlerChainIsOptional ? `✅ Handler chain is valid (${JSON.stringify(handleResult.handlerChain)}).\n` : `❌ Handler chain is invalid. Expected one of: ${JSON.stringify(benchmark.acceptableHandlerChains)}, Actual: ${JSON.stringify(handleResult.handlerChain)}\n`;
 
             const followUps = handleResult.followUp || [];
             if (followUps.length > 0) {
