@@ -57,3 +57,7 @@ Once the wizard/command terminates, the agent will present all the information i
 Additionally, the agent will provide a button which the user can click on to executing the command, using the determined parameters as an initial starting point. If the user clicks on the button, the associated Azure Extension for VS Code will be told to execute the command, passing along the determined parameters. The command will now run its wizard, now with an `IAzureUserInput` object, using the provided parameters where possible, and asking the user for input where not possible.
 
 If the user does not want to click the button, they can provide a new prompt which specifies information to help the agent determine the missing parameters.
+
+## Testing the Agent
+
+The agent can be tested through the use of benchmarks. At this time, benchmarks are provided exclusively by Azure Extensions for VS Code. This is because currently the vast majority of the functionality exposed by the agent is driven by the functionality that the Azure Extensions for VS Code choose to expose. Benchmarks are intended to provide extension developers with an understanding of how frequently the agent does what is is supposed to do. Due to the agent's use of AI to dynmically make decisions, it is not always guaranteed to do what it is supposed to do. However, it should be able to do what it is supposed to do most of the time, and benchmarks are a way to measure how often it does.
