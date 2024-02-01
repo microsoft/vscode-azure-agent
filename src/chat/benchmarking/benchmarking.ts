@@ -55,21 +55,7 @@ export class AgentBenchmarker implements IAgentRequestHandler {
         this._extensionsToBenchmark.push(...extensions);
     }
 
-    public async handleRequestOrPrompt(request: AgentRequest): Promise<SlashCommandHandlerResult> {
-        if (this._benchmarks.length === 0) {
-            for (const extension of this._extensionsToBenchmark) {
-                if (extension.isInstalled() && extension.isCompatible()) {
-                    request.progress.report({ message: `Activating ${extension.displayName}...` });
-                    await extension.activate(request);
-                    request.progress.report({ message: `Getting benchmark configs from ${extension.displayName}...` });
-                    const benchmarkConfigs = await extension.getAgentBenchmarkConfigs();
-                    this._benchmarks.push(...benchmarkConfigs);
-                    this._benchmarksRunsStats.push(...benchmarkConfigs.map(() => []));
-                } else {
-                    request.progress.report({ message: `Skipping getting benchmark configs from ${extension.displayName} as it is not ${extension.isInstalled() ? "compatible" : "installed"}...` });
-                }
-            }
-        }
+    public handleRequestOrPrompt(request: AgentRequest): Promise<SlashCommandHandlerResult> {
         return this._benchmarkerSlashCommandsOwner.handleRequestOrPrompt(request);
     }
 
@@ -78,6 +64,21 @@ export class AgentBenchmarker implements IAgentRequestHandler {
     }
 
     private async _benchmarkAgent(request: AgentRequest): Promise<SlashCommandHandlerResult> {
+        if (this._extensionsToBenchmark.length > 0) {
+            for (const extension of this._extensionsToBenchmark.splice(0)) {
+                if (extension.isInstalled() && extension.isCompatible()) {
+                    request.progress.report({ message: `Activating the ${extension.displayName} extension...` });
+                    await extension.activate(request);
+                    request.progress.report({ message: `Getting benchmark configs from the ${extension.displayName} extension...` });
+                    const benchmarkConfigs = await extension.getAgentBenchmarkConfigs();
+                    this._benchmarks.push(...benchmarkConfigs);
+                    this._benchmarksRunsStats.push(...benchmarkConfigs.map(() => []));
+                } else {
+                    request.progress.report({ message: `Skipping getting benchmark configs from the ${extension.displayName} extension as it is not ${extension.isInstalled() ? "compatible" : "installed"}...` });
+                }
+            }
+        }
+
         if (this._benchmarks.length === 0) {
             request.progress.report({ content: "No benchmarks to run. 😭" });
             return { chatAgentResult: {}, followUp: [], };
