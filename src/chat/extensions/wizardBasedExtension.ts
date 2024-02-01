@@ -62,9 +62,7 @@ export class WizardBasedExtension {
             throw new Error(`Extension ${this.displayName} does not yet have extension agent metadata initialized`);
         }
 
-        if (this._extensionAgentMetadata.runWizardCommandWithoutExecutionCommandId !== "") {
-            await vscode.commands.executeCommand(this._extensionAgentMetadata.runWizardCommandWithoutExecutionCommandId, command, agentAzureUserInput);
-        }
+        await vscode.commands.executeCommand(this._extensionAgentMetadata.runWizardCommandWithoutExecutionCommandId, command, agentAzureUserInput);
     }
 
     public getRunWizardCommandWithInputsFollowUp(command: WizardBasedCommandConfig, inputQueue: AzureUserInputQueue): vscode.ChatAgentFollowup {
