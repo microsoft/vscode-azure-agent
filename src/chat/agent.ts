@@ -11,7 +11,7 @@ import { agentDescription, agentFullName, agentName, maxFollowUps } from "./agen
 import { agentHelpCommandName, getAgentHelpCommand } from "./agentHelpSlashCommand";
 import { AgentBenchmarker } from "./benchmarking/benchmarking";
 import { verbatimCopilotInteraction } from "./copilotInteractions";
-import { appServiceExtensionSlashCommandsOwner, functionsExtensionSlashCommandsOwner, storageExtensionSlashCommandsOwner } from "./extensions/extensions";
+import { appServiceExtensionSlashCommandsOwner, containerAppsExtensionSlashCommandsOwner, databasesExtensionCosmosDbSlashCommandsOwner, databasesExtensionPostgreSQLSlashCommandsOwner, functionsExtensionSlashCommandsOwner, staticWebAppsExtensionSlashCommandsOwner, storageExtensionSlashCommandsOwner, virtualMachinesExtensionSlashCommandsOwner } from "./extensions/extensions";
 import { getRagStatusSlashCommand, toggleRagSlashCommand } from "./rag";
 import { SlashCommandsOwner, type SlashCommandHandlerResult } from "./slashCommands";
 
@@ -35,9 +35,14 @@ export interface IAgentRequestHandler {
  */
 const agentSlashCommandsOwner = new SlashCommandsOwner({ noInput: agentHelpCommandName, default: defaultHandler, });
 agentSlashCommandsOwner.addInvokeableSlashCommands(new Map([
-    functionsExtensionSlashCommandsOwner.getTopLevelSlashCommand(),
-    storageExtensionSlashCommandsOwner.getTopLevelSlashCommand(),
     appServiceExtensionSlashCommandsOwner.getTopLevelSlashCommand(),
+    containerAppsExtensionSlashCommandsOwner.getTopLevelSlashCommand(),
+    databasesExtensionCosmosDbSlashCommandsOwner.getTopLevelSlashCommand(),
+    databasesExtensionPostgreSQLSlashCommandsOwner.getTopLevelSlashCommand(),
+    functionsExtensionSlashCommandsOwner.getTopLevelSlashCommand(),
+    staticWebAppsExtensionSlashCommandsOwner.getTopLevelSlashCommand(),
+    storageExtensionSlashCommandsOwner.getTopLevelSlashCommand(),
+    virtualMachinesExtensionSlashCommandsOwner.getTopLevelSlashCommand(),
     getAgentHelpCommand(agentSlashCommandsOwner),
 ]));
 
