@@ -108,7 +108,7 @@ export class SlashCommandsOwner implements IAgentRequestHandler {
      *
      * Will only handle the request if:
      * - There is a command and it is in the list of invokeable commands OR
-     * - Intent detection is not disabled.
+     * - Intent detection is not disabled and there is a prompt from which intent can be detected.
      */
     public async handleRequestOrPrompt(request: AgentRequest): Promise<SlashCommandHandlerResult> {
         const getHandlerResult = await this._getSlashCommandHandlerForRequest(request);
@@ -155,7 +155,7 @@ export class SlashCommandsOwner implements IAgentRequestHandler {
 
         // Only try to get a handler if:
         // - There is a command and it is in the list of invokeable commands OR
-        // - Intent detection is not disabled.
+        // - Intent detection is not disabled and there is a prompt from which intent can be detected.
         if ((command !== undefined && this._invokeableSlashCommands.has(command)) || !this._disableIntentDetection) {
             // If there is no prompt and no command, then use the noInput fallback handler (or no handler if there is no noInput fallback handler).
             if (!result && prompt === "" && !command) {
@@ -178,8 +178,8 @@ export class SlashCommandsOwner implements IAgentRequestHandler {
                 }
             }
 
-            // If intent detection is not disabled, then use intent detection to find a command (at this point there must be a prompt).
-            if (!result && this._disableIntentDetection !== true) {
+            // If intent detection is not disabled and there is a prompt from which intent can be detected, then use intent detection to find a command.
+            if (!result && prompt !== "" && this._disableIntentDetection !== true) {
                 const intentDetectionTargets = Array.from(this._invokeableSlashCommands.entries())
                     .map(([name, config]) => ({ name: name, intentDetectionDescription: config.intentDescription || config.shortDescription }));
                 const detectedTarget = await detectIntent(intentDetectionTargets, request);

@@ -33,7 +33,17 @@ function learnHandler(config: LearnCommandConfig, request: AgentRequest): Promis
     return callWithTelemetryAndErrorHandling("learnHandler", async (actionContext) => {
         if (request.userPrompt.length === 0) {
             request.progress.report({ content: `If you want to learn more about ${config.topic}, simply ask me what it is you'd like to learn.\n` });
-            return { chatAgentResult: {}, followUp: config.noInputSuggestions?.map((suggestion) => ({ message: `@${agentName} ${suggestion}` })), };
+            const followUps: vscode.ChatAgentFollowup[] = [];
+            if (config.associatedExtension !== undefined && !config.associatedExtension.isInstalled()) {
+                request.progress.report({ content: `\n\nAlso consider installing the ${config.associatedExtension.extensionDisplayName} extension for VS Code.` });
+                followUps.push({ commandId: "workbench.extensions.search", args: [config.associatedExtension.extensionId], title: `Install the ${config.associatedExtension.extensionDisplayName} Extension` });
+            }
+            const ragContent = await getMicrosoftLearnRagContent(actionContext, `Getting started or learning about ${config.topic}`);
+            followUps.push(...await generateSampleQuestionsFollowUps(config.topic, ragContent?.content, request));
+            if (config.noInputSuggestions !== undefined) {
+                followUps.push(...config.noInputSuggestions.map((suggestion) => ({ message: `@${agentName} ${suggestion}` })));
+            }
+            return { chatAgentResult: {}, followUp: followUps, };
         } else {
             const ragContent = await getMicrosoftLearnRagContent(actionContext, request.userPrompt);
             const { copilotResponded, copilotResponse } = await verbatimCopilotInteraction(getLearnSystemPrompt(config, ragContent?.content), request);
@@ -67,13 +77,19 @@ function getLearnSystemPrompt(config: LearnCommandConfig, ragContent: string | u
 
 export type MightBeInterestedHandlerConfig = {
     topic: string;
+    associatedExtension?: WizardBasedExtension;
 };
 
 export function getMightBeInterestedHandler(config: MightBeInterestedHandlerConfig): SlashCommandHandler {
     return async (request: AgentRequest) => {
         return callWithTelemetryAndErrorHandling("mightBeInterested", async (actionContext) => {
+            const followUps: vscode.ChatAgentFollowup[] = [];
+            if (config.associatedExtension !== undefined && !config.associatedExtension.isInstalled()) {
+                request.progress.report({ content: `\n\nAlso consider installing the ${config.associatedExtension.extensionDisplayName} extension for VS Code.` });
+                followUps.push({ commandId: "workbench.extensions.search", args: [config.associatedExtension.extensionId], title: `Install the ${config.associatedExtension.extensionDisplayName} Extension` });
+            }
             const ragContent = await getMicrosoftLearnRagContent(actionContext, `Getting started or learning about ${config.topic}`);
-            const followUps: vscode.ChatAgentFollowup[] = await generateSampleQuestionsFollowUps(config.topic, ragContent?.content, request);
+            followUps.push(...await generateSampleQuestionsFollowUps(config.topic, ragContent?.content, request));
             request.progress.report({ content: `Hi! It sounds like you are interested in ${config.topic}, however, I can't quite help with what you're asking about. Try asking something else.` });
             return { chatAgentResult: {}, followUp: followUps, };
         });
