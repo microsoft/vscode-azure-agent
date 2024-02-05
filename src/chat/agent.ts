@@ -9,8 +9,9 @@ import * as vscode from "vscode";
 import { ext } from '../extensionVariables';
 import { agentDescription, agentFullName, agentName, maxFollowUps } from "./agentConsts";
 import { agentHelpCommandName, getAgentHelpCommand } from "./agentHelpSlashCommand";
+import { defaultBenchmarks, helpBenchmarks } from "./benchmarking/agentBenchmarks";
 import { AgentBenchmarker } from "./benchmarking/benchmarking";
-import { verbatimCopilotInteraction } from "./copilotInteractions";
+import { getLearnCommand } from "./commonCommandsAndHandlers";
 import { appServiceExtensionSlashCommandsOwner, containerAppsExtensionSlashCommandsOwner, databasesExtensionCosmosDbSlashCommandsOwner, databasesExtensionPostgreSQLSlashCommandsOwner, functionsExtensionSlashCommandsOwner, staticWebAppsExtensionSlashCommandsOwner, storageExtensionSlashCommandsOwner, virtualMachinesExtensionSlashCommandsOwner } from "./extensions/extensions";
 import { getRagStatusSlashCommand, toggleRagSlashCommand } from "./rag";
 import { SlashCommandsOwner, type SlashCommandHandlerResult } from "./slashCommands";
@@ -33,7 +34,7 @@ export interface IAgentRequestHandler {
 /**
  * Owns slash commands that are knowingly exposed to the user.
  */
-const agentSlashCommandsOwner = new SlashCommandsOwner({ noInput: agentHelpCommandName, default: defaultHandler, });
+const agentSlashCommandsOwner = new SlashCommandsOwner({ noInput: agentHelpCommandName, default: getLearnCommand({ topic: "Azure" })[1].handler, });
 agentSlashCommandsOwner.addInvokeableSlashCommands(new Map([
     appServiceExtensionSlashCommandsOwner.getTopLevelSlashCommand(),
     containerAppsExtensionSlashCommandsOwner.getTopLevelSlashCommand(),
@@ -50,6 +51,10 @@ agentSlashCommandsOwner.addInvokeableSlashCommands(new Map([
  * Owns slash commands that are hidden from the user and related to benchmarking the agent.
  */
 const agentBenchmarker = new AgentBenchmarker(agentSlashCommandsOwner);
+agentBenchmarker.addBenchmarkConfigs(
+    ...helpBenchmarks,
+    ...defaultBenchmarks,
+);
 agentBenchmarker.addExtensionsToBenchmark(
     functionsExtensionSlashCommandsOwner.getExtension(),
     storageExtensionSlashCommandsOwner.getExtension(),
@@ -113,16 +118,4 @@ function followUpProvider(result: vscode.ChatAgentResult2, token: vscode.Cancell
 
 function getSubCommands(_token: vscode.CancellationToken): vscode.ProviderResult<vscode.ChatAgentSubCommand[]> {
     return agentSlashCommandsOwner.getSlashCommands().map(([name, config]) => ({ name: name, description: config.shortDescription }))
-}
-
-async function defaultHandler(request: AgentRequest): Promise<SlashCommandHandlerResult> {
-    const defaultSystemPrompt1 = `You are an expert in all things Azure. The user needs your help with something related to either Azure and/or the Azure Extensions for VS Code. Do your best to answer their question. The user is currently using VS Code and has one or more Azure Extensions for VS Code installed. Do not overwhelm the user with too much information. Keep responses short and sweet.`;
-
-    const { copilotResponded } = await verbatimCopilotInteraction(defaultSystemPrompt1, request);
-    if (!copilotResponded) {
-        request.progress.report({ content: vscode.l10n.t("Sorry, I can't help with that right now.\n") });
-        return { chatAgentResult: {}, followUp: [], };
-    } else {
-        return { chatAgentResult: {}, followUp: [], };
-    }
 }

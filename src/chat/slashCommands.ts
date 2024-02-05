@@ -81,6 +81,8 @@ export type SlashCommmandOwnerOptions = {
     disableIntentDetection?: boolean;
 };
 
+export const defaultSlashCommandName = "default";
+
 /**
  * A class that owns a set of slash commands and can handle requests for them.
  */
@@ -198,7 +200,7 @@ export class SlashCommandsOwner implements IAgentRequestHandler {
             // If after all of that, there is still no result, then use the default fallback handler (or no handler if there is no default fallback handler).
             if (!result) {
                 result = {
-                    refinedRequest: { ...request, slashCommand: "default", userPrompt: prompt, },
+                    refinedRequest: { ...request, slashCommand: defaultSlashCommandName, userPrompt: prompt, },
                     handler: typeof this._fallbackHandlers.default === "string" ?
                         this._invokeableSlashCommands.get(this._fallbackHandlers.default)?.handler :
                         this._fallbackHandlers.default
