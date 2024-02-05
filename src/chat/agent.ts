@@ -45,6 +45,11 @@ agentSlashCommandsOwner.addInvokeableSlashCommands(new Map([
  * Owns slash commands that are hidden from the user and related to benchmarking the agent.
  */
 const agentBenchmarker = new AgentBenchmarker(agentSlashCommandsOwner);
+agentBenchmarker.addExtensionsToBenchmark(
+    functionsExtensionSlashCommandsOwner.getExtension(),
+    storageExtensionSlashCommandsOwner.getExtension(),
+    appServiceExtensionSlashCommandsOwner.getExtension()
+);
 
 /**
  * Owns slash commands that are hidden from the user.

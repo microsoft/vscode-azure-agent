@@ -7,7 +7,6 @@ import { type AgentBenchmarkConfig } from "@microsoft/vscode-azext-utils";
 import type * as vscode from "vscode";
 import { type AgentRequest, type IAgentRequestHandler } from "../agent";
 import { agentName } from "../agentConsts";
-import { appServiceExtension, functionsExtension, storageExtension } from "../extensions/extensions";
 import { type WizardBasedExtension } from "../extensions/wizardBasedExtension";
 import { SlashCommandsOwner, type FallbackSlashCommandHandlers, type SlashCommand, type SlashCommandConfig, type SlashCommandHandlerResult } from "../slashCommands";
 
@@ -35,11 +34,7 @@ export class AgentBenchmarker implements IAgentRequestHandler {
     constructor(agentSlashCommandsOwner: SlashCommandsOwner) {
         this._agentSlashCommandsOwner = agentSlashCommandsOwner;
         this._benchmarks = [];
-        this._extensionsToBenchmark = [
-            functionsExtension,
-            storageExtension,
-            appServiceExtension,
-        ];
+        this._extensionsToBenchmark = [];
         this._benchmarksRunsStats = [];
 
         const slashCommands = new Map([this._getBenchmarkSlashCommand(), this._getBenchmarkStatsSlashCommand()]);
@@ -51,7 +46,7 @@ export class AgentBenchmarker implements IAgentRequestHandler {
         this._continuationIndex = 0;
     }
 
-    public addExtensionsToBenchmark(extensions: WizardBasedExtension[]): void {
+    public addExtensionsToBenchmark(...extensions: WizardBasedExtension[]): void {
         this._extensionsToBenchmark.push(...extensions);
     }
 
@@ -67,14 +62,14 @@ export class AgentBenchmarker implements IAgentRequestHandler {
         if (this._extensionsToBenchmark.length > 0) {
             for (const extension of this._extensionsToBenchmark.splice(0)) {
                 if (extension.isInstalled() && extension.isCompatible()) {
-                    request.progress.report({ message: `Activating the ${extension.displayName} extension...` });
+                    request.progress.report({ message: `Activating the ${extension.extensionDisplayName} extension...` });
                     await extension.activate(request);
-                    request.progress.report({ message: `Getting benchmark configs from the ${extension.displayName} extension...` });
+                    request.progress.report({ message: `Getting benchmark configs from the ${extension.extensionDisplayName} extension...` });
                     const benchmarkConfigs = await extension.getAgentBenchmarkConfigs();
                     this._benchmarks.push(...benchmarkConfigs);
                     this._benchmarksRunsStats.push(...benchmarkConfigs.map(() => []));
                 } else {
-                    request.progress.report({ message: `Skipping getting benchmark configs from the ${extension.displayName} extension as it is not ${extension.isInstalled() ? "compatible" : "installed"}...` });
+                    request.progress.report({ message: `Skipping getting benchmark configs from the ${extension.extensionDisplayName} extension as it is not ${extension.isInstalled() ? "compatible" : "installed"}...` });
                 }
             }
         }

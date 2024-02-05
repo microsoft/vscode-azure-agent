@@ -81,16 +81,19 @@ export type SlashCommmandOwnerOptions = {
     disableIntentDetection?: boolean;
 };
 
+/**
+ * A class that owns a set of slash commands and can handle requests for them.
+ */
 export class SlashCommandsOwner implements IAgentRequestHandler {
     private _invokeableSlashCommands: SlashCommands;
-    private _fallbackSlashCommands: FallbackSlashCommandHandlers;
+    private _fallbackHandlers: FallbackSlashCommandHandlers;
     private _disableIntentDetection: boolean;
 
     private _previousSlashCommandHandlerResult: SlashCommandHandlerResult;
 
-    constructor(fallbackSlashCommands: FallbackSlashCommandHandlers, options?: SlashCommmandOwnerOptions) {
+    constructor(fallbackHandlers: FallbackSlashCommandHandlers, options?: SlashCommmandOwnerOptions) {
         this._invokeableSlashCommands = new Map();
-        this._fallbackSlashCommands = fallbackSlashCommands;
+        this._fallbackHandlers = fallbackHandlers;
         this._disableIntentDetection = options?.disableIntentDetection || false;
     }
 
@@ -100,9 +103,16 @@ export class SlashCommandsOwner implements IAgentRequestHandler {
         }
     }
 
+    /**
+     * Handles an agent request.
+     *
+     * Will only handle the request if:
+     * - There is a command and it is in the list of invokeable commands OR
+     * - Intent detection is not disabled.
+     */
     public async handleRequestOrPrompt(request: AgentRequest): Promise<SlashCommandHandlerResult> {
         const getHandlerResult = await this._getSlashCommandHandlerForRequest(request);
-        if (getHandlerResult.handler !== undefined) {
+        if (getHandlerResult?.handler !== undefined) {
             const handler = getHandlerResult.handler;
             const refinedRequest = getHandlerResult.refinedRequest;
 
@@ -135,39 +145,30 @@ export class SlashCommandsOwner implements IAgentRequestHandler {
         return Array.from(this._invokeableSlashCommands.entries());
     }
 
-    private async _getSlashCommandHandlerForRequest(request: AgentRequest): Promise<{ refinedRequest: AgentRequest, handler: SlashCommandHandler | undefined }> {
+    private async _getSlashCommandHandlerForRequest(request: AgentRequest): Promise<{ refinedRequest: AgentRequest, handler: SlashCommandHandler | undefined } | undefined> {
         const { prompt: prompt, command: parsedCommand } = this._preProcessPrompt(request.userPrompt);
 
-        // trust VS Code to parse the command out for us, but also look for a parsed command for any "hidden" commands that VS Code doesn't know to parse out.
+        // Trust VS Code to parse the command out for us, but also look for a parsed command for any "hidden" commands that VS Code doesn't know to parse out.
         const command = request.slashCommand || parsedCommand;
 
         let result: { refinedRequest: AgentRequest, handler: SlashCommandHandler | undefined } | undefined;
 
-        if (!result && prompt === "" && !command) {
-            result = {
-                refinedRequest: { ...request, slashCommand: "noInput", userPrompt: prompt, },
-                handler: typeof this._fallbackSlashCommands.noInput === "string" ?
-                    this._invokeableSlashCommands.get(this._fallbackSlashCommands.noInput)?.handler :
-                    this._fallbackSlashCommands.noInput
-            };
-        }
-
-        if (!result && !!command) {
-            const slashCommand = this._invokeableSlashCommands.get(command);
-            if (slashCommand !== undefined) {
+        // Only try to get a handler if:
+        // - There is a command and it is in the list of invokeable commands OR
+        // - Intent detection is not disabled.
+        if ((command !== undefined && this._invokeableSlashCommands.has(command)) || !this._disableIntentDetection) {
+            // If there is no prompt and no command, then use the noInput fallback handler (or no handler if there is no noInput fallback handler).
+            if (!result && prompt === "" && !command) {
                 result = {
-                    refinedRequest: { ...request, slashCommand: command, userPrompt: prompt, },
-                    handler: slashCommand.handler
+                    refinedRequest: { ...request, slashCommand: "noInput", userPrompt: prompt, },
+                    handler: typeof this._fallbackHandlers.noInput === "string" ?
+                        this._invokeableSlashCommands.get(this._fallbackHandlers.noInput)?.handler :
+                        this._fallbackHandlers.noInput
                 };
             }
-        }
 
-        if (!result && this._disableIntentDetection !== true) {
-            const intentDetectionTargets = Array.from(this._invokeableSlashCommands.entries())
-                .map(([name, config]) => ({ name: name, intentDetectionDescription: config.intentDescription || config.shortDescription }));
-            const detectedTarget = await detectIntent(intentDetectionTargets, request);
-            if (detectedTarget !== undefined) {
-                const command = detectedTarget.name;
+            // If there is a command, then use the command's handler.
+            if (!result && !!command) {
                 const slashCommand = this._invokeableSlashCommands.get(command);
                 if (slashCommand !== undefined) {
                     result = {
@@ -176,15 +177,33 @@ export class SlashCommandsOwner implements IAgentRequestHandler {
                     };
                 }
             }
-        }
 
-        if (!result) {
-            result = {
-                refinedRequest: { ...request, slashCommand: "default", userPrompt: prompt, },
-                handler: typeof this._fallbackSlashCommands.default === "string" ?
-                    this._invokeableSlashCommands.get(this._fallbackSlashCommands.default)?.handler :
-                    this._fallbackSlashCommands.default
-            };
+            // If intent detection is not disabled, then use intent detection to find a command (at this point there must be a prompt).
+            if (!result && this._disableIntentDetection !== true) {
+                const intentDetectionTargets = Array.from(this._invokeableSlashCommands.entries())
+                    .map(([name, config]) => ({ name: name, intentDetectionDescription: config.intentDescription || config.shortDescription }));
+                const detectedTarget = await detectIntent(intentDetectionTargets, request);
+                if (detectedTarget !== undefined) {
+                    const command = detectedTarget.name;
+                    const slashCommand = this._invokeableSlashCommands.get(command);
+                    if (slashCommand !== undefined) {
+                        result = {
+                            refinedRequest: { ...request, slashCommand: command, userPrompt: prompt, },
+                            handler: slashCommand.handler
+                        };
+                    }
+                }
+            }
+
+            // If after all of that, there is still no result, then use the default fallback handler (or no handler if there is no default fallback handler).
+            if (!result) {
+                result = {
+                    refinedRequest: { ...request, slashCommand: "default", userPrompt: prompt, },
+                    handler: typeof this._fallbackHandlers.default === "string" ?
+                        this._invokeableSlashCommands.get(this._fallbackHandlers.default)?.handler :
+                        this._fallbackHandlers.default
+                };
+            }
         }
 
         return result;

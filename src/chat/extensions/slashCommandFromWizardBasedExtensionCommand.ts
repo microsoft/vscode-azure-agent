@@ -22,7 +22,7 @@ export function slashCommandFromWizardBasedExtensionCommand(command: WizardBased
                 const markdownResponseLines: string[] = [];
                 const followUps: vscode.ChatAgentFollowup[] = [];
 
-                markdownResponseLines.push(`Ok, I can help you by using the the **${command.displayName}** command from the **${extension.displayName}** extension.`);
+                markdownResponseLines.push(`Ok, I can help you by using the the **${command.displayName}** command from the **${extension.extensionDisplayName}** extension.`);
 
                 // @todo: handle this case
                 // if (command.requiresWorkspaceOpen === true) {

@@ -4,47 +4,43 @@
  *--------------------------------------------------------------------------------------------*/
 
 import { type AgentRequest } from "../agent";
-import { getBrainstormCommand, getLearnCommand, getMightBeInterestedHandler, type BrainstormCommandConfig, type LearnCommandConfig, type MightBeInterestedHandlerConfig } from "../commonCommandsAndHandlers";
+import { getLearnCommand, getMightBeInterestedHandler } from "../commonCommandsAndHandlers";
 import { SlashCommandsOwner, type SlashCommand, type SlashCommandHandlerResult, type SlashCommands } from "../slashCommands";
 import { slashCommandFromWizardBasedExtensionCommand } from "./slashCommandFromWizardBasedExtensionCommand";
-import { type WizardBasedExtension } from "./wizardBasedExtension";
-
-export type CommonSlashCommandAndHandlerConfigs = {
-    brainstorm: BrainstormCommandConfig;
-    learn: LearnCommandConfig;
-    mightBeInterested: MightBeInterestedHandlerConfig;
-}
+import { WizardBasedExtension } from "./wizardBasedExtension";
 
 export class ExtensionSlashCommandsOwner {
     private _extension: WizardBasedExtension;
     private _commandName: string;
-    private _extensionName: string;
+    private _extensionDisplayName: string;
     private _azureServiceName: string;
-    private _commonSlashCommandConfigs: CommonSlashCommandAndHandlerConfigs;
 
     /**
      * Lazily loaded.
      */
     private _extensionSlashCommandsOwner: SlashCommandsOwner | undefined;
 
-    constructor(extension: WizardBasedExtension, commandName: string, extensionName: string, azureServiceName: string, commonSlashCommandConfigs: CommonSlashCommandAndHandlerConfigs) {
-        this._extension = extension;
-        this._commandName = commandName;
-        this._extensionName = extensionName;
+    constructor(extensionId: string, extensionDisplayName: string, azureServiceName: string, commandName: string) {
+        this._extension = new WizardBasedExtension(extensionId, extensionDisplayName);
+        this._extensionDisplayName = extensionDisplayName;
         this._azureServiceName = azureServiceName;
-        this._commonSlashCommandConfigs = commonSlashCommandConfigs;
+        this._commandName = commandName;
     }
 
     public getTopLevelSlashCommand(): SlashCommand {
         return [
             this._commandName,
             {
-                shortDescription: `Work with the ${this._extensionName} extension for VS Code and/or ${this._azureServiceName}`,
-                longDescription: `Use the command when you want to learn about or work with ${this._azureServiceName} or the ${this._extensionName} extension for VS Code.`,
-                intentDescription: `This is best when a user prompt could be related to the ${this._extensionName} extension for VS Code or ${this._azureServiceName}.`,
+                shortDescription: `Work with the ${this._extensionDisplayName} extension for VS Code and/or ${this._azureServiceName}`,
+                longDescription: `Use the command when you want to learn about or work with ${this._azureServiceName} or the ${this._extensionDisplayName} extension for VS Code.`,
+                intentDescription: `This is best when a user prompt could be related to the ${this._extensionDisplayName} extension for VS Code or ${this._azureServiceName}.`,
                 handler: (...args) => this._handleExtensionSlashCommand(...args),
             }
         ]
+    }
+
+    public getExtension(): WizardBasedExtension {
+        return this._extension;
     }
 
     private async _handleExtensionSlashCommand(request: AgentRequest): Promise<SlashCommandHandlerResult> {
@@ -57,8 +53,7 @@ export class ExtensionSlashCommandsOwner {
             await this._extension.activate(request);
 
             const extensionSlashCommands: SlashCommands = new Map([
-                getBrainstormCommand(this._commonSlashCommandConfigs.brainstorm),
-                getLearnCommand(this._commonSlashCommandConfigs.learn),
+                getLearnCommand({ topic: `${this._extensionDisplayName} and/or the ${this._extensionDisplayName} extension for VS Code`, associatedExtension: this._extension }),
             ]);
 
             if (this._extension.isInstalled()) {
@@ -73,7 +68,7 @@ export class ExtensionSlashCommandsOwner {
                 }
             }
 
-            const mightBeInterestedHandler = getMightBeInterestedHandler(this._commonSlashCommandConfigs.mightBeInterested);
+            const mightBeInterestedHandler = getMightBeInterestedHandler({ topic: `${this._extensionDisplayName} and/or the ${this._extensionDisplayName} extension for VS Code` });
             this._extensionSlashCommandsOwner = new SlashCommandsOwner({ noInput: mightBeInterestedHandler, default: mightBeInterestedHandler });
             this._extensionSlashCommandsOwner.addInvokeableSlashCommands(extensionSlashCommands);
         }

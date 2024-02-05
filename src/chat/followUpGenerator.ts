@@ -24,11 +24,11 @@ export async function generateExtensionCommandFollowUps(copilotContent: string, 
 
 export async function generateNextQuestionsFollowUps(copilotContent: string, request: AgentRequest): Promise<vscode.ChatAgentReplyFollowup[]> {
     const copilotContentAgentRequest: AgentRequest = { ...request, userPrompt: copilotContent, }
-    const maybeJsonCopilotResponseLanguage = await getResponseAsStringCopilotInteraction(generateNextQuestionsFollowUpsSystemPrompt1, copilotContentAgentRequest);
+    const maybeJsonCopilotResponse = await getResponseAsStringCopilotInteraction(generateNextQuestionsFollowUpsSystemPrompt1, copilotContentAgentRequest);
     const copilotGeneratedFollowUpQuestions = [
-        getStringFieldFromCopilotResponseMaybeWithStrJson(maybeJsonCopilotResponseLanguage, "followUpOne")?.trim(),
-        getStringFieldFromCopilotResponseMaybeWithStrJson(maybeJsonCopilotResponseLanguage, "followUpTwo")?.trim(),
-        getStringFieldFromCopilotResponseMaybeWithStrJson(maybeJsonCopilotResponseLanguage, "followUpThree")?.trim(),
+        getStringFieldFromCopilotResponseMaybeWithStrJson(maybeJsonCopilotResponse, "followUpOne")?.trim(),
+        getStringFieldFromCopilotResponseMaybeWithStrJson(maybeJsonCopilotResponse, "followUpTwo")?.trim(),
+        getStringFieldFromCopilotResponseMaybeWithStrJson(maybeJsonCopilotResponse, "followUpThree")?.trim(),
     ];
     return copilotGeneratedFollowUpQuestions
         .map((q) => {
@@ -56,4 +56,38 @@ Result: { "followUpOne": "What other Azure services can Azure Functions be trigg
 
 Text: A storage account allows you to store data remotely in Azure as blobs. The data can be accessed from anywhere in the world via HTTP or HTTPS.
 Result: { "followUpOne": "How can I disable HTTP access for my storage account?", "followUpTwo": "How can I enable geo-redundancy for my storage accounts?", "followUpThree": "What is the largest size a blob can be?" }
-`
+`;
+
+export async function generateSampleQuestionsFollowUps(topic: string, ragContent: string | undefined, request: AgentRequest): Promise<vscode.ChatAgentReplyFollowup[]> {
+    const maybeJsonCopilotResponse = await getResponseAsStringCopilotInteraction(generateSampleQuestionsFollowUpsSystemPrompt(topic, ragContent), request);
+    const copilotGeneratedFollowUpQuestions = [
+        getStringFieldFromCopilotResponseMaybeWithStrJson(maybeJsonCopilotResponse, "sampleQuestionOne")?.trim(),
+        getStringFieldFromCopilotResponseMaybeWithStrJson(maybeJsonCopilotResponse, "sampleQuestionTwo")?.trim(),
+        getStringFieldFromCopilotResponseMaybeWithStrJson(maybeJsonCopilotResponse, "sampleQuestionThree")?.trim(),
+    ];
+    return copilotGeneratedFollowUpQuestions
+        .map((q) => {
+            if (q !== undefined && q !== "") {
+                return { message: `@${agentName} ${q}` };
+            } else {
+                return undefined;
+            }
+        })
+        .filter((q): q is vscode.ChatAgentReplyFollowup => q !== undefined);
+}
+
+function generateSampleQuestionsFollowUpsSystemPrompt(topic: string, ragContent: string | undefined): string {
+    const initialSection = `You are an expert in ${topic}. The user wants to use or learn about ${topic} to help them do things and solve problems. Your job is to come up with sample questions a user might have about ${topic}. Assume the the user is only interested in using cloud services from Microsoft Azure. Assume the user wants to use VS Code and/or the Azure Extensions for VS Code. Suggest up to three sample questions. Only repsond with a JSON summary of the sample questions. Do not respond in a coverstaional tone, only JSON.
+
+    # Example Response 1
+    Result: { "sampleQuestionOne": "Can a blob storage trigger template be configured to trigger if any blobs under a prefix are changed?", "sampleQuestionTwo": "Can an Azure Function be triggered by changes in an Azure file share?" }
+
+    # Example Response 2
+    Result: { "sampleQuestionOne": "What other Azure services can Azure Functions be triggered by?", "sampleQuestionTwo": "What Azure services integrate well with Azure Functions?", "sampleQuestionThree": "What types of event processing can Azure Functions help with?" }
+
+    # Example Response 3
+    Result: { "sampleQuestionOne": "How can I disable HTTP access for my storage account?", "sampleQuestionTwo": "How can I enable geo-redundancy for my storage accounts?", "sampleQuestionThree": "What is the largest size a blob can be?" }`;
+    const ragSection = !ragContent ? "" : `\n\nHere is some up-to-date information about ${topic}t:\n\n${ragContent}`;
+    return initialSection + ragSection;
+}
+

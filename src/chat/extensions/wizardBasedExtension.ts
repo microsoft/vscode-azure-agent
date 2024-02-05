@@ -11,14 +11,14 @@ import { type AgentRequest } from "../agent";
 
 export class WizardBasedExtension {
     public readonly extensionId: string;
-    public readonly displayName: string;
+    public readonly extensionDisplayName: string;
 
     private _extensionAgentMetadata: ExtensionAgentMetadata | undefined;
     private _extension: vscode.Extension<object> | undefined;
 
-    constructor(extensionId: string, displayName: string) {
+    constructor(extensionId: string, extensionDisplayName: string) {
         this.extensionId = extensionId;
-        this.displayName = displayName;
+        this.extensionDisplayName = extensionDisplayName;
     }
 
     public isInstalled(): boolean {
@@ -38,7 +38,7 @@ export class WizardBasedExtension {
         if (this.extensionId !== "") {
             this._extension = this._extension || vscode.extensions.getExtension(this.extensionId);
             if (this._extension !== undefined) {
-                request.progress.report({ message: `Activating the ${this.displayName} extension...` })
+                request.progress.report({ message: `Activating the ${this.extensionDisplayName} extension...` })
                 await this._extension.activate();
             }
         }
@@ -46,20 +46,20 @@ export class WizardBasedExtension {
 
     public async getWizardCommands(): Promise<WizardBasedCommandConfig[]> {
         if (!this._extensionAgentMetadata) {
-            throw new Error(`Extension ${this.displayName} does not yet have extension agent metadata initialized`);
+            throw new Error(`Extension ${this.extensionDisplayName} does not yet have extension agent metadata initialized`);
         }
 
         try {
             return await vscode.commands.executeCommand<WizardBasedCommandConfig[]>(this._extensionAgentMetadata.getWizardCommandsCommandId);
         } catch (error) {
-            console.log(`Error getting wizard commands from ${this.displayName} extension: ${JSON.stringify(error)}`);
+            console.log(`Error getting wizard commands from ${this.extensionDisplayName} extension: ${JSON.stringify(error)}`);
             return [];
         }
     }
 
     public async runWizardCommandWithoutExecutionId(command: WizardBasedCommandConfig, agentAzureUserInput: IAzureAgentInput): Promise<void> {
         if (!this._extensionAgentMetadata) {
-            throw new Error(`Extension ${this.displayName} does not yet have extension agent metadata initialized`);
+            throw new Error(`Extension ${this.extensionDisplayName} does not yet have extension agent metadata initialized`);
         }
 
         await vscode.commands.executeCommand(this._extensionAgentMetadata.runWizardCommandWithoutExecutionCommandId, command, agentAzureUserInput);
@@ -67,7 +67,7 @@ export class WizardBasedExtension {
 
     public getRunWizardCommandWithInputsFollowUp(command: WizardBasedCommandConfig, inputQueue: AzureUserInputQueue): vscode.ChatAgentFollowup {
         if (!this._extensionAgentMetadata) {
-            throw new Error(`Extension ${this.displayName} does not yet have extension agent metadata initialized`);
+            throw new Error(`Extension ${this.extensionDisplayName} does not yet have extension agent metadata initialized`);
         }
 
         return { title: command.displayName, commandId: this._extensionAgentMetadata.runWizardCommandWithInputsCommandId, args: [command, inputQueue] };
@@ -75,13 +75,13 @@ export class WizardBasedExtension {
 
     public async getAgentBenchmarkConfigs(): Promise<AgentBenchmarkConfig[]> {
         if (!this._extensionAgentMetadata) {
-            throw new Error(`Extension ${this.displayName} does not yet have extension agent metadata initialized`);
+            throw new Error(`Extension ${this.extensionDisplayName} does not yet have extension agent metadata initialized`);
         }
 
         try {
             return await vscode.commands.executeCommand<AgentBenchmarkConfig[]>(this._extensionAgentMetadata.getAgentBenchmarkConfigsCommandId);
         } catch (error) {
-            console.log(`Error getting wizard commands from ${this.displayName} extension: ${JSON.stringify(error)}`);
+            console.log(`Error getting wizard commands from ${this.extensionDisplayName} extension: ${JSON.stringify(error)}`);
             return [];
         }
     }
