@@ -149,9 +149,9 @@ export class AgentBenchmarker implements IAgentRequestHandler {
             const allRequiredFollowUpsFoundCount = benchmarkRunStats.filter((runStat) => runStat.followUps.allRequiredFollowUpsFound).length;
             const allFollowUpsRequiredOrOptionalCount = benchmarkRunStats.filter((runStat) => runStat.followUps.allFollowUpsRequiredOrOptional).length;
 
-            const handlerChainValidPercentage = handlerChainValidCount / numRuns;
-            const allRequiredFollowUpsFoundPercentage = allRequiredFollowUpsFoundCount / numRuns;
-            const allFollowUpsRequiredOrOptionalPercentage = allFollowUpsRequiredOrOptionalCount / numRuns;
+            const handlerChainValidPercentage = numRuns === 0 ? 1 : handlerChainValidCount / numRuns;
+            const allRequiredFollowUpsFoundPercentage = numRuns === 0 ? 1 : allRequiredFollowUpsFoundCount / numRuns;
+            const allFollowUpsRequiredOrOptionalPercentage = numRuns === 0 ? 1 : allFollowUpsRequiredOrOptionalCount / numRuns;
             const statsString = `📋 Benchmark (${benchmarkIdx}/${this._benchmarks.length}): ${benchmark.name}\n` +
                 `🔁 Number of runs: ${numRuns}\n` +
                 `⏱️ Average time to complete benchmark: ${avgTime}ms\n` +
@@ -189,7 +189,7 @@ export class AgentBenchmarker implements IAgentRequestHandler {
             for (let benchmarkIdx = 0; benchmarkIdx < this._benchmarks.length; benchmarkIdx++) {
                 await this._runBenchmark(benchmarkIdx, request);
 
-                if (i % 10 === 0) {
+                if (i % 10 === 0 && i !== 0) {
                     await this._benchmarkStats(request);
                     const estimatedTimeToRunRemaining = (this._benchmarks.length * averageDelayBetweenBenchmarks * (timesToRunAll - i)) / 1000;
                     const estimatedFinishTime = new Date(Date.now() + estimatedTimeToRunRemaining * 1000).toLocaleTimeString();
