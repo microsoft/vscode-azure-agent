@@ -4,6 +4,9 @@
  *--------------------------------------------------------------------------------------------*/
 
 import { type AgentBenchmarkConfig } from "@microsoft/vscode-azext-utils";
+import * as fs from "fs";
+import * as os from "os";
+import * as path from "path";
 import type * as vscode from "vscode";
 import { type AgentRequest, type IAgentRequestHandler } from "../agent";
 import { agentName } from "../agentConsts";
@@ -106,33 +109,29 @@ export class AgentBenchmarker implements IAgentRequestHandler {
 
         this._debugBenchmarking(request.responseStream, `📋 Benchmark (${benchmarkIdx ?? this._continuationIndex}/${this._benchmarks.length}): ${benchmark.name}\n💭 Prompt: '${benchmark.prompt}'...`);
 
+        // When running a benchmark, create an intermediate response stream that captures information needed to perform validation after the agent is done responding.
         const returnedButtons: vscode.Command[] = [];
         const originalResponseStream = request.responseStream;
-        const responseStream: vscode.ChatAgentResponseStream = {
+        const runBenchmarkResponseStream: vscode.ChatAgentResponseStream = {
             markdown: function (value: string | vscode.MarkdownString): vscode.ChatAgentResponseStream {
-                // @todo: Redirect to a file so VS Code UI doesn't get bogged down and so the output is not lost to chat history length limits.
-                originalResponseStream.markdown(value); return responseStream;
+                return originalResponseStream.markdown(value);
             },
             button: function (command: vscode.Command): vscode.ChatAgentResponseStream {
                 returnedButtons.push(command);
-                // @todo: Redirect to a file so VS Code UI doesn't get bogged down and so the output is not lost to chat history length limits.
-                originalResponseStream.button(command); return responseStream;
+                return originalResponseStream.button(command);
             },
             reference: function (value: vscode.Uri | vscode.Location): vscode.ChatAgentResponseStream {
-                // @todo: Redirect to a file so VS Code UI doesn't get bogged down and so the output is not lost to chat history length limits.
-                originalResponseStream.reference(value); return responseStream;
+                return originalResponseStream.reference(value);
             },
             progress: function (value: string): vscode.ChatAgentResponseStream {
-                // @todo: Redirect to a file so VS Code UI doesn't get bogged down and so the output is not lost to chat history length limits.
-                originalResponseStream.progress(value); return responseStream;
+                return originalResponseStream.progress(value);
             },
             text: function (_value: string): vscode.ChatAgentResponseStream { throw new Error("Function not implemented."); },
             files: function (_value: vscode.ChatAgentFileTreeData): vscode.ChatAgentResponseStream { throw new Error("Function not implemented."); },
             anchor: function (_value: vscode.Uri | vscode.Location, _title?: string | undefined): vscode.ChatAgentResponseStream { throw new Error("Function not implemented."); },
             report: function (_value: vscode.ChatAgentProgress): void { throw new Error("Function not implemented."); }
         };
-        const benchmarkRequest: AgentRequest = { ...request, userPrompt: benchmark.prompt, };
-
+        const benchmarkRequest: AgentRequest = { ...request, userPrompt: benchmark.prompt, responseStream: runBenchmarkResponseStream };
         const startTime = Date.now();
         const handleResult = await this._agentSlashCommandsOwner.handleRequestOrPrompt(benchmarkRequest);
         const endTime = Date.now();
@@ -214,28 +213,55 @@ export class AgentBenchmarker implements IAgentRequestHandler {
         const estimatedTimeToRunAll = (this._benchmarks.length * averageDelayBetweenBenchmarks * timesToRunAll) / 1000;
         const estimatedCompletionTime = new Date(Date.now() + estimatedTimeToRunAll * 1000).toLocaleTimeString();
 
+        // When running all benchmarks, create an response stream that writes all benchmark and agent output to a file.
+        const outFile = await getBenchmarkOutFilePath();
+        const benchmarkAllResponseStream: vscode.ChatAgentResponseStream = {
+            markdown: function (value: string | vscode.MarkdownString): vscode.ChatAgentResponseStream {
+                fs.appendFileSync(outFile, typeof value === "string" ? value : value.value);
+                return benchmarkAllResponseStream;
+            },
+            button: function (command: vscode.Command): vscode.ChatAgentResponseStream {
+                fs.appendFileSync(outFile, JSON.stringify(command.toString()));
+                return benchmarkAllResponseStream;
+            },
+            reference: function (value: vscode.Uri | vscode.Location): vscode.ChatAgentResponseStream {
+                fs.appendFileSync(outFile, JSON.stringify(value.toString()));
+                return benchmarkAllResponseStream;
+            },
+            progress: function (value: string): vscode.ChatAgentResponseStream {
+                fs.appendFileSync(outFile, value.toString());
+                return benchmarkAllResponseStream;
+            },
+            text: function (_value: string): vscode.ChatAgentResponseStream { throw new Error("Function not implemented."); },
+            files: function (_value: vscode.ChatAgentFileTreeData): vscode.ChatAgentResponseStream { throw new Error("Function not implemented."); },
+            anchor: function (_value: vscode.Uri | vscode.Location, _title?: string | undefined): vscode.ChatAgentResponseStream { throw new Error("Function not implemented."); },
+            report: function (_value: vscode.ChatAgentProgress): void { throw new Error("Function not implemented."); }
+        };
+
         const benchmarkAllIntroString = `Running all ${this._benchmarks.length} benchmarks ${timesToRunAll} times.\n` +
             `Average delay between benchmarks: ${averageDelayBetweenBenchmarks / 1000} seconds\n` +
             `Estimated time to run all benchmarks: ${estimatedTimeToRunAll} seconds\n` +
-            `Estimated completion time: ${estimatedCompletionTime}`;
+            `Estimated completion time: ${estimatedCompletionTime}\n` +
+            `Output will be saved to: ${outFile}`;
         this._debugBenchmarking(request.responseStream, benchmarkAllIntroString);
 
         for (let i = 0; i < timesToRunAll; i++) {
             for (let benchmarkIdx = 0; benchmarkIdx < this._benchmarks.length; benchmarkIdx++) {
-                await this._runBenchmark(benchmarkIdx, request);
+                await this._runBenchmark(benchmarkIdx, { ...request, responseStream: benchmarkAllResponseStream });
 
                 const randomDelay = Math.random() * (maxDelayBetweenBenchmarks - minDelayBetweenBenchmarks) + minDelayBetweenBenchmarks;
                 this._debugBenchmarking(request.responseStream, `Delaying ${randomDelay / 1000} seconds before running the next benchmark...`);
                 await new Promise((resolve) => setTimeout(resolve, randomDelay));
             }
 
-            await this._benchmarkStats(request);
+            // Write a benchmark stats after each run through to benchmarkAllResponseStream (which should be to the out file).
+            await this._benchmarkStats({ ...request, responseStream: benchmarkAllResponseStream });
+
             const estimatedTimeToRunRemaining = (this._benchmarks.length * averageDelayBetweenBenchmarks * (timesToRunAll - i)) / 1000;
             const estimatedFinishTime = new Date(Date.now() + estimatedTimeToRunRemaining * 1000).toLocaleTimeString();
             this._debugBenchmarking(request.responseStream, `New estimated completion time: ${estimatedFinishTime}`);
         }
 
-        await this._benchmarkStats(request);
 
         return { chatAgentResult: {}, followUp: [], };
     }
@@ -352,4 +378,26 @@ function getColorEmojiForPercentage(percentage: number): string {
     } else {
         return "🔴";
     }
+}
+
+async function getBenchmarkOutFilePath(): Promise<string> {
+    const fileName = `agent-${agentName}-benchmark-${generateRandomLetters(4)}-${Date.now()}.md`;
+    const filePath = path.join(os.homedir(), fileName);
+
+    if (fs.existsSync(filePath)) {
+        await new Promise((resolve) => setTimeout(resolve, 50));
+        return getBenchmarkOutFilePath();
+    }
+
+    return filePath;
+}
+
+function generateRandomLetters(length: number): string {
+    const characters = "abcdefghijklmnopqrstuvwxyz";
+    let result = "";
+    for (let i = 0; i < length; i++) {
+        const randomIndex = Math.floor(Math.random() * characters.length);
+        result += characters.charAt(randomIndex);
+    }
+    return result;
 }
