@@ -28,6 +28,46 @@ export const helpBenchmarks: AgentBenchmarkConfig[] = [
         prompt: "Can this thing do anything useful?",
         acceptableHandlerChains: [[agentHelpCommandName]]
     },
+    {
+        name: "Agent Help Benchmark 4",
+        prompt: "What is your purpose?",
+        acceptableHandlerChains: [[agentHelpCommandName]]
+    },
+    {
+        name: "Agent Help Benchmark 4",
+        prompt: "I don't know if you can help me...",
+        acceptableHandlerChains: [[agentHelpCommandName]]
+    },
+    {
+        name: "Agent Help Benchmark 4",
+        prompt: "Are you a chatbot?",
+        acceptableHandlerChains: [[agentHelpCommandName]]
+    },
+    {
+        name: "Agent Help Benchmark 4",
+        prompt: "I'd like you to tell me about yourself",
+        acceptableHandlerChains: [[agentHelpCommandName]]
+    },
+    {
+        name: "Agent Help Benchmark 4",
+        prompt: "Sell me on your usefulness",
+        acceptableHandlerChains: [[agentHelpCommandName]]
+    },
+    {
+        name: "Agent Help Benchmark 4",
+        prompt: "Name everything you can help me with",
+        acceptableHandlerChains: [[agentHelpCommandName]]
+    },
+    {
+        name: "Agent Help Benchmark 4",
+        prompt: "I want to know all about the azure agent",
+        acceptableHandlerChains: [[agentHelpCommandName]]
+    },
+    {
+        name: "Agent Help Benchmark 4",
+        prompt: "Tell me more about this agent",
+        acceptableHandlerChains: [[agentHelpCommandName]]
+    },
 ];
 
 export const defaultBenchmarks: AgentBenchmarkConfig[] = [
@@ -49,6 +89,36 @@ export const defaultBenchmarks: AgentBenchmarkConfig[] = [
     {
         name: "Default Benchmark 4",
         prompt: "What Azure services are currently in preview?",
+        acceptableHandlerChains: [[defaultSlashCommandName]]
+    },
+    {
+        name: "Default Benchmark 4",
+        prompt: "Teach me about logic apps",
+        acceptableHandlerChains: [[defaultSlashCommandName]]
+    },
+    {
+        name: "Default Benchmark 4",
+        prompt: "When was Azure created?",
+        acceptableHandlerChains: [[defaultSlashCommandName]]
+    },
+    {
+        name: "Default Benchmark 4",
+        prompt: "How many services does Azure support?",
+        acceptableHandlerChains: [[defaultSlashCommandName]]
+    },
+    {
+        name: "Default Benchmark 4",
+        prompt: "How many languages does Azure speech services support?",
+        acceptableHandlerChains: [[defaultSlashCommandName]]
+    },
+    {
+        name: "Default Benchmark 4",
+        prompt: "What types of notifications can notification hubs send?",
+        acceptableHandlerChains: [[defaultSlashCommandName]]
+    },
+    {
+        name: "Default Benchmark 4",
+        prompt: "What other companies does Azure Orbital Ground Station partner with?",
         acceptableHandlerChains: [[defaultSlashCommandName]]
     },
 ];

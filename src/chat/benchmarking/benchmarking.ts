@@ -22,6 +22,7 @@ type AgentBenchmarkRunStats = {
 
 const benchmarkCommandName = "benchmark";
 const benchmarkStatsCommandName = "benchmarkStats";
+const benchmarkAllCommandName = "benchmarkAll";
 
 export class AgentBenchmarker implements IAgentRequestHandler {
     private _agentSlashCommandsOwner: SlashCommandsOwner;
@@ -37,7 +38,7 @@ export class AgentBenchmarker implements IAgentRequestHandler {
         this._extensionsToBenchmark = [];
         this._benchmarksRunsStats = [];
 
-        const slashCommands = new Map([this._getBenchmarkSlashCommand(), this._getBenchmarkStatsSlashCommand()]);
+        const slashCommands = new Map([this._getBenchmarkSlashCommand(), this._getBenchmarkStatsSlashCommand(), this._getBenchmarkAllSlashCommand()]);
         const fallbackSlashCommandHandlers: FallbackSlashCommandHandlers = { noInput: undefined, default: undefined };
 
         this._benchmarkerSlashCommandsOwner = new SlashCommandsOwner(fallbackSlashCommandHandlers, { disableIntentDetection: true });
@@ -63,20 +64,8 @@ export class AgentBenchmarker implements IAgentRequestHandler {
         return this._benchmarkerSlashCommandsOwner.getFollowUpForLastHandledSlashCommand(result, token);
     }
 
-    private async _benchmarkAgent(request: AgentRequest): Promise<SlashCommandHandlerResult> {
-        if (this._extensionsToBenchmark.length > 0) {
-            for (const extension of this._extensionsToBenchmark.splice(0)) {
-                if (extension.isInstalled() && extension.isCompatible()) {
-                    request.progress.report({ message: `Activating the ${extension.extensionDisplayName} extension...` });
-                    await extension.activate(request);
-                    request.progress.report({ message: `Getting benchmark configs from the ${extension.extensionDisplayName} extension...` });
-                    const benchmarkConfigs = await extension.getAgentBenchmarkConfigs();
-                    this.addBenchmarkConfigs(...benchmarkConfigs);
-                } else {
-                    request.progress.report({ message: `Skipping getting benchmark configs from the ${extension.extensionDisplayName} extension as it is not ${extension.isInstalled() ? "compatible" : "installed"}...` });
-                }
-            }
-        }
+    private async _benchmarkSingle(request: AgentRequest): Promise<SlashCommandHandlerResult> {
+        await this._prepForBenchmarking(request);
 
         if (this._benchmarks.length === 0) {
             request.progress.report({ content: "No benchmarks to run. 😭" });
@@ -172,10 +161,59 @@ export class AgentBenchmarker implements IAgentRequestHandler {
 
             this._debugBenchmarking(request.progress, statsString);
         });
-        return {
-            chatAgentResult: {},
-            followUp: [],
-        };
+
+        return { chatAgentResult: {}, followUp: [], };
+    }
+
+    private async _benchmarkAll(request: AgentRequest): Promise<SlashCommandHandlerResult> {
+        if (this._benchmarks.length === 0) {
+            request.progress.report({ content: "No benchmarks to run. 😭" });
+            return { chatAgentResult: {}, followUp: [], };
+        }
+
+        const args = request.userPrompt.split(" ");
+        const timesToRunAll = parseInt(args[0]) || 1;
+        const minDelayBetweenBenchmarks = parseInt(args[1]) || (5 * 1000);
+        const maxDelayBetweenBenchmarks = parseInt(args[2]) || (10 * 1000);
+        const averageDelayBetweenBenchmarks = (maxDelayBetweenBenchmarks + minDelayBetweenBenchmarks) / 2;
+        const estimatedTimeToRunAll = (this._benchmarks.length * averageDelayBetweenBenchmarks * timesToRunAll) / 1000;
+        const estimatedCompletionTime = new Date(Date.now() + estimatedTimeToRunAll * 1000).toLocaleTimeString();
+
+        const benchmarkAllIntroString = `Running all ${this._benchmarks.length} benchmarks ${timesToRunAll} times.\n` +
+            `Average delay between benchmarks: ${averageDelayBetweenBenchmarks / 1000} seconds\n` +
+            `Estimated time to run all benchmarks: ${estimatedTimeToRunAll} seconds\n` +
+            `Estimated completion time: ${estimatedCompletionTime}`;
+        this._debugBenchmarking(request.progress, benchmarkAllIntroString);
+
+        for (let i = 0; i < timesToRunAll; i++) {
+            for (let benchmarkIdx = 0; benchmarkIdx < this._benchmarks.length; benchmarkIdx++) {
+                await this._runBenchmark(benchmarkIdx, request);
+
+                const randomDelay = Math.random() * (maxDelayBetweenBenchmarks - minDelayBetweenBenchmarks) + minDelayBetweenBenchmarks;
+                this._debugBenchmarking(request.progress, `Delaying ${randomDelay / 1000} seconds before running the next benchmark...`);
+                await new Promise((resolve) => setTimeout(resolve, randomDelay));
+            }
+        }
+
+        await this._benchmarkStats(request);
+
+        return { chatAgentResult: {}, followUp: [], };
+    }
+
+    private async _prepForBenchmarking(request: AgentRequest): Promise<void> {
+        if (this._extensionsToBenchmark.length > 0) {
+            for (const extension of this._extensionsToBenchmark.splice(0)) {
+                if (extension.isInstalled() && extension.isCompatible()) {
+                    request.progress.report({ message: `Activating the ${extension.extensionDisplayName} extension...` });
+                    await extension.activate(request);
+                    request.progress.report({ message: `Getting benchmark configs from the ${extension.extensionDisplayName} extension...` });
+                    const benchmarkConfigs = await extension.getAgentBenchmarkConfigs();
+                    this.addBenchmarkConfigs(...benchmarkConfigs);
+                } else {
+                    request.progress.report({ message: `Skipping getting benchmark configs from the ${extension.extensionDisplayName} extension as it is not ${extension.isInstalled() ? "compatible" : "installed"}...` });
+                }
+            }
+        }
     }
 
     private _getBenchmarkSlashCommand(): SlashCommand {
@@ -183,7 +221,7 @@ export class AgentBenchmarker implements IAgentRequestHandler {
             shortDescription: "",
             longDescription: "",
             intentDescription: "",
-            handler: (request: AgentRequest) => this._benchmarkAgent(request),
+            handler: (request: AgentRequest) => this._benchmarkSingle(request),
         };
         return [benchmarkCommandName, config];
     }
@@ -196,6 +234,16 @@ export class AgentBenchmarker implements IAgentRequestHandler {
             handler: (request: AgentRequest) => this._benchmarkStats(request),
         };
         return [benchmarkStatsCommandName, config];
+    }
+
+    private _getBenchmarkAllSlashCommand(): SlashCommand {
+        const config: SlashCommandConfig = {
+            shortDescription: "",
+            longDescription: "",
+            intentDescription: "",
+            handler: (request: AgentRequest) => this._benchmarkAll(request),
+        };
+        return [benchmarkAllCommandName, config];
     }
 
     private _debugBenchmarking(progress: vscode.Progress<vscode.ChatAgentExtendedProgress>, msg: string) {
