@@ -14,7 +14,7 @@ export function getAgentHelpCommand(agentSlashCommandsOwner: SlashCommandsOwner)
         {
             shortDescription: `Get help with using the @${agentName} agent.`,
             longDescription: `Get help with using the @${agentName} agent.`,
-            intentDescription: `This is best when users want to know what you can do for them, how you can help them, or how to best use you as an agent. You may be referred to as "you", "this", "bot" or other similar langauge. This is not the best if the user asks about or mentions a particular Azure service, topic, feature, or question.`,
+            intentDescription: `This is not a valid option if the user asks you do to something, or if the user mentions a particular Azure service, topic, or feature. Do not pick this option unless users are asking about how to interact with you. This is best when users want to know what you can do for them or need help understanding how to interact with you. You may be referred to as "you", "this", "bot", "agent", or other similar langauge.`,
             handler: (request) => agentHelpHandler(agentSlashCommandsOwner, request)
         }];
 }

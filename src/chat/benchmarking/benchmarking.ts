@@ -50,6 +50,11 @@ export class AgentBenchmarker implements IAgentRequestHandler {
         this._extensionsToBenchmark.push(...extensions);
     }
 
+    public addBenchmarkConfigs(...benchmarkConfigs: AgentBenchmarkConfig[]): void {
+        this._benchmarks.push(...benchmarkConfigs);
+        this._benchmarksRunsStats.push(...benchmarkConfigs.map(() => []));
+    }
+
     public handleRequestOrPrompt(request: AgentRequest): Promise<SlashCommandHandlerResult> {
         return this._benchmarkerSlashCommandsOwner.handleRequestOrPrompt(request);
     }
@@ -66,8 +71,7 @@ export class AgentBenchmarker implements IAgentRequestHandler {
                     await extension.activate(request);
                     request.progress.report({ message: `Getting benchmark configs from the ${extension.extensionDisplayName} extension...` });
                     const benchmarkConfigs = await extension.getAgentBenchmarkConfigs();
-                    this._benchmarks.push(...benchmarkConfigs);
-                    this._benchmarksRunsStats.push(...benchmarkConfigs.map(() => []));
+                    this.addBenchmarkConfigs(...benchmarkConfigs);
                 } else {
                     request.progress.report({ message: `Skipping getting benchmark configs from the ${extension.extensionDisplayName} extension as it is not ${extension.isInstalled() ? "compatible" : "installed"}...` });
                 }
@@ -109,7 +113,7 @@ export class AgentBenchmarker implements IAgentRequestHandler {
     private async _runBenchmark(benchmarkIdx: number, request: AgentRequest): Promise<void> {
         const benchmark = this._benchmarks[benchmarkIdx];
 
-        this._debugBenchmarking(request.progress, `📋 Benchmark (${this._continuationIndex}/${this._benchmarks.length}): ${benchmark.name}\n💭 Prompt: '${benchmark.prompt}'...`);
+        this._debugBenchmarking(request.progress, `📋 Benchmark (${benchmarkIdx ?? this._continuationIndex}/${this._benchmarks.length}): ${benchmark.name}\n💭 Prompt: '${benchmark.prompt}'...`);
 
         const startTime = Date.now();
         const benchmarkRequest: AgentRequest = { ...request, userPrompt: benchmark.prompt, };

@@ -3,7 +3,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import  { type AgentRequest } from "./agent";
+import { type AgentRequest } from "./agent";
 import { getResponseAsStringCopilotInteraction, getStringFieldFromCopilotResponseMaybeWithStrJson } from "./copilotInteractions";
 
 export type IntentDetectionTarget = {
@@ -12,7 +12,7 @@ export type IntentDetectionTarget = {
 }
 
 export async function detectIntent(targets: IntentDetectionTarget[], request: AgentRequest): Promise<IntentDetectionTarget | undefined> {
-    const systemPrompt = getDetectIntentSystemPrompt1(targets);
+    const systemPrompt = getDetectIntentSystemPrompt1(targets.concat([{ name: "none", intentDetectionDescription: "None of the options are the best option or are applicable." }]));
     const maybeJsonCopilotResponse = await getResponseAsStringCopilotInteraction(systemPrompt, request);
     const determinedOption =
         getStringFieldFromCopilotResponseMaybeWithStrJson(maybeJsonCopilotResponse, "option") ||
@@ -31,5 +31,16 @@ export async function detectIntent(targets: IntentDetectionTarget[], request: Ag
 
 function getDetectIntentSystemPrompt1(targets: IntentDetectionTarget[]) {
     const targetDescriptions = targets.map((target) => `'${target.name}' (${target.intentDetectionDescription})`).join(", ")
-    return `You are an expert in determining which of the following options the user is interested. The options are: ${targetDescriptions}. Your job is to determine which option would most help the user based on their query. Choose one of the available options as the best option. Only repsond with a JSON object containing the option you choose. Do not respond in a coverstaional tone, only JSON. For example: { "option": "<one of the provided options>" }`;
+    return `You are an expert in determining which of the following options the user is interested, if any. Your job is to determine which option, if any, would most help the user based on their query. If none of the options are relevant pick the "none" option.
+
+    The options are: ${targetDescriptions}.
+
+    Only repsond with a JSON object containing the option you choose. Do not respond in a coverstaional tone, only JSON.
+
+    # Example Response 1 (unable to choose a best option):
+    Result: { "option": "none" }
+
+    # Example Response 2 (able to choose a best option):
+    Result: { "option": "<one of the non-none provided options>" }
+    `;
 }
