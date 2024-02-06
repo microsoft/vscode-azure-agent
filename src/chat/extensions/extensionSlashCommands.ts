@@ -31,9 +31,9 @@ export class ExtensionSlashCommandsOwner {
         return [
             this._commandName,
             {
-                shortDescription: `Work with the ${this._extensionDisplayName} extension for VS Code and/or ${this._azureServiceName}`,
-                longDescription: `Use the command when you want to learn about or work with ${this._azureServiceName} or the ${this._extensionDisplayName} extension for VS Code.`,
-                intentDescription: `This is best when a user prompt could be related to the ${this._extensionDisplayName} extension for VS Code or ${this._azureServiceName}.`,
+                shortDescription: `Work with ${this._azureServiceName} and/or the ${this._extensionDisplayName} extension for VS Code.`,
+                longDescription: `Use the command when you want to learn about or work with ${this._azureServiceName} and/or the ${this._extensionDisplayName} extension for VS Code.`,
+                intentDescription: `This is best when a user prompt could be related to ${this._azureServiceName} and/or the ${this._extensionDisplayName} extension for VS Code.`,
                 handler: (...args) => this._handleExtensionSlashCommand(...args),
             }
         ]
@@ -53,7 +53,7 @@ export class ExtensionSlashCommandsOwner {
             await this._extension.activate(request);
 
             const extensionSlashCommands: SlashCommands = new Map([
-                getLearnCommand({ topic: `${this._extensionDisplayName} and/or the ${this._extensionDisplayName} extension for VS Code`, associatedExtension: this._extension }),
+                getLearnCommand({ topic: `${this._azureServiceName} and/or the ${this._extensionDisplayName} extension for VS Code`, associatedExtension: this._extension }),
             ]);
 
             if (this._extension.isInstalled()) {
@@ -68,7 +68,7 @@ export class ExtensionSlashCommandsOwner {
                 }
             }
 
-            const mightBeInterestedHandler = getMightBeInterestedHandler({ topic: `${this._extensionDisplayName} and/or the ${this._extensionDisplayName} extension for VS Code` });
+            const mightBeInterestedHandler = getMightBeInterestedHandler({ topic: `${this._azureServiceName} and/or the ${this._extensionDisplayName} extension for VS Code`, associatedExtension: this._extension });
             this._extensionSlashCommandsOwner = new SlashCommandsOwner({ noInput: mightBeInterestedHandler, default: mightBeInterestedHandler });
             this._extensionSlashCommandsOwner.addInvokeableSlashCommands(extensionSlashCommands);
         }
