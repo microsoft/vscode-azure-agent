@@ -189,17 +189,15 @@ export class AgentBenchmarker implements IAgentRequestHandler {
             for (let benchmarkIdx = 0; benchmarkIdx < this._benchmarks.length; benchmarkIdx++) {
                 await this._runBenchmark(benchmarkIdx, request);
 
-                if (i % 10 === 0 && i !== 0) {
-                    await this._benchmarkStats(request);
-                    const estimatedTimeToRunRemaining = (this._benchmarks.length * averageDelayBetweenBenchmarks * (timesToRunAll - i)) / 1000;
-                    const estimatedFinishTime = new Date(Date.now() + estimatedTimeToRunRemaining * 1000).toLocaleTimeString();
-                    this._debugBenchmarking(request.progress, `New estimated completion time: ${estimatedFinishTime}`);
-                }
-
                 const randomDelay = Math.random() * (maxDelayBetweenBenchmarks - minDelayBetweenBenchmarks) + minDelayBetweenBenchmarks;
                 this._debugBenchmarking(request.progress, `Delaying ${randomDelay / 1000} seconds before running the next benchmark...`);
                 await new Promise((resolve) => setTimeout(resolve, randomDelay));
             }
+
+            await this._benchmarkStats(request);
+            const estimatedTimeToRunRemaining = (this._benchmarks.length * averageDelayBetweenBenchmarks * (timesToRunAll - i)) / 1000;
+            const estimatedFinishTime = new Date(Date.now() + estimatedTimeToRunRemaining * 1000).toLocaleTimeString();
+            this._debugBenchmarking(request.progress, `New estimated completion time: ${estimatedFinishTime}`);
         }
 
         await this._benchmarkStats(request);
