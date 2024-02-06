@@ -4,6 +4,9 @@
  *--------------------------------------------------------------------------------------------*/
 
 import { type AgentBenchmarkConfig } from "@microsoft/vscode-azext-utils";
+import * as fs from "fs";
+import * as os from "os";
+import * as path from "path";
 import type * as vscode from "vscode";
 import { type AgentRequest, type IAgentRequestHandler } from "../agent";
 import { agentName } from "../agentConsts";
@@ -17,6 +20,8 @@ type AgentBenchmarkRunStats = {
     followUps: {
         allRequiredFollowUpsFound: boolean,
         allFollowUpsRequiredOrOptional: boolean,
+        allRequiredButtonsFound: boolean,
+        allButtonsRequiredOrOptional: boolean,
     },
 };
 
@@ -68,7 +73,7 @@ export class AgentBenchmarker implements IAgentRequestHandler {
         await this._prepForBenchmarking(request);
 
         if (this._benchmarks.length === 0) {
-            request.progress.report({ content: "No benchmarks to run. 😭" });
+            request.responseStream.markdown("No benchmarks to run. 😭");
             return { chatAgentResult: {}, followUp: [], };
         }
 
@@ -79,7 +84,7 @@ export class AgentBenchmarker implements IAgentRequestHandler {
             this._continuationIndex++;
 
             if (this._continuationIndex === this._benchmarks.length) {
-                this._debugBenchmarking(request.progress, `🎉 Done benchmarking!`);
+                this._debugBenchmarking(request.responseStream, `🎉 Done benchmarking!`);
                 followUps.push({ message: `@${agentName} /${benchmarkStatsCommandName}` });
                 this._continuationIndex = 0;
             }
@@ -102,10 +107,32 @@ export class AgentBenchmarker implements IAgentRequestHandler {
     private async _runBenchmark(benchmarkIdx: number, request: AgentRequest): Promise<void> {
         const benchmark = this._benchmarks[benchmarkIdx];
 
-        this._debugBenchmarking(request.progress, `📋 Benchmark (${benchmarkIdx ?? this._continuationIndex}/${this._benchmarks.length}): ${benchmark.name}\n💭 Prompt: '${benchmark.prompt}'...`);
+        this._debugBenchmarking(request.responseStream, `📋 Benchmark (${benchmarkIdx ?? this._continuationIndex}/${this._benchmarks.length}): ${benchmark.name}\n💭 Prompt: '${benchmark.prompt}'...`);
 
+        // When running a benchmark, create an intermediate response stream that captures information needed to perform validation after the agent is done responding.
+        const returnedButtons: vscode.Command[] = [];
+        const originalResponseStream = request.responseStream;
+        const runBenchmarkResponseStream: vscode.ChatAgentResponseStream = {
+            markdown: function (value: string | vscode.MarkdownString): vscode.ChatAgentResponseStream {
+                return originalResponseStream.markdown(value);
+            },
+            button: function (command: vscode.Command): vscode.ChatAgentResponseStream {
+                returnedButtons.push(command);
+                return originalResponseStream.button(command);
+            },
+            reference: function (value: vscode.Uri | vscode.Location): vscode.ChatAgentResponseStream {
+                return originalResponseStream.reference(value);
+            },
+            progress: function (value: string): vscode.ChatAgentResponseStream {
+                return originalResponseStream.progress(value);
+            },
+            text: function (_value: string): vscode.ChatAgentResponseStream { throw new Error("Function not implemented."); },
+            files: function (_value: vscode.ChatAgentFileTreeData): vscode.ChatAgentResponseStream { throw new Error("Function not implemented."); },
+            anchor: function (_value: vscode.Uri | vscode.Location, _title?: string | undefined): vscode.ChatAgentResponseStream { throw new Error("Function not implemented."); },
+            report: function (_value: vscode.ChatAgentProgress): void { throw new Error("Function not implemented."); }
+        };
+        const benchmarkRequest: AgentRequest = { ...request, userPrompt: benchmark.prompt, responseStream: runBenchmarkResponseStream };
         const startTime = Date.now();
-        const benchmarkRequest: AgentRequest = { ...request, userPrompt: benchmark.prompt, };
         const handleResult = await this._agentSlashCommandsOwner.handleRequestOrPrompt(benchmarkRequest);
         const endTime = Date.now();
 
@@ -116,7 +143,7 @@ export class AgentBenchmarker implements IAgentRequestHandler {
 
             const followUps = handleResult.followUp || [];
             if (followUps.length > 0) {
-                this._debugBenchmarking(request.progress, `⏭️ Follow Ups:\n${followUps.map((followUp) => JSON.stringify(followUp)).join("\n")}`);
+                this._debugBenchmarking(request.responseStream, `⏭️ Follow Ups:\n${followUps.map((followUp) => JSON.stringify(followUp)).join("\n")}`);
             }
 
             const followUpValidation = benchmark.followUps;
@@ -124,7 +151,12 @@ export class AgentBenchmarker implements IAgentRequestHandler {
             validationString += allRequiredFollowUpsFound ? `✅ All required follow ups found.\n` : `❌ Not all required follow ups found.\n`;
             validationString += allFollowUpsRequiredOrOptional ? `✅ All follow ups required or optional.\n` : `❌ Not all follow ups required or optional.\n`;
 
-            this._debugBenchmarking(request.progress, validationString);
+            const buttonValidation = benchmark.buttons;
+            const { allButtonsRequiredOrOptional, allRequiredButtonsFound } = !buttonValidation ? { allButtonsRequiredOrOptional: true, allRequiredButtonsFound: true } : this._validateButtons(returnedButtons, buttonValidation);
+            validationString += allRequiredButtonsFound ? `✅ All required buttons found.\n` : `❌ Not all required buttons found.\n`;
+            validationString += allButtonsRequiredOrOptional ? `✅ All buttons required or optional.\n` : `❌ Not all buttons required or optional.\n`;
+
+            this._debugBenchmarking(request.responseStream, validationString);
 
             const stats: AgentBenchmarkRunStats = {
                 startTime: startTime,
@@ -133,6 +165,8 @@ export class AgentBenchmarker implements IAgentRequestHandler {
                 followUps: {
                     allRequiredFollowUpsFound: allRequiredFollowUpsFound,
                     allFollowUpsRequiredOrOptional: allFollowUpsRequiredOrOptional,
+                    allRequiredButtonsFound: allRequiredButtonsFound,
+                    allButtonsRequiredOrOptional: allButtonsRequiredOrOptional,
                 }
             };
             this._benchmarksRunsStats[benchmarkIdx].push(stats);
@@ -159,7 +193,7 @@ export class AgentBenchmarker implements IAgentRequestHandler {
                 `🔍 All required follow ups found: ${allRequiredFollowUpsFoundCount} (${getColorEmojiForPercentage(allRequiredFollowUpsFoundPercentage)} ${allRequiredFollowUpsFoundPercentage * 100}%)\n` +
                 `🔍 All follow ups required or optional: ${allFollowUpsRequiredOrOptionalCount} (${getColorEmojiForPercentage(allFollowUpsRequiredOrOptionalPercentage)} ${allFollowUpsRequiredOrOptionalPercentage * 100}%)\n`;
 
-            this._debugBenchmarking(request.progress, statsString);
+            this._debugBenchmarking(request.responseStream, statsString);
         });
 
         return { chatAgentResult: {}, followUp: [], };
@@ -167,7 +201,7 @@ export class AgentBenchmarker implements IAgentRequestHandler {
 
     private async _benchmarkAll(request: AgentRequest): Promise<SlashCommandHandlerResult> {
         if (this._benchmarks.length === 0) {
-            request.progress.report({ content: "No benchmarks to run. 😭" });
+            request.responseStream.markdown("No benchmarks to run. 😭");
             return { chatAgentResult: {}, followUp: [], };
         }
 
@@ -179,28 +213,55 @@ export class AgentBenchmarker implements IAgentRequestHandler {
         const estimatedTimeToRunAll = (this._benchmarks.length * averageDelayBetweenBenchmarks * timesToRunAll) / 1000;
         const estimatedCompletionTime = new Date(Date.now() + estimatedTimeToRunAll * 1000).toLocaleTimeString();
 
+        // When running all benchmarks, create an response stream that writes all benchmark and agent output to a file.
+        const outFile = await getBenchmarkOutFilePath();
+        const benchmarkAllResponseStream: vscode.ChatAgentResponseStream = {
+            markdown: function (value: string | vscode.MarkdownString): vscode.ChatAgentResponseStream {
+                fs.appendFileSync(outFile, typeof value === "string" ? value : value.value);
+                return benchmarkAllResponseStream;
+            },
+            button: function (command: vscode.Command): vscode.ChatAgentResponseStream {
+                fs.appendFileSync(outFile, JSON.stringify(command.toString()));
+                return benchmarkAllResponseStream;
+            },
+            reference: function (value: vscode.Uri | vscode.Location): vscode.ChatAgentResponseStream {
+                fs.appendFileSync(outFile, JSON.stringify(value.toString()));
+                return benchmarkAllResponseStream;
+            },
+            progress: function (value: string): vscode.ChatAgentResponseStream {
+                fs.appendFileSync(outFile, value.toString());
+                return benchmarkAllResponseStream;
+            },
+            text: function (_value: string): vscode.ChatAgentResponseStream { throw new Error("Function not implemented."); },
+            files: function (_value: vscode.ChatAgentFileTreeData): vscode.ChatAgentResponseStream { throw new Error("Function not implemented."); },
+            anchor: function (_value: vscode.Uri | vscode.Location, _title?: string | undefined): vscode.ChatAgentResponseStream { throw new Error("Function not implemented."); },
+            report: function (_value: vscode.ChatAgentProgress): void { throw new Error("Function not implemented."); }
+        };
+
         const benchmarkAllIntroString = `Running all ${this._benchmarks.length} benchmarks ${timesToRunAll} times.\n` +
             `Average delay between benchmarks: ${averageDelayBetweenBenchmarks / 1000} seconds\n` +
             `Estimated time to run all benchmarks: ${estimatedTimeToRunAll} seconds\n` +
-            `Estimated completion time: ${estimatedCompletionTime}`;
-        this._debugBenchmarking(request.progress, benchmarkAllIntroString);
+            `Estimated completion time: ${estimatedCompletionTime}\n` +
+            `Output will be saved to: ${outFile}`;
+        this._debugBenchmarking(request.responseStream, benchmarkAllIntroString);
 
         for (let i = 0; i < timesToRunAll; i++) {
             for (let benchmarkIdx = 0; benchmarkIdx < this._benchmarks.length; benchmarkIdx++) {
-                await this._runBenchmark(benchmarkIdx, request);
+                await this._runBenchmark(benchmarkIdx, { ...request, responseStream: benchmarkAllResponseStream });
 
                 const randomDelay = Math.random() * (maxDelayBetweenBenchmarks - minDelayBetweenBenchmarks) + minDelayBetweenBenchmarks;
-                this._debugBenchmarking(request.progress, `Delaying ${randomDelay / 1000} seconds before running the next benchmark...`);
+                this._debugBenchmarking(request.responseStream, `Delaying ${randomDelay / 1000} seconds before running the next benchmark...`);
                 await new Promise((resolve) => setTimeout(resolve, randomDelay));
             }
 
-            await this._benchmarkStats(request);
+            // Write a benchmark stats after each run through to benchmarkAllResponseStream (which should be to the out file).
+            await this._benchmarkStats({ ...request, responseStream: benchmarkAllResponseStream });
+
             const estimatedTimeToRunRemaining = (this._benchmarks.length * averageDelayBetweenBenchmarks * (timesToRunAll - i)) / 1000;
             const estimatedFinishTime = new Date(Date.now() + estimatedTimeToRunRemaining * 1000).toLocaleTimeString();
-            this._debugBenchmarking(request.progress, `New estimated completion time: ${estimatedFinishTime}`);
+            this._debugBenchmarking(request.responseStream, `New estimated completion time: ${estimatedFinishTime}`);
         }
 
-        await this._benchmarkStats(request);
 
         return { chatAgentResult: {}, followUp: [], };
     }
@@ -209,13 +270,13 @@ export class AgentBenchmarker implements IAgentRequestHandler {
         if (this._extensionsToBenchmark.length > 0) {
             for (const extension of this._extensionsToBenchmark.splice(0)) {
                 if (extension.isInstalled() && extension.isCompatible()) {
-                    request.progress.report({ message: `Activating the ${extension.extensionDisplayName} extension...` });
+                    request.responseStream.progress(`Activating the ${extension.extensionDisplayName} extension...`);
                     await extension.activate(request);
-                    request.progress.report({ message: `Getting benchmark configs from the ${extension.extensionDisplayName} extension...` });
+                    request.responseStream.progress(`Getting benchmark configs from the ${extension.extensionDisplayName} extension...`);
                     const benchmarkConfigs = await extension.getAgentBenchmarkConfigs();
                     this.addBenchmarkConfigs(...benchmarkConfigs);
                 } else {
-                    request.progress.report({ message: `Skipping getting benchmark configs from the ${extension.extensionDisplayName} extension as it is not ${extension.isInstalled() ? "compatible" : "installed"}...` });
+                    request.responseStream.progress(`Skipping getting benchmark configs from the ${extension.extensionDisplayName} extension as it is not ${extension.isInstalled() ? "compatible" : "installed"}...`);
                 }
             }
         }
@@ -251,13 +312,13 @@ export class AgentBenchmarker implements IAgentRequestHandler {
         return [benchmarkAllCommandName, config];
     }
 
-    private _debugBenchmarking(progress: vscode.Progress<vscode.ChatAgentExtendedProgress>, msg: string) {
+    private _debugBenchmarking(progress: vscode.ChatAgentResponseStream, msg: string) {
         const lines = msg.trim().split("\n");
-        progress.report({ content: "\n```" });
+        progress.markdown("\n```");
         for (const line of lines) {
-            progress.report({ content: `\n${line}` });
+            progress.markdown(`\n${line}`);
         }
-        progress.report({ content: "\n```\n\n" });
+        progress.markdown("\n```\n\n");
     }
 
     private _validateHandlerChain(handlerChain: string[], acceptableHandlerChains: string[][]): boolean {
@@ -268,25 +329,13 @@ export class AgentBenchmarker implements IAgentRequestHandler {
         let allFollowUpsRequiredOrOptional = true;
         const foundRequiredFollowUps: boolean[] = new Array<boolean>(followUpValidation.required.length).fill(false);
         for (const followUp of followUps) {
-            if (followUpIsCommandFollowUp(followUp)) {
-                const requiredFollowUpIndex = followUpValidation.required.findIndex((requiredFollowUp) => requiredFollowUp.type === "command" && requiredFollowUp.commandId === followUp.commandId);
-                if (requiredFollowUpIndex !== -1) {
-                    foundRequiredFollowUps[requiredFollowUpIndex] = true;
-                } else {
-                    const optionalFollowUpIndex = followUpValidation.optional.findIndex((optionalFollowUp) => optionalFollowUp.type === "command" && optionalFollowUp.commandId === followUp.commandId);
-                    if (optionalFollowUpIndex === -1) {
-                        allFollowUpsRequiredOrOptional = false;
-                    }
-                }
+            const requiredFollowUpIndex = followUpValidation.required.findIndex((requiredFollowUp) => followUp.message.includes(requiredFollowUp.messageContains));
+            if (requiredFollowUpIndex !== -1) {
+                foundRequiredFollowUps[requiredFollowUpIndex] = true;
             } else {
-                const requiredFollowUpIndex = followUpValidation.required.findIndex((requiredFollowUp) => requiredFollowUp.type === "reply" && followUp.message.includes(requiredFollowUp.message));
-                if (requiredFollowUpIndex !== -1) {
-                    foundRequiredFollowUps[requiredFollowUpIndex] = true;
-                } else {
-                    const optionalFollowUpIndex = followUpValidation.optional.findIndex((optionalFollowUp) => optionalFollowUp.type === "reply" && followUp.message.includes(optionalFollowUp.message));
-                    if (optionalFollowUpIndex === -1) {
-                        allFollowUpsRequiredOrOptional = false;
-                    }
+                const optionalFollowUpIndex = followUpValidation.optional.findIndex((optionalFollowUp) => followUp.message.includes(optionalFollowUp.messageContains));
+                if (optionalFollowUpIndex === -1) {
+                    allFollowUpsRequiredOrOptional = false;
                 }
             }
         }
@@ -297,10 +346,28 @@ export class AgentBenchmarker implements IAgentRequestHandler {
             allRequiredFollowUpsFound: allRequiredFollowUpsFound
         };
     }
-}
 
-function followUpIsCommandFollowUp(followUp: vscode.ChatAgentFollowup): followUp is vscode.ChatAgentCommandFollowup {
-    return !!(followUp as vscode.ChatAgentCommandFollowup).commandId;
+    private _validateButtons(buttons: vscode.Command[], buttonValidation: NonNullable<AgentBenchmarkConfig["buttons"]>): { allButtonsRequiredOrOptional: boolean, allRequiredButtonsFound: boolean } {
+        let allButtonsRequiredOrOptional = true;
+        const foundRequiredButtons: boolean[] = new Array<boolean>(buttonValidation.required.length).fill(false);
+        for (const button of buttons) {
+            const requiredButtonIndex = buttonValidation.required.findIndex((requiredButton) => button.command === requiredButton.commandId);
+            if (requiredButtonIndex !== -1) {
+                foundRequiredButtons[requiredButtonIndex] = true;
+            } else {
+                const optionalButtonIndex = buttonValidation.optional.findIndex((optionalButton) => button.command === optionalButton.commandId);
+                if (optionalButtonIndex === -1) {
+                    allButtonsRequiredOrOptional = false;
+                }
+            }
+        }
+        const allRequiredButtonsFound = foundRequiredButtons.every((foundRequiredButton) => foundRequiredButton);
+
+        return {
+            allButtonsRequiredOrOptional: allButtonsRequiredOrOptional,
+            allRequiredButtonsFound: allRequiredButtonsFound
+        };
+    }
 }
 
 function getColorEmojiForPercentage(percentage: number): string {
@@ -311,4 +378,26 @@ function getColorEmojiForPercentage(percentage: number): string {
     } else {
         return "🔴";
     }
+}
+
+async function getBenchmarkOutFilePath(): Promise<string> {
+    const fileName = `agent-${agentName}-benchmark-${generateRandomLetters(4)}-${Date.now()}.md`;
+    const filePath = path.join(os.homedir(), fileName);
+
+    if (fs.existsSync(filePath)) {
+        await new Promise((resolve) => setTimeout(resolve, 50));
+        return getBenchmarkOutFilePath();
+    }
+
+    return filePath;
+}
+
+function generateRandomLetters(length: number): string {
+    const characters = "abcdefghijklmnopqrstuvwxyz";
+    let result = "";
+    for (let i = 0; i < length; i++) {
+        const randomIndex = Math.floor(Math.random() * characters.length);
+        result += characters.charAt(randomIndex);
+    }
+    return result;
 }

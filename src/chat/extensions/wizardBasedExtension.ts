@@ -38,7 +38,7 @@ export class WizardBasedExtension {
         if (this.extensionId !== "") {
             this._extension = this._extension || vscode.extensions.getExtension(this.extensionId);
             if (this._extension !== undefined) {
-                request.progress.report({ message: `Activating the ${this.extensionDisplayName} extension...` })
+                request.responseStream.progress(`Activating the ${this.extensionDisplayName} extension...`);
                 await this._extension.activate();
             }
         }
@@ -65,12 +65,12 @@ export class WizardBasedExtension {
         await vscode.commands.executeCommand(this._extensionAgentMetadata.runWizardCommandWithoutExecutionCommandId, command, agentAzureUserInput);
     }
 
-    public getRunWizardCommandWithInputsFollowUp(command: WizardBasedCommandConfig, inputQueue: AzureUserInputQueue): vscode.ChatAgentFollowup {
+    public getRunWizardCommandWithInputsCommand(command: WizardBasedCommandConfig, inputQueue: AzureUserInputQueue): vscode.Command {
         if (!this._extensionAgentMetadata) {
             throw new Error(`Extension ${this.extensionDisplayName} does not yet have extension agent metadata initialized`);
         }
 
-        return { title: command.displayName, commandId: this._extensionAgentMetadata.runWizardCommandWithInputsCommandId, args: [command, inputQueue] };
+        return { title: command.displayName, command: this._extensionAgentMetadata.runWizardCommandWithInputsCommandId, arguments: [command, inputQueue] };
     }
 
     public async getAgentBenchmarkConfigs(): Promise<AgentBenchmarkConfig[]> {

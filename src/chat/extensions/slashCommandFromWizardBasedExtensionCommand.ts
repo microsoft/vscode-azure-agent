@@ -6,7 +6,7 @@
 import { UserCancelledError, type AgentInputBoxOptions, type AgentQuickPickItem, type AgentQuickPickOptions, type AzureUserInputQueue, type IAzureAgentInput, type ParameterAgentMetadata, type PromptResult, type WizardBasedCommandConfig } from "@microsoft/vscode-azext-utils";
 import * as vscode from "vscode";
 import { type AgentRequest } from "../agent";
-import { getSignInFollowUp, isUserSignedInToAzure } from "../azureSignIn";
+import { getSignInCommand, isUserSignedInToAzure } from "../azureSignIn";
 import { getResponseAsStringCopilotInteraction, getStringFieldFromCopilotResponseMaybeWithStrJson } from "../copilotInteractions";
 import { type SlashCommand, type SlashCommandHandlerResult } from "../slashCommands";
 import { type WizardBasedExtension } from "./wizardBasedExtension";
@@ -19,51 +19,46 @@ export function slashCommandFromWizardBasedExtensionCommand(command: WizardBased
             longDescription: command.displayName,
             intentDescription: command.intentDescription || command.displayName,
             handler: async (request: AgentRequest): Promise<SlashCommandHandlerResult> => {
-                const markdownResponseLines: string[] = [];
                 const followUps: vscode.ChatAgentFollowup[] = [];
 
-                markdownResponseLines.push(`Ok, I can help you by using the the **${command.displayName}** command from the **${extension.extensionDisplayName}** extension.`);
+                request.responseStream.markdown(`Ok, I can help you by using the the **${command.displayName}** command from the **${extension.extensionDisplayName}** extension.`);
 
                 // @todo: handle this case
                 // if (command.requiresWorkspaceOpen === true) {
                 //     // todo
                 // } else {
-                if (command.requiresAzureLogin === true) {
-                    const isSignedIn = await isUserSignedInToAzure();
-                    if (!isSignedIn) {
-                        markdownResponseLines.push(`Before I can help you though, you need to be signed in to Azure.\n\nPlease sign in and then try again.`);
-                        followUps.push(getSignInFollowUp());
-                    }
+                const isSignedIn = await isUserSignedInToAzure();
+                if (command.requiresAzureLogin === true && !isSignedIn) {
+                    request.responseStream.markdown(`Before I can help you though, you need to be signed in to Azure.\n\nPlease sign in and then try again.`);
+                    request.responseStream.button(getSignInCommand());
                 } else {
-                    request.progress.report({ message: "Analyzing conversation..." });
+                    request.responseStream.progress("Analyzing conversation...");
 
                     const agentAzureUserInput = new AgentAzureUserInput(request);
                     await extension.runWizardCommandWithoutExecutionId(command, agentAzureUserInput);
 
                     const { pickedParameters, unfulfilledParameters, inputQueue } = agentAzureUserInput.getInteractionResults();
 
-
                     if (Object.keys(pickedParameters).length > 0) {
-                        markdownResponseLines.push(`I have determined the following information needed for **${command.displayName}** based on our conversation:`);
-                        markdownResponseLines.push(...Object.keys(pickedParameters).map((parameterName) => `- ${pickedParameters[parameterName].parameterDisplayTitle}: ${pickedParameters[parameterName].pickedValueLabel}`));
-                        markdownResponseLines.push(`\nIf any of that information is incorrect, feel free to ask me to change it or start over.`);
-                        markdownResponseLines.push(`\nOtherwise, you can go ahead and start with that by clicking the **${command.displayName}** button below.`);
+                        request.responseStream.markdown(`I have determined the following information needed for **${command.displayName}** based on our conversation:`);
+                        request.responseStream.markdown(Object.keys(pickedParameters).map((parameterName) => `- ${pickedParameters[parameterName].parameterDisplayTitle}: ${pickedParameters[parameterName].pickedValueLabel}`).join("\n"));
+                        request.responseStream.markdown(`\nIf any of that information is incorrect, feel free to ask me to change it or start over.`);
+                        request.responseStream.markdown(`\nOtherwise, you can go ahead and start with that by clicking the **${command.displayName}** button below.`);
                         if (Object.keys(unfulfilledParameters).length > 0) {
-                            markdownResponseLines.push(`\nYou can also provide me more information. I am at least interested in knowing:`);
-                            markdownResponseLines.push(...Object.keys(unfulfilledParameters).map((parameterName) => `- ${unfulfilledParameters[parameterName].parameterDisplayTitle}: ${unfulfilledParameters[parameterName].parameterDisplayDescription}`));
+                            request.responseStream.markdown(`\nYou can also provide me more information. I am at least interested in knowing:`);
+                            request.responseStream.markdown(Object.keys(unfulfilledParameters).map((parameterName) => `- ${unfulfilledParameters[parameterName].parameterDisplayTitle}: ${unfulfilledParameters[parameterName].parameterDisplayDescription}`).join("\n"));
                         }
                     } else {
-                        markdownResponseLines.push(`\nI was not able to determine any of the information needed for **${command.displayName}** based on our conversation.`);
-                        markdownResponseLines.push(`\nYou can go ahead and click the **${command.displayName}** button below to get started, or provide me with more information.`);
+                        request.responseStream.markdown(`\nI was not able to determine any of the information needed for **${command.displayName}** based on our conversation.`);
+                        request.responseStream.markdown(`\nYou can go ahead and click the **${command.displayName}** button below to get started, or provide me with more information.`);
                         if (Object.keys(unfulfilledParameters).length > 0) {
-                            markdownResponseLines.push(`\nIf you'd like to provide me with more information. I am at least interested in knowing:`);
-                            markdownResponseLines.push(...Object.keys(unfulfilledParameters).map((parameterName) => `- ${unfulfilledParameters[parameterName].parameterDisplayTitle}: ${unfulfilledParameters[parameterName].parameterDisplayDescription}`));
+                            request.responseStream.markdown(`\nIf you'd like to provide me with more information. I am at least interested in knowing:`);
+                            request.responseStream.markdown(Object.keys(unfulfilledParameters).map((parameterName) => `- ${unfulfilledParameters[parameterName].parameterDisplayTitle}: ${unfulfilledParameters[parameterName].parameterDisplayDescription}`).join("\n"));
                         }
                     }
-                    followUps.push(extension.getRunWizardCommandWithInputsFollowUp(command, inputQueue));
+                    request.responseStream.button(extension.getRunWizardCommandWithInputsCommand(command, inputQueue));
                 }
 
-                request.progress.report({ content: markdownResponseLines.join("\n") });
                 return { chatAgentResult: {}, followUp: followUps };
             }
         }
@@ -99,7 +94,7 @@ class AgentAzureUserInput implements IAzureAgentInput {
             }
         }
 
-        const parameterName = options.agentMetadata.parameterName;
+        const parameterName = options.agentMetadata.parameterDisplayTitle;
         const pickedItem = options.canPickMany ? undefined : await this._pickQuickPickItem(this._request, items, options);
         if (pickedItem !== undefined) {
             this._pickedParameters[parameterName] = { ...options.agentMetadata, pickedValueLabel: pickedItem.label };
@@ -113,7 +108,7 @@ class AgentAzureUserInput implements IAzureAgentInput {
     }
 
     public async showInputBox(options: AgentInputBoxOptions): Promise<string> {
-        const parameterName = options.agentMetadata.parameterName;
+        const parameterName = options.agentMetadata.parameterDisplayTitle;
         const providedInput = await this._provideInput(this._request, options);
         if (providedInput !== undefined) {
             this._pickedParameters[parameterName] = { ...options.agentMetadata, pickedValueLabel: providedInput };
@@ -158,7 +153,7 @@ class AgentAzureUserInput implements IAzureAgentInput {
         } else {
             const systemPrompt = this._getPickQuickPickItemSystemPrompt1(resolvedApplicableItems, options);
             const maybeJsonCopilotResponse = await getResponseAsStringCopilotInteraction(systemPrompt, request);
-            const copilotPickedItemTitle = getStringFieldFromCopilotResponseMaybeWithStrJson(maybeJsonCopilotResponse, ["value", "parameter", "parameterValue", options.agentMetadata.parameterName || "value"]);
+            const copilotPickedItemTitle = getStringFieldFromCopilotResponseMaybeWithStrJson(maybeJsonCopilotResponse, ["value", "parameter", "parameterValue", options.agentMetadata.parameterDisplayTitle || "value"]);
             return copilotPickedItemTitle === undefined ? undefined : resolvedApplicableItems.find((i) => i.label === copilotPickedItemTitle);
         }
     }
@@ -177,9 +172,9 @@ class AgentAzureUserInput implements IAzureAgentInput {
             .replace(/\)\)/g, ")");
 
         return [
-            `You are an expert in determining the value of a '${options.agentMetadata.parameterName}' parameter based on user input.`,
+            `You are an expert in determining the value of a '${options.agentMetadata.parameterDisplayTitle}' parameter based on user input.`,
             `The possible values for the parameter are: ${itemsString}.`,
-            `Given the user's input, your job is to determine a value for '${options.agentMetadata.parameterName}'.`,
+            `Given the user's input, your job is to determine a value for '${options.agentMetadata.parameterDisplayTitle}'.`,
             `Only repsond with a JSON summary (for example, '{value: "xyz"}') of the value you determine. Do not respond in a coverstaional tone, only JSON. If the users input does not infer or specify a value for this parameter, then do not respond.`,
         ].filter(s => !!s).join(" ");
     }
@@ -187,15 +182,15 @@ class AgentAzureUserInput implements IAzureAgentInput {
     private async _provideInput(request: AgentRequest, options: AgentInputBoxOptions): Promise<string | undefined> {
         const systemPrompt = this._getProvideInputSystemPrompt1(options);
         const maybeJsonCopilotResponse = await getResponseAsStringCopilotInteraction(systemPrompt, request);
-        const copilotProvidedInput = getStringFieldFromCopilotResponseMaybeWithStrJson(maybeJsonCopilotResponse, ["value", "parameter", "parameterValue", options.agentMetadata.parameterName || "value"]);
+        const copilotProvidedInput = getStringFieldFromCopilotResponseMaybeWithStrJson(maybeJsonCopilotResponse, ["value", "parameter", "parameterValue", options.agentMetadata.parameterDisplayTitle || "value"]);
         return copilotProvidedInput;
     }
 
     private _getProvideInputSystemPrompt1(options: AgentInputBoxOptions): string {
         return [
-            `You are an expert in determining the value of a '${options.agentMetadata.parameterName}' parameter based on user input.`,
+            `You are an expert in determining the value of a '${options.agentMetadata.parameterDisplayTitle}' parameter based on user input.`,
             `This parameter is a string input, for which you must come up with a value for.`,
-            `Given the user's input, your job is to determine a string value for '${options.agentMetadata.parameterName}'.`,
+            `Given the user's input, your job is to determine a string value for '${options.agentMetadata.parameterDisplayTitle}'.`,
             `Only repsond with a JSON summary (for example, '{value: "xyz"}') of the value you determine. Do not respond in a coverstaional tone, only JSON.`,
         ].filter(s => !!s).join(" ");
     }

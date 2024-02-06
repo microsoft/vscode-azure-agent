@@ -78,7 +78,7 @@ export const toggleRagSlashCommand: SlashCommand = [
         intentDescription: "Toggle RAG on or off",
         handler: async (request: AgentRequest): Promise<SlashCommandHandlerResult> => {
             const newState = await toggleRag();
-            request.progress.report({ content: `RAG is now ${newState ? "on" : "off"}.` });
+            request.responseStream.markdown(`RAG is now ${newState ? "on" : "off"}.`);
             return { chatAgentResult: {}, followUp: [{ message: `@${agentName} /${getRagStatusCommand}` }] };
         },
     }
@@ -93,10 +93,10 @@ export const getRagStatusSlashCommand: SlashCommand = [
         handler: async (request: AgentRequest): Promise<SlashCommandHandlerResult> => {
             const extensionIdentityConfigEndpoint = getExtensionIdentityConfigEndpoint();
             const openAiConfigEndpoint = getOpenAiConfigEndpoint();
-            request.progress.report({ content: `Status:\n` });
-            request.progress.report({ content: `- RAG is ${ragEnabled ? "on" : "off"}.\n` });
-            request.progress.report({ content: `- Extension identity config endpoint is: ${extensionIdentityConfigEndpoint ? extensionIdentityConfigEndpoint : "missing"}.\n` });
-            request.progress.report({ content: `- OpenAI config endpoint is: ${openAiConfigEndpoint ? openAiConfigEndpoint : "missing"}.\n` });
+            request.responseStream.markdown(`Status:\n`);
+            request.responseStream.markdown(`- RAG is ${ragEnabled ? "on" : "off"}.\n`);
+            request.responseStream.markdown(`- Extension identity config endpoint is: ${extensionIdentityConfigEndpoint ? extensionIdentityConfigEndpoint : "missing"}.\n`);
+            request.responseStream.markdown(`- OpenAI config endpoint is: ${openAiConfigEndpoint ? openAiConfigEndpoint : "missing"}.\n`);
             return { chatAgentResult: {}, followUp: [{ message: `@${agentName} /${toggleRagCommand}` }] };
         },
     }
