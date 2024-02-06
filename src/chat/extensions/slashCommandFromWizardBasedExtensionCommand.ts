@@ -6,7 +6,7 @@
 import { UserCancelledError, type AgentInputBoxOptions, type AgentQuickPickItem, type AgentQuickPickOptions, type AzureUserInputQueue, type IAzureAgentInput, type ParameterAgentMetadata, type PromptResult, type WizardBasedCommandConfig } from "@microsoft/vscode-azext-utils";
 import * as vscode from "vscode";
 import { type AgentRequest } from "../agent";
-import { getSignInFollowUp, isUserSignedInToAzure } from "../azureSignIn";
+import { getSignInCommand, isUserSignedInToAzure } from "../azureSignIn";
 import { getResponseAsStringCopilotInteraction, getStringFieldFromCopilotResponseMaybeWithStrJson } from "../copilotInteractions";
 import { type SlashCommand, type SlashCommandHandlerResult } from "../slashCommands";
 import { type WizardBasedExtension } from "./wizardBasedExtension";
@@ -19,51 +19,46 @@ export function slashCommandFromWizardBasedExtensionCommand(command: WizardBased
             longDescription: command.displayName,
             intentDescription: command.intentDescription || command.displayName,
             handler: async (request: AgentRequest): Promise<SlashCommandHandlerResult> => {
-                const markdownResponseLines: string[] = [];
                 const followUps: vscode.ChatAgentFollowup[] = [];
 
-                markdownResponseLines.push(`Ok, I can help you by using the the **${command.displayName}** command from the **${extension.extensionDisplayName}** extension.`);
+                request.responseStream.markdown(`Ok, I can help you by using the the **${command.displayName}** command from the **${extension.extensionDisplayName}** extension.`);
 
                 // @todo: handle this case
                 // if (command.requiresWorkspaceOpen === true) {
                 //     // todo
                 // } else {
-                if (command.requiresAzureLogin === true) {
-                    const isSignedIn = await isUserSignedInToAzure();
-                    if (!isSignedIn) {
-                        markdownResponseLines.push(`Before I can help you though, you need to be signed in to Azure.\n\nPlease sign in and then try again.`);
-                        followUps.push(getSignInFollowUp());
-                    }
+                const isSignedIn = await isUserSignedInToAzure();
+                if (command.requiresAzureLogin === true && !isSignedIn) {
+                    request.responseStream.markdown(`Before I can help you though, you need to be signed in to Azure.\n\nPlease sign in and then try again.`);
+                    request.responseStream.button(getSignInCommand());
                 } else {
-                    request.progress.report({ message: "Analyzing conversation..." });
+                    request.responseStream.progress("Analyzing conversation...");
 
                     const agentAzureUserInput = new AgentAzureUserInput(request);
                     await extension.runWizardCommandWithoutExecutionId(command, agentAzureUserInput);
 
                     const { pickedParameters, unfulfilledParameters, inputQueue } = agentAzureUserInput.getInteractionResults();
 
-
                     if (Object.keys(pickedParameters).length > 0) {
-                        markdownResponseLines.push(`I have determined the following information needed for **${command.displayName}** based on our conversation:`);
-                        markdownResponseLines.push(...Object.keys(pickedParameters).map((parameterName) => `- ${pickedParameters[parameterName].parameterDisplayTitle}: ${pickedParameters[parameterName].pickedValueLabel}`));
-                        markdownResponseLines.push(`\nIf any of that information is incorrect, feel free to ask me to change it or start over.`);
-                        markdownResponseLines.push(`\nOtherwise, you can go ahead and start with that by clicking the **${command.displayName}** button below.`);
+                        request.responseStream.markdown(`I have determined the following information needed for **${command.displayName}** based on our conversation:`);
+                        request.responseStream.markdown(Object.keys(pickedParameters).map((parameterName) => `- ${pickedParameters[parameterName].parameterDisplayTitle}: ${pickedParameters[parameterName].pickedValueLabel}`).join("\n"));
+                        request.responseStream.markdown(`\nIf any of that information is incorrect, feel free to ask me to change it or start over.`);
+                        request.responseStream.markdown(`\nOtherwise, you can go ahead and start with that by clicking the **${command.displayName}** button below.`);
                         if (Object.keys(unfulfilledParameters).length > 0) {
-                            markdownResponseLines.push(`\nYou can also provide me more information. I am at least interested in knowing:`);
-                            markdownResponseLines.push(...Object.keys(unfulfilledParameters).map((parameterName) => `- ${unfulfilledParameters[parameterName].parameterDisplayTitle}: ${unfulfilledParameters[parameterName].parameterDisplayDescription}`));
+                            request.responseStream.markdown(`\nYou can also provide me more information. I am at least interested in knowing:`);
+                            request.responseStream.markdown(Object.keys(unfulfilledParameters).map((parameterName) => `- ${unfulfilledParameters[parameterName].parameterDisplayTitle}: ${unfulfilledParameters[parameterName].parameterDisplayDescription}`).join("\n"));
                         }
                     } else {
-                        markdownResponseLines.push(`\nI was not able to determine any of the information needed for **${command.displayName}** based on our conversation.`);
-                        markdownResponseLines.push(`\nYou can go ahead and click the **${command.displayName}** button below to get started, or provide me with more information.`);
+                        request.responseStream.markdown(`\nI was not able to determine any of the information needed for **${command.displayName}** based on our conversation.`);
+                        request.responseStream.markdown(`\nYou can go ahead and click the **${command.displayName}** button below to get started, or provide me with more information.`);
                         if (Object.keys(unfulfilledParameters).length > 0) {
-                            markdownResponseLines.push(`\nIf you'd like to provide me with more information. I am at least interested in knowing:`);
-                            markdownResponseLines.push(...Object.keys(unfulfilledParameters).map((parameterName) => `- ${unfulfilledParameters[parameterName].parameterDisplayTitle}: ${unfulfilledParameters[parameterName].parameterDisplayDescription}`));
+                            request.responseStream.markdown(`\nIf you'd like to provide me with more information. I am at least interested in knowing:`);
+                            request.responseStream.markdown(Object.keys(unfulfilledParameters).map((parameterName) => `- ${unfulfilledParameters[parameterName].parameterDisplayTitle}: ${unfulfilledParameters[parameterName].parameterDisplayDescription}`).join("\n"));
                         }
                     }
-                    followUps.push(extension.getRunWizardCommandWithInputsFollowUp(command, inputQueue));
+                    request.responseStream.button(extension.getRunWizardCommandWithInputsCommand(command, inputQueue));
                 }
 
-                request.progress.report({ content: markdownResponseLines.join("\n") });
                 return { chatAgentResult: {}, followUp: followUps };
             }
         }

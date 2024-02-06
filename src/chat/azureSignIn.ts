@@ -11,6 +11,6 @@ export function isUserSignedInToAzure(): Promise<boolean> {
     return subscriptionProvider.isSignedIn();
 }
 
-export function getSignInFollowUp(): vscode.ChatAgentFollowup {
-    return { title: "Sign in to Azure", commandId: "azureResourceGroups.logIn" };
+export function getSignInCommand(): vscode.Command {
+    return { title: "Sign in to Azure", command: "azureResourceGroups.logIn" };
 }

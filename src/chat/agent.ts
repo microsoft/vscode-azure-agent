@@ -22,7 +22,7 @@ export type AgentRequest = {
     variables: Record<string, vscode.ChatVariableValue[]>;
 
     context: vscode.ChatAgentContext;
-    progress: vscode.Progress<vscode.ChatAgentExtendedProgress>;
+    responseStream: vscode.ChatAgentResponseStream;
     token: vscode.CancellationToken;
 }
 
@@ -83,8 +83,15 @@ export function registerChatAgent() {
     }
 }
 
-async function handler(request: vscode.ChatAgentRequest, context: vscode.ChatAgentContext, progress: vscode.Progress<vscode.ChatAgentExtendedProgress>, token: vscode.CancellationToken): Promise<vscode.ChatAgentResult2 | undefined> {
-    const agentRequest: AgentRequest = { slashCommand: request.subCommand, userPrompt: request.prompt, variables: request.variables, context: context, progress: progress, token: token, };
+async function handler(request: vscode.ChatAgentRequest, context: vscode.ChatAgentContext, response: vscode.ChatAgentExtendedResponseStream, token: vscode.CancellationToken): Promise<vscode.ChatAgentResult2 | undefined> {
+    const agentRequest: AgentRequest = {
+        slashCommand: request.subCommand,
+        userPrompt: request.prompt,
+        variables: request.variables,
+        context: context,
+        responseStream: response,
+        token: token,
+    };
     const handlers = [agentHiddenSlashCommandsOwner, agentBenchmarker, agentSlashCommandsOwner];
 
     let handleResult: SlashCommandHandlerResult | undefined;

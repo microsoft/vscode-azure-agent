@@ -5,135 +5,137 @@
 
 declare module 'vscode' {
 
-	export interface ChatAgent2<TResult extends ChatAgentResult2> {
-		onDidPerformAction: Event<ChatAgentUserActionEvent>;
-		supportIssueReporting?: boolean;
-	}
+    export interface ChatAgent2<TResult extends ChatAgentResult2> {
+        onDidPerformAction: Event<ChatAgentUserActionEvent>;
+        supportIssueReporting?: boolean;
+    }
 
-	export interface ChatAgentErrorDetails {
-		/**
-		 * If set to true, the message content is completely hidden. Only ChatAgentErrorDetails#message will be shown.
-		 */
-		responseIsRedacted?: boolean;
-	}
+    export interface ChatAgentErrorDetails {
+        /**
+         * If set to true, the message content is completely hidden. Only ChatAgentErrorDetails#message will be shown.
+         */
+        responseIsRedacted?: boolean;
+    }
 
-	/**
-	 * This is temporary until inline references are fully supported and adopted
-	 */
-	export interface ChatAgentMarkdownContent {
-		markdownContent: MarkdownString;
-	}
+    /**
+     * This is temporary until inline references are fully supported and adopted
+     */
+    export interface ChatAgentMarkdownContent {
+        markdownContent: MarkdownString;
+    }
 
-	export interface ChatAgentDetectedAgent {
-		agentName: string;
-		command?: ChatAgentSubCommand;
-	}
+    export interface ChatAgentDetectedAgent {
+        agentName: string;
+        command?: ChatAgentSubCommand;
+    }
 
-	export interface ChatAgentVulnerability {
-		title: string;
-		description: string;
-		// id: string; // Later we will need to be able to link these across multiple content chunks.
-	}
+    export interface ChatAgentVulnerability {
+        title: string;
+        description: string;
+        // id: string; // Later we will need to be able to link these across multiple content chunks.
+    }
 
-	export interface ChatAgentContent {
-		vulnerabilities?: ChatAgentVulnerability[];
-	}
+    export interface ChatAgentContent {
+        vulnerabilities?: ChatAgentVulnerability[];
+    }
 
-	export type ChatAgentExtendedProgress = ChatAgentProgress
-		| ChatAgentMarkdownContent
-		| ChatAgentDetectedAgent;
+    export type ChatAgentExtendedProgress = ChatAgentProgress
+        | ChatAgentMarkdownContent
+        | ChatAgentDetectedAgent;
 
-	export interface ChatAgent2<TResult extends ChatAgentResult2> {
-		/**
-		 * Provide a set of variables that can only be used with this agent.
-		 */
-		agentVariableProvider?: { provider: ChatAgentCompletionItemProvider; triggerCharacters: string[] };
-	}
+    export type ChatAgentExtendedResponseStream = ChatAgentResponseStream & Progress<ChatAgentExtendedProgress>;
 
-	export interface ChatAgentCompletionItemProvider {
-		provideCompletionItems(query: string, token: CancellationToken): ProviderResult<ChatAgentCompletionItem[]>;
-	}
+    export interface ChatAgent2<TResult extends ChatAgentResult2> {
+        /**
+         * Provide a set of variables that can only be used with this agent.
+         */
+        agentVariableProvider?: { provider: ChatAgentCompletionItemProvider; triggerCharacters: string[] };
+    }
 
-	export class ChatAgentCompletionItem {
-		label: string | CompletionItemLabel;
-		values: ChatVariableValue[];
-		insertText?: string;
-		detail?: string;
-		documentation?: string | MarkdownString;
+    export interface ChatAgentCompletionItemProvider {
+        provideCompletionItems(query: string, token: CancellationToken): ProviderResult<ChatAgentCompletionItem[]>;
+    }
 
-		constructor(label: string | CompletionItemLabel, values: ChatVariableValue[]);
-	}
+    export class ChatAgentCompletionItem {
+        label: string | CompletionItemLabel;
+        values: ChatVariableValue[];
+        insertText?: string;
+        detail?: string;
+        documentation?: string | MarkdownString;
 
-	export type ChatAgentExtendedHandler = (request: ChatAgentRequest, context: ChatAgentContext, progress: Progress<ChatAgentExtendedProgress>, token: CancellationToken) => ProviderResult<ChatAgentResult2>;
+        constructor(label: string | CompletionItemLabel, values: ChatVariableValue[]);
+    }
 
-	export namespace chat {
-		/**
-		 * Create a chat agent with the extended progress type
-		 */
-		export function createChatAgent<TResult extends ChatAgentResult2>(name: string, handler: ChatAgentExtendedHandler): ChatAgent2<TResult>;
-	}
+    export type ChatAgentExtendedHandler = (request: ChatAgentRequest, context: ChatAgentContext, response: ChatAgentExtendedResponseStream, token: CancellationToken) => ProviderResult<ChatAgentResult2>;
 
-	/*
-	 * User action events
-	 */
+    export namespace chat {
+        /**
+         * Create a chat agent with the extended progress type
+         */
+        export function createChatAgent<TResult extends ChatAgentResult2>(name: string, handler: ChatAgentExtendedHandler): ChatAgent2<TResult>;
+    }
 
-	export enum ChatAgentCopyKind {
-		// Keyboard shortcut or context menu
-		Action = 1,
-		Toolbar = 2
-	}
+    /*
+     * User action events
+     */
 
-	export interface ChatAgentCopyAction {
-		// eslint-disable-next-line local/vscode-dts-string-type-literals
-		kind: 'copy';
-		codeBlockIndex: number;
-		copyKind: ChatAgentCopyKind;
-		copiedCharacters: number;
-		totalCharacters: number;
-		copiedText: string;
-	}
+    export enum ChatAgentCopyKind {
+        // Keyboard shortcut or context menu
+        Action = 1,
+        Toolbar = 2
+    }
 
-	export interface ChatAgentInsertAction {
-		// eslint-disable-next-line local/vscode-dts-string-type-literals
-		kind: 'insert';
-		codeBlockIndex: number;
-		totalCharacters: number;
-		newFile?: boolean;
-	}
+    export interface ChatAgentCopyAction {
+        // eslint-disable-next-line local/vscode-dts-string-type-literals
+        kind: 'copy';
+        codeBlockIndex: number;
+        copyKind: ChatAgentCopyKind;
+        copiedCharacters: number;
+        totalCharacters: number;
+        copiedText: string;
+    }
 
-	export interface ChatAgentTerminalAction {
-		// eslint-disable-next-line local/vscode-dts-string-type-literals
-		kind: 'runInTerminal';
-		codeBlockIndex: number;
-		languageId?: string;
-	}
+    export interface ChatAgentInsertAction {
+        // eslint-disable-next-line local/vscode-dts-string-type-literals
+        kind: 'insert';
+        codeBlockIndex: number;
+        totalCharacters: number;
+        newFile?: boolean;
+    }
 
-	export interface ChatAgentCommandAction {
-		// eslint-disable-next-line local/vscode-dts-string-type-literals
-		kind: 'command';
-		command: ChatAgentCommandFollowup;
-	}
+    export interface ChatAgentTerminalAction {
+        // eslint-disable-next-line local/vscode-dts-string-type-literals
+        kind: 'runInTerminal';
+        codeBlockIndex: number;
+        languageId?: string;
+    }
 
-	export interface ChatAgentSessionFollowupAction {
-		// eslint-disable-next-line local/vscode-dts-string-type-literals
-		kind: 'followUp';
-		followup: ChatAgentFollowup;
-	}
+    export interface ChatAgentCommandAction {
+        // eslint-disable-next-line local/vscode-dts-string-type-literals
+        kind: 'command';
+        commandButton: ChatAgentCommandButton;
+    }
 
-	export interface ChatAgentBugReportAction {
-		// eslint-disable-next-line local/vscode-dts-string-type-literals
-		kind: 'bug';
-	}
+    export interface ChatAgentSessionFollowupAction {
+        // eslint-disable-next-line local/vscode-dts-string-type-literals
+        kind: 'followUp';
+        followup: ChatAgentFollowup;
+    }
 
-	export interface ChatAgentUserActionEvent {
-		readonly result: ChatAgentResult2;
-		readonly action: ChatAgentCopyAction | ChatAgentInsertAction | ChatAgentTerminalAction | ChatAgentCommandAction | ChatAgentSessionFollowupAction | ChatAgentBugReportAction;
-	}
+    export interface ChatAgentBugReportAction {
+        // eslint-disable-next-line local/vscode-dts-string-type-literals
+        kind: 'bug';
+    }
 
-	export interface ChatVariableValue {
-		/**
-		 * An optional type tag for extensions to communicate the kind of the variable. An extension might use it to interpret the shape of `value`.
-		 */
-		kind?: string;
-	}
+    export interface ChatAgentUserActionEvent {
+        readonly result: ChatAgentResult2;
+        readonly action: ChatAgentCopyAction | ChatAgentInsertAction | ChatAgentTerminalAction | ChatAgentCommandAction | ChatAgentSessionFollowupAction | ChatAgentBugReportAction;
+    }
+
+    export interface ChatVariableValue {
+        /**
+         * An optional type tag for extensions to communicate the kind of the variable. An extension might use it to interpret the shape of `value`.
+         */
+        kind?: string;
+    }
 }
