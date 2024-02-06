@@ -94,7 +94,7 @@ class AgentAzureUserInput implements IAzureAgentInput {
             }
         }
 
-        const parameterName = options.agentMetadata.parameterName;
+        const parameterName = options.agentMetadata.parameterDisplayTitle;
         const pickedItem = options.canPickMany ? undefined : await this._pickQuickPickItem(this._request, items, options);
         if (pickedItem !== undefined) {
             this._pickedParameters[parameterName] = { ...options.agentMetadata, pickedValueLabel: pickedItem.label };
@@ -108,7 +108,7 @@ class AgentAzureUserInput implements IAzureAgentInput {
     }
 
     public async showInputBox(options: AgentInputBoxOptions): Promise<string> {
-        const parameterName = options.agentMetadata.parameterName;
+        const parameterName = options.agentMetadata.parameterDisplayTitle;
         const providedInput = await this._provideInput(this._request, options);
         if (providedInput !== undefined) {
             this._pickedParameters[parameterName] = { ...options.agentMetadata, pickedValueLabel: providedInput };
@@ -153,7 +153,7 @@ class AgentAzureUserInput implements IAzureAgentInput {
         } else {
             const systemPrompt = this._getPickQuickPickItemSystemPrompt1(resolvedApplicableItems, options);
             const maybeJsonCopilotResponse = await getResponseAsStringCopilotInteraction(systemPrompt, request);
-            const copilotPickedItemTitle = getStringFieldFromCopilotResponseMaybeWithStrJson(maybeJsonCopilotResponse, ["value", "parameter", "parameterValue", options.agentMetadata.parameterName || "value"]);
+            const copilotPickedItemTitle = getStringFieldFromCopilotResponseMaybeWithStrJson(maybeJsonCopilotResponse, ["value", "parameter", "parameterValue", options.agentMetadata.parameterDisplayTitle || "value"]);
             return copilotPickedItemTitle === undefined ? undefined : resolvedApplicableItems.find((i) => i.label === copilotPickedItemTitle);
         }
     }
@@ -172,9 +172,9 @@ class AgentAzureUserInput implements IAzureAgentInput {
             .replace(/\)\)/g, ")");
 
         return [
-            `You are an expert in determining the value of a '${options.agentMetadata.parameterName}' parameter based on user input.`,
+            `You are an expert in determining the value of a '${options.agentMetadata.parameterDisplayTitle}' parameter based on user input.`,
             `The possible values for the parameter are: ${itemsString}.`,
-            `Given the user's input, your job is to determine a value for '${options.agentMetadata.parameterName}'.`,
+            `Given the user's input, your job is to determine a value for '${options.agentMetadata.parameterDisplayTitle}'.`,
             `Only repsond with a JSON summary (for example, '{value: "xyz"}') of the value you determine. Do not respond in a coverstaional tone, only JSON. If the users input does not infer or specify a value for this parameter, then do not respond.`,
         ].filter(s => !!s).join(" ");
     }
@@ -182,15 +182,15 @@ class AgentAzureUserInput implements IAzureAgentInput {
     private async _provideInput(request: AgentRequest, options: AgentInputBoxOptions): Promise<string | undefined> {
         const systemPrompt = this._getProvideInputSystemPrompt1(options);
         const maybeJsonCopilotResponse = await getResponseAsStringCopilotInteraction(systemPrompt, request);
-        const copilotProvidedInput = getStringFieldFromCopilotResponseMaybeWithStrJson(maybeJsonCopilotResponse, ["value", "parameter", "parameterValue", options.agentMetadata.parameterName || "value"]);
+        const copilotProvidedInput = getStringFieldFromCopilotResponseMaybeWithStrJson(maybeJsonCopilotResponse, ["value", "parameter", "parameterValue", options.agentMetadata.parameterDisplayTitle || "value"]);
         return copilotProvidedInput;
     }
 
     private _getProvideInputSystemPrompt1(options: AgentInputBoxOptions): string {
         return [
-            `You are an expert in determining the value of a '${options.agentMetadata.parameterName}' parameter based on user input.`,
+            `You are an expert in determining the value of a '${options.agentMetadata.parameterDisplayTitle}' parameter based on user input.`,
             `This parameter is a string input, for which you must come up with a value for.`,
-            `Given the user's input, your job is to determine a string value for '${options.agentMetadata.parameterName}'.`,
+            `Given the user's input, your job is to determine a string value for '${options.agentMetadata.parameterDisplayTitle}'.`,
             `Only repsond with a JSON summary (for example, '{value: "xyz"}') of the value you determine. Do not respond in a coverstaional tone, only JSON.`,
         ].filter(s => !!s).join(" ");
     }
