@@ -51,6 +51,7 @@ export type SlashCommandConfig = {
      * A sentence description that helps copilot understand when the command should be used.
      */
     intentDescription?: string,
+
     handler: SlashCommandHandler
 };
 

@@ -56,9 +56,14 @@ agentBenchmarker.addBenchmarkConfigs(
     ...defaultBenchmarks,
 );
 agentBenchmarker.addExtensionsToBenchmark(
+    appServiceExtensionSlashCommandsOwner.getExtension(),
+    containerAppsExtensionSlashCommandsOwner.getExtension(),
+    databasesExtensionCosmosDbSlashCommandsOwner.getExtension(),
+    databasesExtensionPostgreSQLSlashCommandsOwner.getExtension(),
     functionsExtensionSlashCommandsOwner.getExtension(),
+    staticWebAppsExtensionSlashCommandsOwner.getExtension(),
     storageExtensionSlashCommandsOwner.getExtension(),
-    appServiceExtensionSlashCommandsOwner.getExtension()
+    virtualMachinesExtensionSlashCommandsOwner.getExtension(),
 );
 
 /**
@@ -89,7 +94,7 @@ async function handler(request: vscode.ChatAgentRequest, context: vscode.ChatAge
         userPrompt: request.prompt,
         variables: request.variables,
         context: context,
-        responseStream: response,
+        responseStream: { ...response, button: (command) => response.markdown(`\n\n**[${command.title}]**\n\n`) },
         token: token,
     };
     const handlers = [agentHiddenSlashCommandsOwner, agentBenchmarker, agentSlashCommandsOwner];

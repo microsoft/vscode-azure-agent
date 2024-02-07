@@ -40,19 +40,19 @@ export function slashCommandFromWizardBasedExtensionCommand(command: WizardBased
                     const { pickedParameters, unfulfilledParameters, inputQueue } = agentAzureUserInput.getInteractionResults();
 
                     if (Object.keys(pickedParameters).length > 0) {
-                        request.responseStream.markdown(`I have determined the following information needed for **${command.displayName}** based on our conversation:`);
+                        request.responseStream.markdown(`I have determined the following information needed for **${command.displayName}** based on our conversation:\n`);
                         request.responseStream.markdown(Object.keys(pickedParameters).map((parameterName) => `- ${pickedParameters[parameterName].parameterDisplayTitle}: ${pickedParameters[parameterName].pickedValueLabel}`).join("\n"));
-                        request.responseStream.markdown(`\nIf any of that information is incorrect, feel free to ask me to change it or start over.`);
-                        request.responseStream.markdown(`\nOtherwise, you can go ahead and start with that by clicking the **${command.displayName}** button below.`);
+                        request.responseStream.markdown(`\n\nIf any of that information is incorrect, feel free to ask me to change it or start over.`);
+                        request.responseStream.markdown(`\n\nOtherwise, you can go ahead and start with that by clicking the **${command.displayName}** button below.`);
                         if (Object.keys(unfulfilledParameters).length > 0) {
-                            request.responseStream.markdown(`\nYou can also provide me more information. I am at least interested in knowing:`);
+                            request.responseStream.markdown(`\nYou can also provide me more information. I am at least interested in knowing:\n`);
                             request.responseStream.markdown(Object.keys(unfulfilledParameters).map((parameterName) => `- ${unfulfilledParameters[parameterName].parameterDisplayTitle}: ${unfulfilledParameters[parameterName].parameterDisplayDescription}`).join("\n"));
                         }
                     } else {
-                        request.responseStream.markdown(`\nI was not able to determine any of the information needed for **${command.displayName}** based on our conversation.`);
-                        request.responseStream.markdown(`\nYou can go ahead and click the **${command.displayName}** button below to get started, or provide me with more information.`);
+                        request.responseStream.markdown(`\n\nI was not able to determine any of the information needed for **${command.displayName}** based on our conversation.`);
+                        request.responseStream.markdown(`\n\nYou can go ahead and click the **${command.displayName}** button below to get started, or provide me with more information.`);
                         if (Object.keys(unfulfilledParameters).length > 0) {
-                            request.responseStream.markdown(`\nIf you'd like to provide me with more information. I am at least interested in knowing:`);
+                            request.responseStream.markdown(`\nIf you'd like to provide me with more information. I am at least interested in knowing:\n`);
                             request.responseStream.markdown(Object.keys(unfulfilledParameters).map((parameterName) => `- ${unfulfilledParameters[parameterName].parameterDisplayTitle}: ${unfulfilledParameters[parameterName].parameterDisplayDescription}`).join("\n"));
                         }
                     }
