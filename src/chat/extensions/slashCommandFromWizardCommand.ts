@@ -11,7 +11,7 @@ import { getResponseAsStringCopilotInteraction, getStringFieldFromCopilotRespons
 import { type SlashCommand, type SlashCommandHandlerResult } from "../slashCommands";
 import { type AzureExtension } from "./AzureExtension";
 
-export function slashCommandFromWizardCommandConfig(command: WizardCommandConfig, extension: AzureExtension): SlashCommand {
+export function slashCommandFromWizardCommand(command: WizardCommandConfig, extension: AzureExtension): SlashCommand {
     return [
         command.name,
         {
