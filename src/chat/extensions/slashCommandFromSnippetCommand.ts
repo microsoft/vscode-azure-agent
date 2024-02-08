@@ -40,7 +40,10 @@ export function slashCommandFromSnippetCommand(command: SnippetCommandConfig, ex
                         request.responseStream.markdown(`\n\nHere is the ${command.snippetType || "code"} snippet that I generated for you:`);
                         request.responseStream.markdown(`\n\n\`\`\`${snippetLanguage}\n${snippet}\n\`\`\`\``);
                         request.responseStream.markdown(`\nIf this looks good to you, go ahead and click the **${command.displayName}** button to continue.`);
-                        request.responseStream.button({ command: command.commandId, title: command.displayName });
+
+                        // @todo: switch to request.responseStream.button once chat extension supports it
+                        // request.responseStream.button({ command: command.commandId, title: command.displayName, arguments: [snippet] });
+                        followUps.push({ title: command.displayName, commandId: command.commandId, args: [snippet] } as unknown as vscode.ChatAgentFollowup);
                     } else {
                         request.responseStream.markdown(`I'm sorry, I was not able to generate a code snippet for you.`);
                     }
