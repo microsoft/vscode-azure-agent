@@ -8,7 +8,7 @@ import { getLearnCommand, getMightBeInterestedHandler } from "../commonCommandsA
 import { SlashCommandsOwner, type SlashCommand, type SlashCommandHandlerResult, type SlashCommands } from "../slashCommands";
 import { AzureExtension } from "./AzureExtension";
 import { slashCommandFromSimpleCommand } from "./slashCommandFromSimpleCommand";
-import { slashCommandFromWizardCommandConfig } from "./slashCommandFromWizardCommandConfig";
+import { slashCommandFromWizardCommand } from "./slashCommandFromWizardCommand";
 
 export class ExtensionSlashCommandsOwner {
     private _extension: AzureExtension;
@@ -61,7 +61,7 @@ export class ExtensionSlashCommandsOwner {
                 if (this._extension.isCompatible()) {
                     const extensionWizardCommands = await this._extension.getWizardCommands();
                     for (const commandConfig of extensionWizardCommands) {
-                        const slashCommand = slashCommandFromWizardCommandConfig(commandConfig, this._extension);
+                        const slashCommand = slashCommandFromWizardCommand(commandConfig, this._extension);
                         extensionSlashCommands.set(slashCommand[0], slashCommand[1]);
                     }
 
