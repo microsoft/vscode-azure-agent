@@ -49,7 +49,10 @@ function learnHandler(config: LearnCommandConfig, request: AgentRequest): Promis
                     followUps.push(...(await generateExtensionCommandFollowUps(copilotResponse, config.associatedExtension, request)));
                 } else if (config.associatedExtension !== undefined && !config.associatedExtension.isInstalled()) {
                     request.responseStream.markdown(`\n\nFor additional help related to ${config.topic}, install the ${config.associatedExtension.extensionDisplayName} extension for VS Code.`);
-                    request.responseStream.button({ title: `Install the ${config.associatedExtension.extensionDisplayName} Extension`, command: "workbench.extensions.search" });
+
+                    // @todo: switch to request.responseStream.button once chat extension supports it
+                    // request.responseStream.button({ title: `Install the ${config.associatedExtension.extensionDisplayName} Extension`, command: "workbench.extensions.search", arguments: [config.associatedExtension.extensionId] });
+                    followUps.push({ title: `Install the ${config.associatedExtension.extensionDisplayName} Extension`, commandId: "workbench.extensions.search", args: [config.associatedExtension.extensionId] } as unknown as vscode.ChatAgentFollowup);
                 }
                 followUps.push(...(await generateNextQuestionsFollowUps(copilotResponse, request)));
 
@@ -76,7 +79,10 @@ export function getMightBeInterestedHandler(config: MightBeInterestedHandlerConf
             const followUps: vscode.ChatAgentFollowup[] = [];
             if (config.associatedExtension !== undefined && !config.associatedExtension.isInstalled()) {
                 request.responseStream.markdown(`\n\nAlso consider installing the ${config.associatedExtension.extensionDisplayName} extension for VS Code.`);
-                request.responseStream.button({ title: `Install the ${config.associatedExtension.extensionDisplayName} Extension`, command: "workbench.extensions.search" });
+
+                // @todo: switch to request.responseStream.button once chat extension supports it
+                // request.responseStream.button({ title: `Install the ${config.associatedExtension.extensionDisplayName} Extension`, command: "workbench.extensions.search", arguments: [config.associatedExtension.extensionId] });
+                followUps.push({ title: `Install the ${config.associatedExtension.extensionDisplayName} Extension`, commandId: "workbench.extensions.search", args: [config.associatedExtension.extensionId] } as unknown as vscode.ChatAgentFollowup);
             }
             const ragContent = await getMicrosoftLearnRagContent(actionContext, `Getting started or learning about ${config.topic}`);
             followUps.push(...await generateSampleQuestionsFollowUps(config.topic, ragContent?.content, request));
