@@ -45,7 +45,7 @@ export function slashCommandFromSnippetCommand(command: SnippetCommandConfig, ex
                         // request.responseStream.button({ command: command.commandId, title: command.displayName, arguments: [snippet] });
                         followUps.push({ title: command.displayName, commandId: command.commandId, args: [snippet] } as unknown as vscode.ChatAgentFollowup);
                     } else {
-                        request.responseStream.markdown(`I'm sorry, I was not able to generate a code snippet for you.`);
+                        request.responseStream.markdown(`I'm sorry, I was not able to generate a ${command.snippetType || "code"} snippet for you.`);
                     }
                 }
                 return { chatAgentResult: {}, followUp: followUps };
