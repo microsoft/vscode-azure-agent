@@ -7,10 +7,10 @@ import type * as vscode from "vscode";
 import { type AgentRequest } from "./agent";
 import { agentName } from "./agentConsts";
 import { getResponseAsStringCopilotInteraction, getStringFieldFromCopilotResponseMaybeWithStrJson } from "./copilotInteractions";
-import { type WizardBasedExtension } from "./extensions/wizardBasedExtension";
+import { type AzureExtension } from "./extensions/AzureExtension";
 import { detectIntent } from "./intentDetection";
 
-export async function generateExtensionCommandFollowUps(copilotContent: string, apiProvider: WizardBasedExtension, request: AgentRequest): Promise<vscode.ChatAgentFollowup[]> {
+export async function generateExtensionCommandFollowUps(copilotContent: string, apiProvider: AzureExtension, request: AgentRequest): Promise<vscode.ChatAgentFollowup[]> {
     const copilotContentAgentRequest: AgentRequest = { ...request, userPrompt: copilotContent, }
     const availableCommands = await apiProvider.getWizardCommands();
     const intentDetectionTargets = availableCommands.map((command) => ({ name: command.name, intentDetectionDescription: command.intentDescription || command.displayName }));

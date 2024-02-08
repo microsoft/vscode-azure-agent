@@ -6,10 +6,10 @@
 /* eslint-disable-next-line @typescript-eslint/no-unused-vars */
 import * as vscode from "vscode";
 /* eslint-disable-next-line @typescript-eslint/no-unused-vars */
-import { type AgentBenchmarkConfig, type AzureUserInputQueue, type ExtensionAgentMetadata, type IAzureAgentInput, type WizardBasedCommandConfig } from "@microsoft/vscode-azext-utils";
+import { type AgentBenchmarkConfig, type AzureUserInputQueue, type ExtensionAgentMetadata, type IAzureAgentInput, type SimpleCommandConfig, type WizardCommandConfig } from "@microsoft/vscode-azext-utils";
 import { type AgentRequest } from "../agent";
 
-export class WizardBasedExtension {
+export class AzureExtension {
     public readonly extensionId: string;
     public readonly extensionDisplayName: string;
 
@@ -44,20 +44,33 @@ export class WizardBasedExtension {
         }
     }
 
-    public async getWizardCommands(): Promise<WizardBasedCommandConfig[]> {
+    public async getWizardCommands(): Promise<WizardCommandConfig[]> {
         if (!this._extensionAgentMetadata) {
             throw new Error(`Extension ${this.extensionDisplayName} does not yet have extension agent metadata initialized`);
         }
 
         try {
-            return await vscode.commands.executeCommand<WizardBasedCommandConfig[]>(this._extensionAgentMetadata.getWizardCommandsCommandId);
+            return (await this._getCommandConfigs()).filter((commandConfig): commandConfig is WizardCommandConfig => commandConfig.type === "wizard");
         } catch (error) {
             console.log(`Error getting wizard commands from ${this.extensionDisplayName} extension: ${JSON.stringify(error)}`);
             return [];
         }
     }
 
-    public async runWizardCommandWithoutExecutionId(command: WizardBasedCommandConfig, agentAzureUserInput: IAzureAgentInput): Promise<void> {
+    public async getSimpleCommands(): Promise<SimpleCommandConfig[]> {
+        if (!this._extensionAgentMetadata) {
+            throw new Error(`Extension ${this.extensionDisplayName} does not yet have extension agent metadata initialized`);
+        }
+
+        try {
+            return (await this._getCommandConfigs()).filter((commandConfig): commandConfig is SimpleCommandConfig => commandConfig.type === "simple");
+        } catch (error) {
+            console.log(`Error getting wizard commands from ${this.extensionDisplayName} extension: ${JSON.stringify(error)}`);
+            return [];
+        }
+    }
+
+    public async runWizardCommandWithoutExecutionId(command: WizardCommandConfig, agentAzureUserInput: IAzureAgentInput): Promise<void> {
         if (!this._extensionAgentMetadata) {
             throw new Error(`Extension ${this.extensionDisplayName} does not yet have extension agent metadata initialized`);
         }
@@ -65,12 +78,20 @@ export class WizardBasedExtension {
         await vscode.commands.executeCommand(this._extensionAgentMetadata.runWizardCommandWithoutExecutionCommandId, command, agentAzureUserInput);
     }
 
-    public getRunWizardCommandWithInputsCommand(command: WizardBasedCommandConfig, inputQueue: AzureUserInputQueue): vscode.Command {
+    public getRunWizardCommandWithInputsCommand(command: WizardCommandConfig, inputQueue: AzureUserInputQueue): vscode.Command {
         if (!this._extensionAgentMetadata) {
             throw new Error(`Extension ${this.extensionDisplayName} does not yet have extension agent metadata initialized`);
         }
 
         return { title: command.displayName, command: this._extensionAgentMetadata.runWizardCommandWithInputsCommandId, arguments: [command, inputQueue] };
+    }
+
+    public getRunSimpleCommandCommand(command: SimpleCommandConfig): vscode.Command {
+        if (!this._extensionAgentMetadata) {
+            throw new Error(`Extension ${this.extensionDisplayName} does not yet have extension agent metadata initialized`);
+        }
+
+        return { title: command.displayName, command: command.commandId };
     }
 
     public async getAgentBenchmarkConfigs(): Promise<AgentBenchmarkConfig[]> {
@@ -80,6 +101,19 @@ export class WizardBasedExtension {
 
         try {
             return await vscode.commands.executeCommand<AgentBenchmarkConfig[]>(this._extensionAgentMetadata.getAgentBenchmarkConfigsCommandId);
+        } catch (error) {
+            console.log(`Error getting wizard commands from ${this.extensionDisplayName} extension: ${JSON.stringify(error)}`);
+            return [];
+        }
+    }
+
+    private async _getCommandConfigs(): Promise<(WizardCommandConfig | SimpleCommandConfig)[]> {
+        if (!this._extensionAgentMetadata) {
+            throw new Error(`Extension ${this.extensionDisplayName} does not yet have extension agent metadata initialized`);
+        }
+
+        try {
+            return await vscode.commands.executeCommand<(WizardCommandConfig | SimpleCommandConfig)[]>(this._extensionAgentMetadata.getCommandsCommandId);
         } catch (error) {
             console.log(`Error getting wizard commands from ${this.extensionDisplayName} extension: ${JSON.stringify(error)}`);
             return [];

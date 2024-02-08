@@ -3,15 +3,15 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { UserCancelledError, type AgentInputBoxOptions, type AgentQuickPickItem, type AgentQuickPickOptions, type AzureUserInputQueue, type IAzureAgentInput, type ParameterAgentMetadata, type PromptResult, type WizardBasedCommandConfig } from "@microsoft/vscode-azext-utils";
+import { UserCancelledError, type AgentInputBoxOptions, type AgentQuickPickItem, type AgentQuickPickOptions, type AzureUserInputQueue, type IAzureAgentInput, type ParameterAgentMetadata, type PromptResult, type WizardCommandConfig } from "@microsoft/vscode-azext-utils";
 import * as vscode from "vscode";
 import { type AgentRequest } from "../agent";
 import { getSignInCommand, isUserSignedInToAzure } from "../azureSignIn";
 import { getResponseAsStringCopilotInteraction, getStringFieldFromCopilotResponseMaybeWithStrJson } from "../copilotInteractions";
 import { type SlashCommand, type SlashCommandHandlerResult } from "../slashCommands";
-import { type WizardBasedExtension } from "./wizardBasedExtension";
+import { type AzureExtension } from "./AzureExtension";
 
-export function slashCommandFromWizardBasedExtensionCommand(command: WizardBasedCommandConfig, extension: WizardBasedExtension): SlashCommand {
+export function slashCommandFromWizardCommandConfig(command: WizardCommandConfig, extension: AzureExtension): SlashCommand {
     return [
         command.name,
         {

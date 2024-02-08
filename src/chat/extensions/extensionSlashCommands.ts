@@ -6,11 +6,12 @@
 import { type AgentRequest } from "../agent";
 import { getLearnCommand, getMightBeInterestedHandler } from "../commonCommandsAndHandlers";
 import { SlashCommandsOwner, type SlashCommand, type SlashCommandHandlerResult, type SlashCommands } from "../slashCommands";
-import { slashCommandFromWizardBasedExtensionCommand } from "./slashCommandFromWizardBasedExtensionCommand";
-import { WizardBasedExtension } from "./wizardBasedExtension";
+import { AzureExtension } from "./AzureExtension";
+import { slashCommandFromSimpleCommand } from "./slashCommandFromSimpleCommand";
+import { slashCommandFromWizardCommandConfig } from "./slashCommandFromWizardCommandConfig";
 
 export class ExtensionSlashCommandsOwner {
-    private _extension: WizardBasedExtension;
+    private _extension: AzureExtension;
     private _commandName: string;
     private _extensionDisplayName: string;
     private _azureServiceName: string;
@@ -21,7 +22,7 @@ export class ExtensionSlashCommandsOwner {
     private _extensionSlashCommandsOwner: SlashCommandsOwner | undefined;
 
     constructor(extensionId: string, extensionDisplayName: string, azureServiceName: string, commandName: string) {
-        this._extension = new WizardBasedExtension(extensionId, extensionDisplayName);
+        this._extension = new AzureExtension(extensionId, extensionDisplayName);
         this._extensionDisplayName = extensionDisplayName;
         this._azureServiceName = azureServiceName;
         this._commandName = commandName;
@@ -39,7 +40,7 @@ export class ExtensionSlashCommandsOwner {
         ]
     }
 
-    public getExtension(): WizardBasedExtension {
+    public getExtension(): AzureExtension {
         return this._extension;
     }
 
@@ -59,8 +60,14 @@ export class ExtensionSlashCommandsOwner {
             if (this._extension.isInstalled()) {
                 if (this._extension.isCompatible()) {
                     const extensionWizardCommands = await this._extension.getWizardCommands();
-                    for (const commandSchema of extensionWizardCommands) {
-                        const slashCommand = slashCommandFromWizardBasedExtensionCommand(commandSchema, this._extension);
+                    for (const commandConfig of extensionWizardCommands) {
+                        const slashCommand = slashCommandFromWizardCommandConfig(commandConfig, this._extension);
+                        extensionSlashCommands.set(slashCommand[0], slashCommand[1]);
+                    }
+
+                    const extensionSimpleCommands = await this._extension.getSimpleCommands();
+                    for (const commandConfig of extensionSimpleCommands) {
+                        const slashCommand = slashCommandFromSimpleCommand(commandConfig, this._extension);
                         extensionSlashCommands.set(slashCommand[0], slashCommand[1]);
                     }
                 } else {
