@@ -9,6 +9,7 @@ import * as vscode from "vscode";
 import { type AzureUserInputQueue, type ExtensionAgentMetadata, type IAzureAgentInput, type SimpleCommandConfig, type WizardCommandConfig } from "@microsoft/vscode-azext-utils";
 import { type AgentRequest } from "../agent";
 import { type AgentBenchmarkConfig, type AgentBenchmarkWithStepsConfig } from "../benchmarking/NewBenchmarkTypes";
+import { type SnippetCommandConfig } from "./SnippetBasedCommandConfig";
 
 export class AzureExtension {
     public readonly extensionId: string;
@@ -61,6 +62,19 @@ export class AzureExtension {
         }
     }
 
+    public async getSnippetCommands(): Promise<SnippetCommandConfig[]> {
+        if (!this._extensionAgentMetadata) {
+            throw new Error(`Extension ${this.extensionDisplayName} does not yet have extension agent metadata initialized`);
+        }
+
+        try {
+            return (await this._getCommandConfigs()).filter((commandConfig): commandConfig is SnippetCommandConfig => commandConfig.type === "snippet");
+        } catch (error) {
+            console.log(`Error getting wizard commands from ${this.extensionDisplayName} extension: ${JSON.stringify(error)}`);
+            return [];
+        }
+    }
+
     public async runWizardCommandWithoutExecutionId(command: WizardCommandConfig, agentAzureUserInput: IAzureAgentInput): Promise<void> {
         if (!this._extensionAgentMetadata) {
             throw new Error(`Extension ${this.extensionDisplayName} does not yet have extension agent metadata initialized`);
@@ -103,15 +117,15 @@ export class AzureExtension {
         }
     }
 
-    private _cachedCommandConfigs: (WizardCommandConfig | SimpleCommandConfig)[] | undefined;
-    private async _getCommandConfigs(): Promise<(WizardCommandConfig | SimpleCommandConfig)[]> {
+    private _cachedCommandConfigs: (WizardCommandConfig | SimpleCommandConfig | SnippetCommandConfig)[] | undefined;
+    private async _getCommandConfigs(): Promise<(WizardCommandConfig | SimpleCommandConfig | SnippetCommandConfig)[]> {
         if (!this._extensionAgentMetadata) {
             return [];
         }
 
         try {
             if (this._cachedCommandConfigs === undefined) {
-                this._cachedCommandConfigs = await vscode.commands.executeCommand<(WizardCommandConfig | SimpleCommandConfig)[]>(this._extensionAgentMetadata.getCommandsCommandId) || [];
+                this._cachedCommandConfigs = await vscode.commands.executeCommand<(WizardCommandConfig | SimpleCommandConfig | SnippetCommandConfig)[]>(this._extensionAgentMetadata.getCommandsCommandId) || [];
             }
             return this._cachedCommandConfigs;
         } catch (error) {
