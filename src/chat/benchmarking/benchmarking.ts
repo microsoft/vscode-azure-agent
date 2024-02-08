@@ -10,7 +10,7 @@ import * as path from "path";
 import type * as vscode from "vscode";
 import { type AgentRequest, type IAgentRequestHandler } from "../agent";
 import { agentName } from "../agentConsts";
-import { type WizardBasedExtension } from "../extensions/wizardBasedExtension";
+import { type AzureExtension } from "../extensions/AzureExtension";
 import { SlashCommandsOwner, type FallbackSlashCommandHandlers, type SlashCommand, type SlashCommandConfig, type SlashCommandHandlerResult } from "../slashCommands";
 
 type AgentBenchmarkRunStats = {
@@ -34,7 +34,7 @@ export class AgentBenchmarker implements IAgentRequestHandler {
     private _benchmarkerSlashCommandsOwner: SlashCommandsOwner;
     private _continuationIndex: number;
     private _benchmarks: AgentBenchmarkConfig[];
-    private _extensionsToBenchmark: WizardBasedExtension[];
+    private _extensionsToBenchmark: AzureExtension[];
     private _benchmarksRunsStats: AgentBenchmarkRunStats[][];
 
     constructor(agentSlashCommandsOwner: SlashCommandsOwner) {
@@ -52,7 +52,7 @@ export class AgentBenchmarker implements IAgentRequestHandler {
         this._continuationIndex = 0;
     }
 
-    public addExtensionsToBenchmark(...extensions: WizardBasedExtension[]): void {
+    public addExtensionsToBenchmark(...extensions: AzureExtension[]): void {
         this._extensionsToBenchmark.push(...extensions);
     }
 

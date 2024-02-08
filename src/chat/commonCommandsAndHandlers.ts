@@ -8,7 +8,7 @@ import * as vscode from "vscode";
 import { type AgentRequest } from "./agent";
 import { agentName } from "./agentConsts";
 import { verbatimCopilotInteraction } from "./copilotInteractions";
-import { type WizardBasedExtension } from "./extensions/wizardBasedExtension";
+import { type AzureExtension } from "./extensions/AzureExtension";
 import { generateExtensionCommandFollowUps, generateNextQuestionsFollowUps, generateSampleQuestionsFollowUps } from "./followUpGenerator";
 import { getMicrosoftLearnRagContent } from "./rag";
 import { type SlashCommand, type SlashCommandHandler, type SlashCommandHandlerResult } from "./slashCommands";
@@ -16,7 +16,7 @@ import { type SlashCommand, type SlashCommandHandler, type SlashCommandHandlerRe
 export type LearnCommandConfig = {
     topic: string;
     noInputSuggestions?: string[];
-    associatedExtension?: WizardBasedExtension;
+    associatedExtension?: AzureExtension;
 }
 
 export function getLearnCommand(config: LearnCommandConfig): SlashCommand {
@@ -67,7 +67,7 @@ function getLearnSystemPrompt(config: LearnCommandConfig, ragContent: string | u
 
 export type MightBeInterestedHandlerConfig = {
     topic: string;
-    associatedExtension?: WizardBasedExtension;
+    associatedExtension?: AzureExtension;
 };
 
 export function getMightBeInterestedHandler(config: MightBeInterestedHandlerConfig): SlashCommandHandler {
