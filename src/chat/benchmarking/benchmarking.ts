@@ -269,14 +269,14 @@ export class AgentBenchmarker implements IAgentRequestHandler {
     private async _prepForBenchmarking(request: AgentRequest): Promise<void> {
         if (this._extensionsToBenchmark.length > 0) {
             for (const extension of this._extensionsToBenchmark.splice(0)) {
-                if (extension.isInstalled() && extension.isCompatible()) {
+                if (extension.isInstalled()) {
                     request.responseStream.progress(`Activating the ${extension.extensionDisplayName} extension...`);
                     await extension.activate(request);
                     request.responseStream.progress(`Getting benchmark configs from the ${extension.extensionDisplayName} extension...`);
                     const benchmarkConfigs = await extension.getAgentBenchmarkConfigs();
                     this.addBenchmarkConfigs(...benchmarkConfigs);
                 } else {
-                    request.responseStream.progress(`Skipping getting benchmark configs from the ${extension.extensionDisplayName} extension as it is not ${extension.isInstalled() ? "compatible" : "installed"}...`);
+                    request.responseStream.progress(`Skipping getting benchmark configs from the ${extension.extensionDisplayName} extension as it is not installed...`);
                 }
             }
         }

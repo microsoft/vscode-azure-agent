@@ -58,20 +58,16 @@ export class ExtensionSlashCommandsOwner {
             ]);
 
             if (this._extension.isInstalled()) {
-                if (this._extension.isCompatible()) {
-                    const extensionWizardCommands = await this._extension.getWizardCommands();
-                    for (const commandConfig of extensionWizardCommands) {
-                        const slashCommand = slashCommandFromWizardCommand(commandConfig, this._extension);
-                        extensionSlashCommands.set(slashCommand[0], slashCommand[1]);
-                    }
+                const extensionWizardCommands = await this._extension.getWizardCommands();
+                for (const commandConfig of extensionWizardCommands) {
+                    const slashCommand = slashCommandFromWizardCommand(commandConfig, this._extension);
+                    extensionSlashCommands.set(slashCommand[0], slashCommand[1]);
+                }
 
-                    const extensionSimpleCommands = await this._extension.getSimpleCommands();
-                    for (const commandConfig of extensionSimpleCommands) {
-                        const slashCommand = slashCommandFromSimpleCommand(commandConfig, this._extension);
-                        extensionSlashCommands.set(slashCommand[0], slashCommand[1]);
-                    }
-                } else {
-                    console.log(`Extension ${this._extension.extensionId} is installed but not compatible`);
+                const extensionSimpleCommands = await this._extension.getSimpleCommands();
+                for (const commandConfig of extensionSimpleCommands) {
+                    const slashCommand = slashCommandFromSimpleCommand(commandConfig, this._extension);
+                    extensionSlashCommands.set(slashCommand[0], slashCommand[1]);
                 }
             }
 
