@@ -3,6 +3,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
+import { type BaseCommandConfig } from "@microsoft/vscode-azext-utils";
 import type * as vscode from "vscode";
 import { type AgentRequest } from "./agent";
 import { agentName } from "./agentConsts";
@@ -10,16 +11,53 @@ import { getResponseAsStringCopilotInteraction, getStringFieldFromCopilotRespons
 import { type AzureExtension } from "./extensions/AzureExtension";
 import { detectIntent } from "./intentDetection";
 
-export async function generateExtensionCommandFollowUps(copilotContent: string, apiProvider: AzureExtension, request: AgentRequest): Promise<vscode.ChatAgentFollowup[]> {
+export async function generateExtensionCommandFollowUpsOther(copilotContent: string, apiProvider: AzureExtension, request: AgentRequest): Promise<vscode.ChatAgentFollowup[]> {
     const copilotContentAgentRequest: AgentRequest = { ...request, userPrompt: copilotContent, }
-    const availableCommands = await apiProvider.getWizardCommands();
-    const intentDetectionTargets = availableCommands.map((command) => ({ name: command.name, intentDetectionDescription: command.intentDescription || command.displayName }));
+    const availableCommands = [
+        ...await apiProvider.getWizardCommands(),
+        ...await apiProvider.getSimpleCommands(),
+    ];
+    const intentDetectionTargets = availableCommands
+        .map((command) => ({ name: command.name, intentDetectionDescription: command.intentDescription || command.displayName }));
+
     const detectedIntentionTarget = await detectIntent(intentDetectionTargets, copilotContentAgentRequest);
     const detectedCommand = availableCommands.find((command) => command.name === detectedIntentionTarget?.name);
     if (detectedCommand !== undefined) {
         return [{ message: `@${agentName} ${detectedCommand.displayName}` }]
     }
     return [];
+}
+
+export async function generateExtensionCommandFollowUps(copilotContent: string, apiProvider: AzureExtension, request: AgentRequest): Promise<vscode.ChatAgentFollowup[]> {
+    const copilotContentAgentRequest: AgentRequest = { ...request, userPrompt: copilotContent, }
+    const availableCommands = [
+        ...await apiProvider.getWizardCommands(),
+        ...await apiProvider.getSimpleCommands(),
+    ];
+    const systemPrompt = generateNextActionsFollowUpsSystemPrompt1(availableCommands);
+    const maybeJsonCopilotResponse = await getResponseAsStringCopilotInteraction(systemPrompt, copilotContentAgentRequest);
+    const action = getStringFieldFromCopilotResponseMaybeWithStrJson(maybeJsonCopilotResponse, "action");
+    const actionPhrase = getStringFieldFromCopilotResponseMaybeWithStrJson(maybeJsonCopilotResponse, "actionPhrase");
+    const matchingCommand = availableCommands.find((command) => command.displayName === action);
+
+    if (action !== undefined && actionPhrase !== undefined && matchingCommand !== undefined) {
+        return [{ message: `@${agentName} ${actionPhrase}` }]
+    }
+
+    return [];
+}
+
+function generateNextActionsFollowUpsSystemPrompt1(actions: BaseCommandConfig[]): string {
+    const actionDescriptions = actions.map((target) => `'${target.displayName}'`).join(", ")
+    return `You are an expert in Azure development. Your job is to come up with a single action phrase that is associated with the next task a user would want to do after reading the given information. The action phrase should be worded as an instruction the user gives to you. The phrase should be simple. Do not mention VS Code, any tools, CLIs, or extensions. You are capabile of the following actions: ${actionDescriptions}.
+
+    Only repsond with a JSON summary of the chosen action and action phrase. Do not respond in a coverstaional tone, only JSON.
+
+    # Example Response 1 (able to choose a best option):
+    Result: { "action": "<a name of one of the available actions>", "actionPhrase": "<an action phrase associated with the chosen availabile action>" }
+
+    # Example Response 2 (unable to choose a best option):
+    Result: { "action": "none", "actionPhrase": "" }`;
 }
 
 export async function generateNextQuestionsFollowUps(copilotContent: string, request: AgentRequest): Promise<vscode.ChatAgentFollowup[]> {
