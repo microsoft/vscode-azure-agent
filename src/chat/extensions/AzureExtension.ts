@@ -96,6 +96,7 @@ export class AzureExtension {
             }
             return this._cachedAgentBenchmarkConfigs || []
         } catch (error) {
+            this._cachedAgentBenchmarkConfigs = [];
             console.log(`Error getting wizard commands from ${this.extensionDisplayName} extension: ${JSON.stringify(error)}`);
             return [];
         }
@@ -113,6 +114,7 @@ export class AzureExtension {
             }
             return this._cachedCommandConfigs || []
         } catch (error) {
+            this._cachedCommandConfigs = [];
             console.log(`Error getting wizard commands from ${this.extensionDisplayName} extension: ${JSON.stringify(error)}`);
             return [];
         }
