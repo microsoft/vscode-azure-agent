@@ -92,9 +92,9 @@ export class AzureExtension {
 
         try {
             if (this._cachedAgentBenchmarkConfigs === undefined) {
-                this._cachedAgentBenchmarkConfigs = await vscode.commands.executeCommand<AgentBenchmarkConfig[]>(this._extensionAgentMetadata.getAgentBenchmarkConfigsCommandId);
+                this._cachedAgentBenchmarkConfigs = await vscode.commands.executeCommand<AgentBenchmarkConfig[]>(this._extensionAgentMetadata.getAgentBenchmarkConfigsCommandId) || [];
             }
-            return this._cachedAgentBenchmarkConfigs || []
+            return this._cachedAgentBenchmarkConfigs;
         } catch (error) {
             this._cachedAgentBenchmarkConfigs = [];
             console.log(`Error getting wizard commands from ${this.extensionDisplayName} extension: ${JSON.stringify(error)}`);
@@ -110,9 +110,9 @@ export class AzureExtension {
 
         try {
             if (this._cachedCommandConfigs === undefined) {
-                this._cachedCommandConfigs = await vscode.commands.executeCommand<(WizardCommandConfig | SimpleCommandConfig)[]>(this._extensionAgentMetadata.getCommandsCommandId);
+                this._cachedCommandConfigs = await vscode.commands.executeCommand<(WizardCommandConfig | SimpleCommandConfig)[]>(this._extensionAgentMetadata.getCommandsCommandId) || [];
             }
-            return this._cachedCommandConfigs || []
+            return this._cachedCommandConfigs;
         } catch (error) {
             this._cachedCommandConfigs = [];
             console.log(`Error getting wizard commands from ${this.extensionDisplayName} extension: ${JSON.stringify(error)}`);
