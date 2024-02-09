@@ -30,10 +30,6 @@ export class AzureExtension {
         return true;
     }
 
-    public isCompatible(): boolean {
-        return this.isInstalled() && this._extensionAgentMetadata !== undefined;
-    }
-
     public async activate(request: AgentRequest): Promise<void> {
         if (this.extensionId !== "") {
             this._extension = this._extension || vscode.extensions.getExtension(this.extensionId);
@@ -45,12 +41,9 @@ export class AzureExtension {
     }
 
     public async getWizardCommands(): Promise<WizardCommandConfig[]> {
-        if (!this._extensionAgentMetadata) {
-            throw new Error(`Extension ${this.extensionDisplayName} does not yet have extension agent metadata initialized`);
-        }
-
         try {
-            return (await this._getCommandConfigs()).filter((commandConfig): commandConfig is WizardCommandConfig => commandConfig.type === "wizard");
+            return (await this._getCommandConfigs())
+                .filter((commandConfig): commandConfig is WizardCommandConfig => commandConfig.type === "wizard");
         } catch (error) {
             console.log(`Error getting wizard commands from ${this.extensionDisplayName} extension: ${JSON.stringify(error)}`);
             return [];
@@ -58,12 +51,9 @@ export class AzureExtension {
     }
 
     public async getSimpleCommands(): Promise<SimpleCommandConfig[]> {
-        if (!this._extensionAgentMetadata) {
-            throw new Error(`Extension ${this.extensionDisplayName} does not yet have extension agent metadata initialized`);
-        }
-
         try {
-            return (await this._getCommandConfigs()).filter((commandConfig): commandConfig is SimpleCommandConfig => commandConfig.type === "simple");
+            return (await this._getCommandConfigs())
+                .filter((commandConfig): commandConfig is SimpleCommandConfig => commandConfig.type === "simple");
         } catch (error) {
             console.log(`Error getting wizard commands from ${this.extensionDisplayName} extension: ${JSON.stringify(error)}`);
             return [];
@@ -94,26 +84,34 @@ export class AzureExtension {
         return { title: command.displayName, command: command.commandId };
     }
 
+    private _cachedAgentBenchmarkConfigs: AgentBenchmarkConfig[] | undefined;
     public async getAgentBenchmarkConfigs(): Promise<AgentBenchmarkConfig[]> {
         if (!this._extensionAgentMetadata) {
-            throw new Error(`Extension ${this.extensionDisplayName} does not yet have extension agent metadata initialized`);
+            return [];
         }
 
         try {
-            return await vscode.commands.executeCommand<AgentBenchmarkConfig[]>(this._extensionAgentMetadata.getAgentBenchmarkConfigsCommandId);
+            if (this._cachedAgentBenchmarkConfigs === undefined) {
+                this._cachedAgentBenchmarkConfigs = await vscode.commands.executeCommand<AgentBenchmarkConfig[]>(this._extensionAgentMetadata.getAgentBenchmarkConfigsCommandId);
+            }
+            return this._cachedAgentBenchmarkConfigs || []
         } catch (error) {
             console.log(`Error getting wizard commands from ${this.extensionDisplayName} extension: ${JSON.stringify(error)}`);
             return [];
         }
     }
 
+    private _cachedCommandConfigs: (WizardCommandConfig | SimpleCommandConfig)[] | undefined;
     private async _getCommandConfigs(): Promise<(WizardCommandConfig | SimpleCommandConfig)[]> {
         if (!this._extensionAgentMetadata) {
-            throw new Error(`Extension ${this.extensionDisplayName} does not yet have extension agent metadata initialized`);
+            return [];
         }
 
         try {
-            return await vscode.commands.executeCommand<(WizardCommandConfig | SimpleCommandConfig)[]>(this._extensionAgentMetadata.getCommandsCommandId);
+            if (this._cachedCommandConfigs === undefined) {
+                this._cachedCommandConfigs = await vscode.commands.executeCommand<(WizardCommandConfig | SimpleCommandConfig)[]>(this._extensionAgentMetadata.getCommandsCommandId);
+            }
+            return this._cachedCommandConfigs || []
         } catch (error) {
             console.log(`Error getting wizard commands from ${this.extensionDisplayName} extension: ${JSON.stringify(error)}`);
             return [];
