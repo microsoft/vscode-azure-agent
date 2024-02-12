@@ -56,12 +56,10 @@ export class AgentBenchmarker implements IAgentRequestHandler {
         this._extensionsToBenchmark.push(...extensions);
     }
 
-    public addBenchmarkConfigs(...benchmarkConfigs: AgentBenchmarkWithStepsConfig[]): void {
-        this._benchmarks.push(...benchmarkConfigs);
-        // benchmarkConfigs.forEach((config) => {
-        //     this._benchmarksRunsStats.push(...config.steps.map(() => []));
-        // });
-        this._benchmarksRunsStats.push(...benchmarkConfigs.map((config) => config.steps.map(() => [])));
+    public addBenchmarkConfigs(...benchmarkConfigs: (AgentBenchmarkWithStepsConfig | AgentBenchmarkConfig)[]): void {
+        const convertedBenchmarkConfigs = benchmarkConfigs.map((config) => ensureIsAgentBenchmarkWithStepsConfig(config));
+        this._benchmarks.push(...convertedBenchmarkConfigs);
+        this._benchmarksRunsStats.push(...convertedBenchmarkConfigs.map((config) => config.steps.map(() => [])));
     }
 
     public handleRequestOrPrompt(request: AgentRequest): Promise<SlashCommandHandlerResult> {
@@ -283,7 +281,7 @@ export class AgentBenchmarker implements IAgentRequestHandler {
                     await extension.activate(request);
                     request.responseStream.progress(`Getting benchmark configs from the ${extension.extensionDisplayName} extension...`);
                     const benchmarkConfigs = await extension.getAgentBenchmarkConfigs();
-                    this.addBenchmarkConfigs(...benchmarkConfigs.map((config) => ensureIsAgentBenchmarkWithStepsConfig(config)));
+                    this.addBenchmarkConfigs(...benchmarkConfigs);
                 } else {
                     request.responseStream.progress(`Skipping getting benchmark configs from the ${extension.extensionDisplayName} extension as it is not installed...`);
                 }
