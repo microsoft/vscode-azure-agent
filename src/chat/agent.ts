@@ -9,7 +9,7 @@ import * as vscode from "vscode";
 import { ext } from '../extensionVariables';
 import { agentDescription, agentFullName, agentName, maxFollowUps } from "./agentConsts";
 import { agentHelpCommandName, getAgentHelpCommand } from "./agentHelpSlashCommand";
-import { defaultBenchmarks, helpBenchmarks } from "./benchmarking/agentBenchmarks";
+import { defaultBenchmarks, helpBenchmarks, multiPromptBenchmarks } from "./benchmarking/agentBenchmarks";
 import { AgentBenchmarker } from "./benchmarking/benchmarking";
 import { getLearnCommand } from "./commonCommandsAndHandlers";
 import { appServiceExtensionSlashCommandsOwner, containerAppsExtensionSlashCommandsOwner, databasesExtensionCosmosDbSlashCommandsOwner, databasesExtensionPostgreSQLSlashCommandsOwner, functionsExtensionSlashCommandsOwner, staticWebAppsExtensionSlashCommandsOwner, storageExtensionSlashCommandsOwner, virtualMachinesExtensionSlashCommandsOwner } from "./extensions/extensions";
@@ -20,7 +20,7 @@ export type AgentRequest = {
     command?: string;
     userPrompt: string;
 
-    context: vscode.ChatAgentContext;
+    context: Omit<vscode.ChatAgentContext, "history">;
     responseStream: vscode.ChatAgentResponseStream;
     token: vscode.CancellationToken;
 }
@@ -51,6 +51,7 @@ agentSlashCommandsOwner.addInvokeableSlashCommands(new Map([
  */
 const agentBenchmarker = new AgentBenchmarker(agentSlashCommandsOwner);
 agentBenchmarker.addBenchmarkConfigs(
+    ...multiPromptBenchmarks,
     ...helpBenchmarks,
     ...defaultBenchmarks,
 );

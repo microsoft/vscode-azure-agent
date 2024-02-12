@@ -3,7 +3,6 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { type AgentBenchmarkConfig } from "@microsoft/vscode-azext-utils";
 import * as fs from "fs";
 import * as os from "os";
 import * as path from "path";
@@ -12,6 +11,7 @@ import { type AgentRequest, type IAgentRequestHandler } from "../agent";
 import { agentName } from "../agentConsts";
 import { type AzureExtension } from "../extensions/AzureExtension";
 import { SlashCommandsOwner, type FallbackSlashCommandHandlers, type SlashCommand, type SlashCommandConfig, type SlashCommandHandlerResult } from "../slashCommands";
+import { type AgentBenchmarkConfig, type AgentBenchmarkWithStepsConfig } from "./NewBenchmarkTypes";
 
 type AgentBenchmarkRunStats = {
     startTime: number,
@@ -33,9 +33,9 @@ export class AgentBenchmarker implements IAgentRequestHandler {
     private _agentSlashCommandsOwner: SlashCommandsOwner;
     private _benchmarkerSlashCommandsOwner: SlashCommandsOwner;
     private _continuationIndex: number;
-    private _benchmarks: AgentBenchmarkConfig[];
+    private _benchmarks: AgentBenchmarkWithStepsConfig[];
     private _extensionsToBenchmark: AzureExtension[];
-    private _benchmarksRunsStats: AgentBenchmarkRunStats[][];
+    private _benchmarksRunsStats: AgentBenchmarkRunStats[][][];
 
     constructor(agentSlashCommandsOwner: SlashCommandsOwner) {
         this._agentSlashCommandsOwner = agentSlashCommandsOwner;
@@ -56,9 +56,10 @@ export class AgentBenchmarker implements IAgentRequestHandler {
         this._extensionsToBenchmark.push(...extensions);
     }
 
-    public addBenchmarkConfigs(...benchmarkConfigs: AgentBenchmarkConfig[]): void {
-        this._benchmarks.push(...benchmarkConfigs);
-        this._benchmarksRunsStats.push(...benchmarkConfigs.map(() => []));
+    public addBenchmarkConfigs(...benchmarkConfigs: (AgentBenchmarkWithStepsConfig | AgentBenchmarkConfig)[]): void {
+        const convertedBenchmarkConfigs = benchmarkConfigs.map((config) => ensureIsAgentBenchmarkWithStepsConfig(config));
+        this._benchmarks.push(...convertedBenchmarkConfigs);
+        this._benchmarksRunsStats.push(...convertedBenchmarkConfigs.map((config) => config.steps.map(() => [])));
     }
 
     public handleRequestOrPrompt(request: AgentRequest): Promise<SlashCommandHandlerResult> {
@@ -107,82 +108,114 @@ export class AgentBenchmarker implements IAgentRequestHandler {
     private async _runBenchmark(benchmarkIdx: number, request: AgentRequest): Promise<void> {
         const benchmark = this._benchmarks[benchmarkIdx];
 
-        this._debugBenchmarking(request.responseStream, `📋 Benchmark (${benchmarkIdx ?? this._continuationIndex}/${this._benchmarks.length}): ${benchmark.name}\n💭 Prompt: '${benchmark.prompt}'...`);
+        this._debugBenchmarking(request.responseStream, `📋 Benchmark (${benchmarkIdx ?? this._continuationIndex}/${this._benchmarks.length}): ${benchmark.name}`);
 
-        // When running a benchmark, create an intermediate response stream that captures information needed to perform validation after the agent is done responding.
-        const returnedButtons: vscode.Command[] = [];
-        const originalResponseStream = request.responseStream;
-        const runBenchmarkResponseStream: vscode.ChatAgentResponseStream = getChatAgentResponseStream(originalResponseStream, {
-            button: function (command: vscode.Command): void { returnedButtons.push(command); },
-        });
-        const benchmarkRequest: AgentRequest = { ...request, userPrompt: benchmark.prompt, responseStream: runBenchmarkResponseStream };
-        const startTime = Date.now();
-        const handleResult = await this._agentSlashCommandsOwner.handleRequestOrPrompt(benchmarkRequest);
-        const endTime = Date.now();
+        const history: (vscode.ChatAgentRequestTurn | vscode.ChatAgentResponseTurn)[] = [];
 
-        if (handleResult) {
-            let validationString = "🔍 Automated Validation:\n";
-            const handlerChainIsOptional = this._validateHandlerChain(handleResult.handlerChain || [], benchmark.acceptableHandlerChains);
-            validationString += handlerChainIsOptional ? `✅ Handler chain is valid (${JSON.stringify(handleResult.handlerChain)}).\n` : `❌ Handler chain is invalid. Expected one of: ${JSON.stringify(benchmark.acceptableHandlerChains)}, Actual: ${JSON.stringify(handleResult.handlerChain)}\n`;
+        for (const step of benchmark.steps) {
+            this._debugBenchmarking(request.responseStream, `💭 User: '${step.prompt}'...`);
 
-            const followUps = handleResult.followUp || [];
-            if (followUps.length > 0) {
-                this._debugBenchmarking(request.responseStream, `⏭️ Follow Ups:\n${followUps.map((followUp) => JSON.stringify(followUp)).join("\n")}`);
-            }
-
-            const followUpValidation = benchmark.followUps;
-            const { allFollowUpsRequiredOrOptional, allRequiredFollowUpsFound } = !followUpValidation ? { allFollowUpsRequiredOrOptional: true, allRequiredFollowUpsFound: true } : this._validateFollowUps(followUps, followUpValidation);
-            validationString += allRequiredFollowUpsFound ? `✅ All required follow ups found.\n` : `❌ Not all required follow ups found.\n`;
-            validationString += allFollowUpsRequiredOrOptional ? `✅ All follow ups required or optional.\n` : `❌ Not all follow ups required or optional.\n`;
-
-            const buttonValidation = benchmark.buttons;
-            const { allButtonsRequiredOrOptional, allRequiredButtonsFound } = !buttonValidation ? { allButtonsRequiredOrOptional: true, allRequiredButtonsFound: true } : this._validateButtons(returnedButtons, buttonValidation);
-            validationString += allRequiredButtonsFound ? `✅ All required buttons found.\n` : `❌ Not all required buttons found.\n`;
-            validationString += allButtonsRequiredOrOptional ? `✅ All buttons required or optional.\n` : `❌ Not all buttons required or optional.\n`;
-
-            this._debugBenchmarking(request.responseStream, validationString);
-
-            const stats: AgentBenchmarkRunStats = {
-                startTime: startTime,
-                endTime: endTime,
-                handlerChainValid: handlerChainIsOptional,
-                followUps: {
-                    allRequiredFollowUpsFound: allRequiredFollowUpsFound,
-                    allFollowUpsRequiredOrOptional: allFollowUpsRequiredOrOptional,
-                    allRequiredButtonsFound: allRequiredButtonsFound,
-                    allButtonsRequiredOrOptional: allButtonsRequiredOrOptional,
-                }
+            // When running a step:
+            // - Keep track of agent responses so we can add a new entry to history after the agent is done responding.
+            const responses: (vscode.ChatAgentHistoryEntry["response"]) = [];
+            // - Keep track of buttons returned so we can validate them after each step
+            const returnedButtons: vscode.Command[] = [];
+            // - Create an intermediate response stream that captures information needed to perform validation after the agent is done responding.
+            const originalResponseStream = request.responseStream;
+            const runBenchmarkResponseStream: vscode.ChatAgentResponseStream = getChatAgentResponseStream(originalResponseStream, {
+                button: function (command: vscode.Command): void { returnedButtons.push(command); },
+            });
+            const agentRequestAtStep: AgentRequest = {
+                context: { ...request.context, history2: history },
+                userPrompt: step.prompt,
+                responseStream: runBenchmarkResponseStream,
+                token: request.token,
             };
-            this._benchmarksRunsStats[benchmarkIdx].push(stats);
+
+            const startTime = Date.now();
+            const handleResult = await this._agentSlashCommandsOwner.handleRequestOrPrompt(agentRequestAtStep);
+            const endTime = Date.now();
+
+            if (handleResult) {
+                let validationString = "🔍 Automated Validation:\n";
+                const handlerChainIsOptional = this._validateHandlerChain(handleResult.handlerChain || [], step.acceptableHandlerChains);
+                validationString += handlerChainIsOptional ? `✅ Handler chain is valid (${JSON.stringify(handleResult.handlerChain)}).\n` : `❌ Handler chain is invalid. Expected one of: ${JSON.stringify(step.acceptableHandlerChains)}, Actual: ${JSON.stringify(handleResult.handlerChain)}\n`;
+
+                const followUps = handleResult.followUp || [];
+                if (followUps.length > 0) {
+                    this._debugBenchmarking(request.responseStream, `⏭️ Follow Ups:\n${followUps.map((followUp) => JSON.stringify(followUp)).join("\n")}`);
+                }
+
+                const followUpValidation = step.followUps;
+                const { allFollowUpsRequiredOrOptional, allRequiredFollowUpsFound } = !followUpValidation ? { allFollowUpsRequiredOrOptional: true, allRequiredFollowUpsFound: true } : this._validateFollowUps(followUps, followUpValidation);
+                validationString += allRequiredFollowUpsFound ? `✅ All required follow ups found.\n` : `❌ Not all required follow ups found.\n`;
+                validationString += allFollowUpsRequiredOrOptional ? `✅ All follow ups required or optional.\n` : `❌ Not all follow ups required or optional.\n`;
+
+                const buttonValidation = step.buttons;
+                const { allButtonsRequiredOrOptional, allRequiredButtonsFound } = !buttonValidation ? { allButtonsRequiredOrOptional: true, allRequiredButtonsFound: true } : this._validateButtons(returnedButtons, buttonValidation);
+                validationString += allRequiredButtonsFound ? `✅ All required buttons found.\n` : `❌ Not all required buttons found.\n`;
+                validationString += allButtonsRequiredOrOptional ? `✅ All buttons required or optional.\n` : `❌ Not all buttons required or optional.\n`;
+
+                this._debugBenchmarking(request.responseStream, validationString);
+
+                const stats: AgentBenchmarkRunStats = {
+                    startTime: startTime,
+                    endTime: endTime,
+                    handlerChainValid: handlerChainIsOptional,
+                    followUps: {
+                        allRequiredFollowUpsFound: allRequiredFollowUpsFound,
+                        allFollowUpsRequiredOrOptional: allFollowUpsRequiredOrOptional,
+                        allRequiredButtonsFound: allRequiredButtonsFound,
+                        allButtonsRequiredOrOptional: allButtonsRequiredOrOptional,
+                    }
+                };
+
+                this._benchmarksRunsStats[benchmarkIdx][benchmark.steps.indexOf(step)].push(stats);
+
+                // Push the request turn
+                history.push({ agentId: agentName, prompt: step.prompt, command: request.command, variables: [] });
+                // Push the response turn
+                history.push({ agentId: agentName, response: responses, result: handleResult.chatAgentResult || {}, });
+
+                await new Promise((resolve) => setTimeout(resolve, 1000));
+            }
         }
     }
 
     private async _benchmarkStats(request: AgentRequest): Promise<SlashCommandHandlerResult> {
         this._benchmarks.forEach((benchmark, benchmarkIdx) => {
-            const benchmarkRunStats = this._benchmarksRunsStats[benchmarkIdx];
-
-            const numRuns = benchmarkRunStats.length;
-            const avgTime = benchmarkRunStats.reduce((acc, curr) => acc + curr.endTime - curr.startTime, 0) / numRuns;
-            const handlerChainValidCount = benchmarkRunStats.filter((runStat) => runStat.handlerChainValid).length;
-            const allRequiredFollowUpsFoundCount = benchmarkRunStats.filter((runStat) => runStat.followUps.allRequiredFollowUpsFound).length;
-            const allFollowUpsRequiredOrOptionalCount = benchmarkRunStats.filter((runStat) => runStat.followUps.allFollowUpsRequiredOrOptional).length;
-
-            const handlerChainValidPercentage = numRuns === 0 ? 1 : handlerChainValidCount / numRuns;
-            const allRequiredFollowUpsFoundPercentage = numRuns === 0 ? 1 : allRequiredFollowUpsFoundCount / numRuns;
-            const allFollowUpsRequiredOrOptionalPercentage = numRuns === 0 ? 1 : allFollowUpsRequiredOrOptionalCount / numRuns;
-
+            const numRuns = this._benchmarksRunsStats[benchmarkIdx][0]?.length;
             if (numRuns === 0) {
                 const noStatsString = `📋 Benchmark (${benchmarkIdx}/${this._benchmarks.length}): ${benchmark.name}\n` +
                     `🔁 Number of runs: ${numRuns}\n`;
                 this._debugBenchmarking(request.responseStream, noStatsString);
-            } else {
+            } else if (numRuns > 0) {
+                // Calculating average runtime may be bugged. Can look into it later.
+                const getStepsCumulativeRuntime = (stepsRunStats: AgentBenchmarkRunStats[]) => stepsRunStats.reduce((acc, curr) => acc + curr.endTime - curr.startTime, 0);
+                const runtimeOfAllRuns = this._benchmarksRunsStats[benchmarkIdx].reduce((acc, curr) => acc + getStepsCumulativeRuntime(curr), 0);
+                const avgTime = runtimeOfAllRuns / numRuns;
                 const statsString = `📋 Benchmark (${benchmarkIdx}/${this._benchmarks.length}): ${benchmark.name}\n` +
                     `🔁 Number of runs: ${numRuns}\n` +
-                    `⏱️ Average time to complete benchmark: ${avgTime}ms\n` +
-                    `🔍 Handler chain valid: ${handlerChainValidCount} (${getColorEmojiForPercentage(handlerChainValidPercentage)} ${handlerChainValidPercentage * 100}%)\n` +
-                    `🔍 All required follow ups found: ${allRequiredFollowUpsFoundCount} (${getColorEmojiForPercentage(allRequiredFollowUpsFoundPercentage)} ${allRequiredFollowUpsFoundPercentage * 100}%)\n` +
-                    `🔍 All follow ups required or optional: ${allFollowUpsRequiredOrOptionalCount} (${getColorEmojiForPercentage(allFollowUpsRequiredOrOptionalPercentage)} ${allFollowUpsRequiredOrOptionalPercentage * 100}%)\n`;
+                    `⏱️ Average time to complete benchmark: ${avgTime}ms\n`;
                 this._debugBenchmarking(request.responseStream, statsString);
+
+                benchmark.steps.forEach((_, stepIdx) => {
+                    const stepRunStats = this._benchmarksRunsStats[benchmarkIdx][stepIdx];
+
+                    const handlerChainValidCount = stepRunStats.filter((runStat) => runStat.handlerChainValid).length;
+                    const allRequiredFollowUpsFoundCount = stepRunStats.filter((runStat) => runStat.followUps.allRequiredFollowUpsFound).length;
+                    const allFollowUpsRequiredOrOptionalCount = stepRunStats.filter((runStat) => runStat.followUps.allFollowUpsRequiredOrOptional).length;
+
+                    const handlerChainValidPercentage = numRuns === 0 ? 1 : handlerChainValidCount / numRuns;
+                    const allRequiredFollowUpsFoundPercentage = numRuns === 0 ? 1 : allRequiredFollowUpsFoundCount / numRuns;
+                    const allFollowUpsRequiredOrOptionalPercentage = numRuns === 0 ? 1 : allFollowUpsRequiredOrOptionalCount / numRuns;
+
+                    const stepStatsString = `🪜 Step (${stepIdx}/${benchmark.steps.length}): ${benchmark.name}\n` +
+                        `🔍 Handler chain valid: ${handlerChainValidCount} (${getColorEmojiForPercentage(handlerChainValidPercentage)} ${handlerChainValidPercentage * 100}%)\n` +
+                        `🔍 All required follow ups found: ${allRequiredFollowUpsFoundCount} (${getColorEmojiForPercentage(allRequiredFollowUpsFoundPercentage)} ${allRequiredFollowUpsFoundPercentage * 100}%)\n` +
+                        `🔍 All follow ups required or optional: ${allFollowUpsRequiredOrOptionalCount} (${getColorEmojiForPercentage(allFollowUpsRequiredOrOptionalPercentage)} ${allFollowUpsRequiredOrOptionalPercentage * 100}%)\n`;
+                    this._debugBenchmarking(request.responseStream, stepStatsString);
+                });
             }
         });
 
@@ -429,4 +462,24 @@ function getChatAgentResponseStream(originalResponseStream: vscode.ChatAgentResp
         }
     };
     return chatAgentResponseStream;
+}
+
+function isAgentBenchmarkWithStepsConfig(config: AgentBenchmarkConfig | AgentBenchmarkWithStepsConfig): config is AgentBenchmarkWithStepsConfig {
+    return (config as AgentBenchmarkWithStepsConfig).steps !== undefined;
+}
+
+function ensureIsAgentBenchmarkWithStepsConfig(config: AgentBenchmarkConfig | AgentBenchmarkWithStepsConfig): AgentBenchmarkWithStepsConfig {
+    if (!isAgentBenchmarkWithStepsConfig(config)) {
+        return {
+            name: config.name,
+            steps: [{
+                prompt: config.prompt,
+                acceptableHandlerChains: config.acceptableHandlerChains,
+                followUps: config.followUps,
+                buttons: config.buttons,
+            }],
+        };
+    } else {
+        return config as AgentBenchmarkWithStepsConfig;
+    }
 }

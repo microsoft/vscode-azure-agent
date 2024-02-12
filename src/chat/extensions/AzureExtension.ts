@@ -6,8 +6,9 @@
 /* eslint-disable-next-line @typescript-eslint/no-unused-vars */
 import * as vscode from "vscode";
 /* eslint-disable-next-line @typescript-eslint/no-unused-vars */
-import { type AgentBenchmarkConfig, type AzureUserInputQueue, type ExtensionAgentMetadata, type IAzureAgentInput, type SimpleCommandConfig, type WizardCommandConfig } from "@microsoft/vscode-azext-utils";
+import { type AzureUserInputQueue, type ExtensionAgentMetadata, type IAzureAgentInput, type SimpleCommandConfig, type WizardCommandConfig } from "@microsoft/vscode-azext-utils";
 import { type AgentRequest } from "../agent";
+import { type AgentBenchmarkConfig, type AgentBenchmarkWithStepsConfig } from "../benchmarking/NewBenchmarkTypes";
 
 export class AzureExtension {
     public readonly extensionId: string;
@@ -84,15 +85,15 @@ export class AzureExtension {
         return { title: command.displayName, command: command.commandId };
     }
 
-    private _cachedAgentBenchmarkConfigs: AgentBenchmarkConfig[] | undefined;
-    public async getAgentBenchmarkConfigs(): Promise<AgentBenchmarkConfig[]> {
+    private _cachedAgentBenchmarkConfigs: (AgentBenchmarkConfig | AgentBenchmarkWithStepsConfig)[] | undefined;
+    public async getAgentBenchmarkConfigs(): Promise<(AgentBenchmarkConfig | AgentBenchmarkWithStepsConfig)[]> {
         if (!this._extensionAgentMetadata) {
             return [];
         }
 
         try {
             if (this._cachedAgentBenchmarkConfigs === undefined) {
-                this._cachedAgentBenchmarkConfigs = await vscode.commands.executeCommand<AgentBenchmarkConfig[]>(this._extensionAgentMetadata.getAgentBenchmarkConfigsCommandId) || [];
+                this._cachedAgentBenchmarkConfigs = await vscode.commands.executeCommand<(AgentBenchmarkConfig | AgentBenchmarkWithStepsConfig)[]>(this._extensionAgentMetadata.getAgentBenchmarkConfigsCommandId) || [];
             }
             return this._cachedAgentBenchmarkConfigs;
         } catch (error) {
