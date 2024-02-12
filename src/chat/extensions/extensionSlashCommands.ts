@@ -3,8 +3,9 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { CancellationToken, ChatAgentFollowup, ChatAgentResult2 } from "vscode";
-import { IAgentRequestHandler, type AgentRequest } from "../agent";
+import  { type CancellationToken, type ChatAgentFollowup, type ChatAgentResult2 } from "vscode";
+import  { type IAgentRequestHandler} from "../agent";
+import { type AgentRequest } from "../agent";
 import { getLearnCommand, getMightBeInterestedHandler } from "../commonCommandsAndHandlers";
 import { SlashCommandsOwner, type SlashCommand, type SlashCommandHandlerResult, type SlashCommands } from "../slashCommands";
 import { AzureExtension } from "./AzureExtension";
