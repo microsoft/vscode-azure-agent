@@ -14,6 +14,16 @@ export type CopilotInteractionOptions = {
      * - `"all"`: All history will be included
      */
     includeHistory?: "none" | "all";
+
+    /**
+     * Whether or not to cache the result of the Copilot interaction. Default is `false`.
+     */
+    setCache?: boolean;
+
+    /**
+     * Whether or not to use the cached result of a previous Copilot interaction that matches this one. Default is `true`.
+     */
+    useCache?: boolean;
 };
 
 export type CopilotInteractionResult = { copilotResponded: true, copilotResponse: string } | { copilotResponded: false, copilotResponse: undefined };
@@ -44,7 +54,7 @@ export async function verbatimCopilotInteraction(systemPrompt: string, request: 
     await queueCopilotInteraction((fragment) => {
         joinedFragements += fragment;
         request.responseStream.markdown(fragment);
-    }, systemPrompt, request, { includeHistory: "none", ...options });
+    }, systemPrompt, request, { includeHistory: "none", setCache: false, useCache: true, ...options });
     if (joinedFragements === "") {
         return { copilotResponded: false, copilotResponse: undefined };
     } else {
@@ -59,7 +69,7 @@ export async function getResponseAsStringCopilotInteraction(systemPrompt: string
     let joinedFragements = "";
     await queueCopilotInteraction((fragment) => {
         joinedFragements += fragment;
-    }, systemPrompt, request, { includeHistory: "none", ...options });
+    }, systemPrompt, request, { includeHistory: "none", setCache: false, useCache: true, ...options });
     debugCopilotInteraction(request.responseStream, `Copilot response:\n\n${joinedFragements}\n`);
     return joinedFragements;
 }
@@ -96,14 +106,17 @@ async function runCopilotInteractionQueue() {
 
         await doCopilotInteraction(queueItem.onResponseFragment, queueItem.systemPrompt, queueItem.request, queueItem.options);
         queueItem.resolve();
+        clearOldEntriesFromCopilotInteractionCache();
     }
     copilotInteractionQueueRunning = false;
 }
 
+const maxCachedInteractionAge = 1000 * 30;
+const copilotInteractionCache: { [key: string]: { lastHit: number, joinedResponseFragments: string } } = {};
+
 async function doCopilotInteraction(onResponseFragment: (fragment: string) => void, systemPrompt: string, agentRequest: AgentRequest, options: Required<CopilotInteractionOptions>): Promise<void> {
     try {
-        const access = await getLanguageModelAccess();
-        const messages = [
+        const messages: vscode.ChatMessage[] = [
             {
                 role: vscode.ChatMessageRole.System,
                 content: systemPrompt
@@ -123,13 +136,39 @@ async function doCopilotInteraction(onResponseFragment: (fragment: string) => vo
         debugCopilotInteraction(agentRequest.responseStream, `System Prompt:\n\n${systemPrompt}\n`);
         debugCopilotInteraction(agentRequest.responseStream, `User Content:\n\n${agentRequest.userPrompt}\n`);
 
-        const request = access.makeChatRequest(messages, {}, agentRequest.token);
-        for await (const fragment of request.stream) {
-            onResponseFragment(fragment);
+        const cacheKey = encodeCopilotInteractionToCacheKey(messages);
+        if (options.useCache && copilotInteractionCache[cacheKey]) {
+            debugCopilotInteraction(agentRequest.responseStream, `Using cached response...`);
+            onResponseFragment(copilotInteractionCache[cacheKey].joinedResponseFragments);
+            copilotInteractionCache[cacheKey].lastHit = Date.now();
+        } else {
+            const access = await getLanguageModelAccess();
+            const request = access.makeChatRequest(messages, {}, agentRequest.token);
+            for await (const fragment of request.stream) {
+                if (options.setCache) {
+                    if (!copilotInteractionCache[cacheKey]) {
+                        copilotInteractionCache[cacheKey] = { lastHit: Date.now(), joinedResponseFragments: "" };
+                    }
+                    copilotInteractionCache[cacheKey].joinedResponseFragments += fragment;
+                }
+                onResponseFragment(fragment);
+            }
         }
     } catch (e) {
         debugCopilotInteraction(agentRequest.responseStream, `Failed to do copilot interaction with system prompt '${systemPrompt}'. Error: ${JSON.stringify(e)}`);
     }
+}
+
+function clearOldEntriesFromCopilotInteractionCache() {
+    for (const cacheKey in copilotInteractionCache) {
+        if (copilotInteractionCache[cacheKey].lastHit < Date.now() - maxCachedInteractionAge) {
+            delete copilotInteractionCache[cacheKey];
+        }
+    }
+}
+
+function encodeCopilotInteractionToCacheKey(messages: vscode.ChatMessage[]): string {
+    return Buffer.from(JSON.stringify(messages)).toString("base64");
 }
 
 /**
