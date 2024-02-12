@@ -7,7 +7,7 @@ import { callWithTelemetryAndErrorHandling, type BaseCommandConfig } from "@micr
 import * as vscode from "vscode";
 import { type AgentRequest } from "./agent";
 import { agentName } from "./agentConsts";
-import { verbatimCopilotInteraction } from "./copilotInteractions";
+import { getResponseAsStringCopilotInteraction, verbatimCopilotInteraction } from "./copilotInteractions";
 import { type AzureExtension } from "./extensions/AzureExtension";
 import { generateExtensionCommandFollowUps, generateNextQuestionsFollowUps, generateSampleQuestionsFollowUps } from "./followUpGenerator";
 import { getMicrosoftLearnRagContent } from "./rag";
@@ -35,7 +35,8 @@ function learnHandler(config: LearnCommandConfig, request: AgentRequest): Promis
             request.responseStream.markdown(`If you want to learn more about ${config.topic}, simply ask me what it is you'd like to learn.\n`);
             return { chatAgentResult: {}, followUp: config.noInputSuggestions?.map((suggestion) => ({ message: `@${agentName} ${suggestion}` })), };
         } else {
-            const ragContent = await getMicrosoftLearnRagContent(actionContext, request.userPrompt, request);
+            const questionForRagContent = await summarizeHistoryToSingleQuestion(request);
+            const ragContent = await getMicrosoftLearnRagContent(actionContext, questionForRagContent, request);
             const availableCommands: BaseCommandConfig[] = config.associatedExtension !== undefined ? [
                 ...await config.associatedExtension.getWizardCommands(),
                 ...await config.associatedExtension.getSimpleCommands(),
@@ -100,3 +101,11 @@ export function getMightBeInterestedHandler(config: MightBeInterestedHandlerConf
         });
     }
 }
+
+async function summarizeHistoryToSingleQuestion(request: AgentRequest): Promise<string> {
+    const systemPrompt = summarizeHistoryToSingleQuestionSystemPrompt1;
+    const maybeJsonCopilotResponse = await getResponseAsStringCopilotInteraction(systemPrompt, request, { includeHistory: "all" });
+    return maybeJsonCopilotResponse || request.userPrompt;
+}
+
+const summarizeHistoryToSingleQuestionSystemPrompt1 = `You are an expert in summarizing the current state of a Q&A focused conversation between a user and a virtual assistant. Your job is to summarize the conversation down to what the users most recent question is. You can use the history of the conversation to help determine what the current question is. Do not answer the question, simply determine what the current question is. Phrase the current question summary in the voice of the user, so do not say phrases like "The user is asking...". Avoid questions longer than a few sentences.`;
