@@ -29,38 +29,6 @@ const benchmarkCommandName = "benchmark";
 const benchmarkStatsCommandName = "benchmarkStats";
 const benchmarkAllCommandName = "benchmarkAll";
 
-// export class AgentBenchmarkResultsTracker {
-//     private _benchmarkRunStats: AgentBenchmarkRunStats[][];
-//     private _benchmarkNames: string[];
-
-//     constructor(benchmarksToTrack: UtilsAgentBenchmarkConfig[]) {
-//         this._benchmarkRunStats = benchmarksToTrack.map(() => []);
-//         this._benchmarkNames = benchmarksToTrack.map((benchmark) => benchmark.name);
-//     }
-
-//     public outputRunStats(agentRequest: AgentRequest): void {
-//         this._benchmarkRunStats.forEach((benchmarkRunStats, idx) => {
-//             const numRuns = benchmarkRunStats.length;
-//             const avgTime = benchmarkRunStats.reduce((acc, curr) => acc + curr.endTime - curr.startTime, 0) / numRuns;
-//             const handlerChainValidCount = benchmarkRunStats.filter((runStat) => runStat.handlerChainValid).length;
-//             const allRequiredFollowUpsFoundCount = benchmarkRunStats.filter((runStat) => runStat.followUps.allRequiredFollowUpsFound).length;
-//             const allFollowUpsRequiredOrOptionalCount = benchmarkRunStats.filter((runStat) => runStat.followUps.allFollowUpsRequiredOrOptional).length;
-
-//             const handlerChainValidPercentage = numRuns === 0 ? 1 : handlerChainValidCount / numRuns;
-//             const allRequiredFollowUpsFoundPercentage = numRuns === 0 ? 1 : allRequiredFollowUpsFoundCount / numRuns;
-//             const allFollowUpsRequiredOrOptionalPercentage = numRuns === 0 ? 1 : allFollowUpsRequiredOrOptionalCount / numRuns;
-//             const statsString = `📋 Benchmark (${idx}/${this._benchmarkRunStats.length}): ${this._benchmarkNames[idx]}\n` +
-//                 `🔁 Number of runs: ${numRuns}\n` +
-//                 `⏱️ Average time to complete benchmark: ${avgTime}ms\n` +
-//                 `🔍 Handler chain valid: ${handlerChainValidCount} (${getColorEmojiForPercentage(handlerChainValidPercentage)} ${handlerChainValidPercentage * 100}%)\n` +
-//                 `🔍 All required follow ups found: ${allRequiredFollowUpsFoundCount} (${getColorEmojiForPercentage(allRequiredFollowUpsFoundPercentage)} ${allRequiredFollowUpsFoundPercentage * 100}%)\n` +
-//                 `🔍 All follow ups required or optional: ${allFollowUpsRequiredOrOptionalCount} (${getColorEmojiForPercentage(allFollowUpsRequiredOrOptionalPercentage)} ${allFollowUpsRequiredOrOptionalPercentage * 100}%)\n`;
-
-//             debugBenchmarking(agentRequest.responseStream, statsString);
-//         });
-//     }
-// }
-
 export class AgentBenchmarker implements IAgentRequestHandler {
     private _agentSlashCommandsOwner: SlashCommandsOwner;
     private _benchmarkerSlashCommandsOwner: SlashCommandsOwner;
@@ -315,7 +283,7 @@ export class AgentBenchmarker implements IAgentRequestHandler {
                     await extension.activate(request);
                     request.responseStream.progress(`Getting benchmark configs from the ${extension.extensionDisplayName} extension...`);
                     const benchmarkConfigs = await extension.getAgentBenchmarkConfigs();
-                    this.addBenchmarkConfigs(...benchmarkConfigs.filter((config): config is AgentBenchmarkWithStepsConfig => !isAgentBenchmarkConfig(config)));
+                    this.addBenchmarkConfigs(...benchmarkConfigs.map((config) => ensureIsAgentBenchmarkWithStepsConfig(config)));
                 } else {
                     request.responseStream.progress(`Skipping getting benchmark configs from the ${extension.extensionDisplayName} extension as it is not installed...`);
                 }
@@ -498,6 +466,22 @@ function getChatAgentResponseStream(originalResponseStream: vscode.ChatAgentResp
     return chatAgentResponseStream;
 }
 
-function isAgentBenchmarkConfig(config: AgentBenchmarkConfig | AgentBenchmarkWithStepsConfig): config is AgentBenchmarkConfig {
-    return (config as AgentBenchmarkConfig).name !== undefined;
+function isAgentBenchmarkWithStepsConfig(config: AgentBenchmarkConfig | AgentBenchmarkWithStepsConfig): config is AgentBenchmarkWithStepsConfig {
+    return (config as AgentBenchmarkWithStepsConfig).steps !== undefined;
+}
+
+function ensureIsAgentBenchmarkWithStepsConfig(config: AgentBenchmarkConfig | AgentBenchmarkWithStepsConfig): AgentBenchmarkWithStepsConfig {
+    if (!isAgentBenchmarkWithStepsConfig(config)) {
+        return {
+            name: config.name,
+            steps: [{
+                prompt: config.prompt,
+                acceptableHandlerChains: config.acceptableHandlerChains,
+                followUps: config.followUps,
+                buttons: config.buttons,
+            }],
+        };
+    } else {
+        return config as AgentBenchmarkWithStepsConfig;
+    }
 }
