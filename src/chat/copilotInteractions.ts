@@ -5,14 +5,15 @@
 
 import * as vscode from "vscode";
 import { type AgentRequest } from "./agent";
+import { agentName } from "./agentConsts";
 
 export type CopilotInteractionResult = { copilotResponded: true, copilotResponse: string } | { copilotResponded: false, copilotResponse: undefined };
 
 const maxCachedAccessAge = 1000 * 30;
-let cachedAccess: { access: vscode.ChatAccess, requestedAt: number } | undefined;
-async function getChatAccess(): Promise<vscode.ChatAccess> {
+let cachedAccess: { access: vscode.LanguageModelAccess, requestedAt: number } | undefined;
+async function getLanguageModelAccess(): Promise<vscode.LanguageModelAccess> {
     if (cachedAccess === undefined || cachedAccess.access.isRevoked || cachedAccess.requestedAt < Date.now() - maxCachedAccessAge) {
-        const newAccess = await vscode.chat.requestChatAccess("copilot");
+        const newAccess = await vscode.chat.requestLanguageModelAccess("copilot-gpt-4", { justification: `Access to Copilot for the @${agentName} agent.` });
         cachedAccess = { access: newAccess, requestedAt: Date.now() };
     }
     return cachedAccess.access;
@@ -92,7 +93,7 @@ async function runCopilotInteractionQueue() {
 
 async function doCopilotInteraction(onResponseFragment: (fragment: string) => void, systemPrompt: string, agentRequest: AgentRequest): Promise<void> {
     try {
-        const access = await getChatAccess();
+        const access = await getLanguageModelAccess();
         const messages = [
             {
                 role: vscode.ChatMessageRole.System,
@@ -107,8 +108,8 @@ async function doCopilotInteraction(onResponseFragment: (fragment: string) => vo
         debugCopilotInteraction(agentRequest.responseStream, `System Prompt:\n\n${systemPrompt}\n`);
         debugCopilotInteraction(agentRequest.responseStream, `User Content:\n\n${agentRequest.userPrompt}\n`);
 
-        const request = access.makeRequest(messages, {}, agentRequest.token);
-        for await (const fragment of request.response) {
+        const request = access.makeChatRequest(messages, {}, agentRequest.token);
+        for await (const fragment of request.stream) {
             onResponseFragment(fragment);
         }
     } catch (e) {

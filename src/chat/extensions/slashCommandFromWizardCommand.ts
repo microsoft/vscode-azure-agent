@@ -6,7 +6,7 @@
 import { UserCancelledError, type AgentInputBoxOptions, type AgentQuickPickItem, type AgentQuickPickOptions, type AzureUserInputQueue, type IAzureAgentInput, type ParameterAgentMetadata, type PromptResult, type WizardCommandConfig } from "@microsoft/vscode-azext-utils";
 import * as vscode from "vscode";
 import { type AgentRequest } from "../agent";
-import { isUserSignedInToAzure } from "../azureSignIn";
+import { getSignInCommand, isUserSignedInToAzure } from "../azureSignIn";
 import { getResponseAsStringCopilotInteraction, getStringFieldFromCopilotResponseMaybeWithStrJson } from "../copilotInteractions";
 import { type SlashCommand, type SlashCommandHandlerResult } from "../slashCommands";
 import { type AzureExtension } from "./AzureExtension";
@@ -30,9 +30,7 @@ export function slashCommandFromWizardCommand(command: WizardCommandConfig, exte
                 const isSignedIn = await isUserSignedInToAzure();
                 if (command.requiresAzureLogin === true && !isSignedIn) {
                     request.responseStream.markdown(`Before I can help you though, you need to be signed in to Azure.\n\nPlease sign in and then try again.`);
-
-                    // @todo: switch to request.responseStream.button once chat extension supports it
-                    // request.responseStream.button(getSignInCommand());
+                    request.responseStream.button(getSignInCommand());
                 } else {
                     request.responseStream.progress("Analyzing conversation...");
 
@@ -58,11 +56,7 @@ export function slashCommandFromWizardCommand(command: WizardCommandConfig, exte
                             request.responseStream.markdown(Object.keys(unfulfilledParameters).map((parameterName) => `- ${unfulfilledParameters[parameterName].parameterDisplayTitle}: ${unfulfilledParameters[parameterName].parameterDisplayDescription}`).join("\n"));
                         }
                     }
-
-                    // @todo: switch to request.responseStream.button once chat extension supports it
-                    const button = extension.getRunWizardCommandWithInputsCommand(command, inputQueue);
-                    // request.responseStream.button(extension.getRunWizardCommandWithInputsCommand(command, inputQueue));
-                    followUps.push({ title: button.title, commandId: button.command, args: button.arguments } as unknown as vscode.ChatAgentFollowup);
+                    request.responseStream.button(extension.getRunWizardCommandWithInputsCommand(command, inputQueue));
                 }
 
                 return { chatAgentResult: {}, followUp: followUps };
