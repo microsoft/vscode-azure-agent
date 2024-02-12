@@ -12,6 +12,13 @@ import { detectIntent } from "./intentDetection";
  */
 export type SlashCommandName = string;
 
+export type ChatAgentResultMetadata = {
+    /**
+     * The chain of slash command handlers that were invoked to produce this result.
+     */
+    handlerChain: string[]
+}
+
 /**
  * The result of a slash command handler.
  */
@@ -19,15 +26,12 @@ export type SlashCommandHandlerResult = {
     /**
      * The VsCode chat agent result.
      */
-    chatAgentResult: vscode.ChatAgentResult2,
+    chatAgentResult: Omit<vscode.ChatAgentResult2, "metadata"> & { metadata?: ChatAgentResultMetadata },
+
     /**
      * Any follow-up messages to be given for this result.
      */
     followUp?: vscode.ChatAgentFollowup[],
-    /**
-     * The chain of slash command handlers that were invoked to produce this result.
-     */
-    handlerChain?: string[]
 } | undefined;
 
 /**
@@ -120,12 +124,15 @@ export class SlashCommandsOwner implements IAgentRequestHandler {
             const refinedRequest = getHandlerResult.refinedRequest;
 
             const result = await handler(refinedRequest);
+
             this._previousSlashCommandHandlerResult = result;
             if (result !== undefined) {
-                if (!result?.handlerChain) {
-                    result.handlerChain = [refinedRequest.command || "unknown"];
+                result.chatAgentResult.metadata = result?.chatAgentResult.metadata || { handlerChain: [] };
+
+                if (result.chatAgentResult.metadata.handlerChain.length === 0) {
+                    result.chatAgentResult.metadata.handlerChain = [refinedRequest.command || "unknown"];
                 } else {
-                    result.handlerChain.unshift(refinedRequest.command || "unknown");
+                    result.chatAgentResult.metadata.handlerChain.unshift(refinedRequest.command || "unknown");
                 }
             }
             return result;

@@ -7,6 +7,15 @@ import * as vscode from "vscode";
 import { type AgentRequest } from "./agent";
 import { agentName } from "./agentConsts";
 
+export type CopilotInteractionOptions = {
+    /**
+     * What type of history to include in the context for the Copilot interaction.
+     * - `"none"`: No history will be included (default)
+     * - `"all"`: All history will be included
+     */
+    includeHistory?: "none" | "all";
+};
+
 export type CopilotInteractionResult = { copilotResponded: true, copilotResponse: string } | { copilotResponded: false, copilotResponse: undefined };
 
 const maxCachedAccessAge = 1000 * 30;
@@ -30,12 +39,12 @@ function debugCopilotInteraction(progress: vscode.Progress<vscode.ChatAgentExten
 /**
  * Feeds {@link systemPrompt} and {@link userContent} to Copilot and redirects the response directly to ${@link progress}.
  */
-export async function verbatimCopilotInteraction(systemPrompt: string, request: AgentRequest): Promise<CopilotInteractionResult> {
+export async function verbatimCopilotInteraction(systemPrompt: string, request: AgentRequest, options?: CopilotInteractionOptions): Promise<CopilotInteractionResult> {
     let joinedFragements = "";
     await queueCopilotInteraction((fragment) => {
         joinedFragements += fragment;
         request.responseStream.markdown(fragment);
-    }, systemPrompt, request);
+    }, systemPrompt, request, { includeHistory: "none", ...options });
     if (joinedFragements === "") {
         return { copilotResponded: false, copilotResponse: undefined };
     } else {
@@ -46,22 +55,22 @@ export async function verbatimCopilotInteraction(systemPrompt: string, request: 
 /**
  * Feeds {@link systemPrompt} and {@link userContent} to Copilot and directly returns its response.
  */
-export async function getResponseAsStringCopilotInteraction(systemPrompt: string, request: AgentRequest): Promise<string | undefined> {
+export async function getResponseAsStringCopilotInteraction(systemPrompt: string, request: AgentRequest, options?: CopilotInteractionOptions): Promise<string | undefined> {
     let joinedFragements = "";
     await queueCopilotInteraction((fragment) => {
         joinedFragements += fragment;
-    }, systemPrompt, request);
+    }, systemPrompt, request, { includeHistory: "none", ...options });
     debugCopilotInteraction(request.responseStream, `Copilot response:\n\n${joinedFragements}\n`);
     return joinedFragements;
 }
 
 let copilotInteractionQueueRunning = false;
-type CopilotInteractionQueueItem = { onResponseFragment: (fragment: string) => void, systemPrompt: string, request: AgentRequest, resolve: () => void };
+type CopilotInteractionQueueItem = { onResponseFragment: (fragment: string) => void, systemPrompt: string, request: AgentRequest, options: Required<CopilotInteractionOptions>, resolve: () => void };
 const copilotInteractionQueue: CopilotInteractionQueueItem[] = [];
 
-export async function queueCopilotInteraction(onResponseFragment: (fragment: string) => void, systemPrompt: string, request: AgentRequest): Promise<void> {
+export async function queueCopilotInteraction(onResponseFragment: (fragment: string) => void, systemPrompt: string, request: AgentRequest, options: Required<CopilotInteractionOptions>): Promise<void> {
     return new Promise<void>((resolve) => {
-        copilotInteractionQueue.push({ onResponseFragment: onResponseFragment, systemPrompt: systemPrompt, request: request, resolve: resolve });
+        copilotInteractionQueue.push({ onResponseFragment: onResponseFragment, systemPrompt: systemPrompt, request: request, options: options, resolve: resolve });
         if (!copilotInteractionQueueRunning) {
             copilotInteractionQueueRunning = true;
             void runCopilotInteractionQueue();
@@ -85,13 +94,13 @@ async function runCopilotInteractionQueue() {
 
         lastCopilotInteractionRunTime = Date.now();
 
-        await doCopilotInteraction(queueItem.onResponseFragment, queueItem.systemPrompt, queueItem.request);
+        await doCopilotInteraction(queueItem.onResponseFragment, queueItem.systemPrompt, queueItem.request, queueItem.options);
         queueItem.resolve();
     }
     copilotInteractionQueueRunning = false;
 }
 
-async function doCopilotInteraction(onResponseFragment: (fragment: string) => void, systemPrompt: string, agentRequest: AgentRequest): Promise<void> {
+async function doCopilotInteraction(onResponseFragment: (fragment: string) => void, systemPrompt: string, agentRequest: AgentRequest, options: Required<CopilotInteractionOptions>): Promise<void> {
     try {
         const access = await getLanguageModelAccess();
         const messages = [
@@ -99,6 +108,12 @@ async function doCopilotInteraction(onResponseFragment: (fragment: string) => vo
                 role: vscode.ChatMessageRole.System,
                 content: systemPrompt
             },
+            ...(options.includeHistory === "none" ? [] : agentRequest.context.history2.map((turn) => {
+                return {
+                    role: isRequestTurn(turn) ? vscode.ChatMessageRole.User : vscode.ChatMessageRole.Assistant,
+                    content: isRequestTurn(turn) ? turn.prompt : getResponseTurnContent(turn),
+                }
+            })),
             {
                 role: vscode.ChatMessageRole.User,
                 content: agentRequest.userPrompt
@@ -197,4 +212,19 @@ function findPossibleValuesOfFieldFromParsedCopilotResponse(parsedCopilotRespons
         }
     }
     return [];
+}
+
+function isRequestTurn(turn: vscode.ChatAgentRequestTurn | vscode.ChatAgentResponseTurn): turn is vscode.ChatAgentRequestTurn {
+    return (turn as vscode.ChatAgentRequestTurn).prompt !== undefined;
+}
+
+function getResponseTurnContent(turn: vscode.ChatAgentResponseTurn): string {
+    return turn.response.map((response) => {
+        const responseContent = response.value;
+        if (responseContent instanceof vscode.MarkdownString) {
+            return responseContent.value;
+        } else {
+            return "";
+        }
+    }).join("\n");
 }
