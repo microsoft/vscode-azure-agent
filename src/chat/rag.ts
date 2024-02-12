@@ -102,7 +102,7 @@ export const getRagStatusSlashCommand: SlashCommand = [
     }
 ]
 
-export async function getMicrosoftLearnRagContent(context: IActionContext, input: string, request: AgentRequest): Promise<MicrosoftLearnKnowledgeServiceDocument | undefined> {
+export async function getMicrosoftLearnRagContent(context: IActionContext, contentFor: string, request: AgentRequest): Promise<MicrosoftLearnKnowledgeServiceDocument | undefined> {
     if (!ragEnabled) {
         return undefined;
     }
@@ -113,8 +113,8 @@ export async function getMicrosoftLearnRagContent(context: IActionContext, input
         return undefined;
     }
 
-    // Adding "Azure" to the input string to generall bias the search toward Azure docs. We can probably do better though.
-    const inputEmbedding = await createAda002Embedding(openAiConfig, "Azure " + input);
+    // Adding "Azure" to the input string to generally bias the search toward Azure docs. We can probably do better though.
+    const inputEmbedding = await createAda002Embedding(openAiConfig, "Azure " + contentFor);
     if (!inputEmbedding) {
         return undefined;
     }
