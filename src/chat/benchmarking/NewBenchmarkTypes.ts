@@ -31,8 +31,7 @@ export type AgentBenchmarkStepConfig = {
         required: { type: "command", commandId: string }[],
         optional: { type: "command", commandId: string }[],
     }
-}
-
+};
 
 export type AgentBenchmarkWithStepsConfig = {
     name: string;
