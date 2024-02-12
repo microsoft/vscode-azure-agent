@@ -17,9 +17,8 @@ import { getRagStatusSlashCommand, toggleRagSlashCommand } from "./rag";
 import { SlashCommandsOwner, type SlashCommandHandlerResult } from "./slashCommands";
 
 export type AgentRequest = {
-    slashCommand?: string;
+    command?: string;
     userPrompt: string;
-    variables: Record<string, vscode.ChatVariableValue[]>;
 
     context: vscode.ChatAgentContext;
     responseStream: vscode.ChatAgentResponseStream;
@@ -81,20 +80,19 @@ export function registerChatAgent() {
         agent2.description = agentDescription;
         agent2.fullName = agentFullName;
         agent2.iconPath = vscode.Uri.joinPath(ext.context.extensionUri, "resources", "azure-color.svg");
-        agent2.subCommandProvider = { provideSubCommands: getSubCommands };
+        agent2.commandProvider = { provideCommands: getCommands };
         agent2.followupProvider = { provideFollowups: followUpProvider };
     } catch (e) {
         console.log(e);
     }
 }
 
-async function handler(request: vscode.ChatAgentRequest, context: vscode.ChatAgentContext, response: vscode.ChatAgentExtendedResponseStream, token: vscode.CancellationToken): Promise<vscode.ChatAgentResult2 | undefined> {
+async function handler(request: vscode.ChatAgentRequest, context: vscode.ChatAgentContext, responseStream: vscode.ChatAgentExtendedResponseStream, token: vscode.CancellationToken): Promise<vscode.ChatAgentResult2 | undefined> {
     const agentRequest: AgentRequest = {
-        slashCommand: request.subCommand,
+        command: request.command,
         userPrompt: request.prompt,
-        variables: request.variables,
         context: context,
-        responseStream: { ...response, button: (command) => response.markdown(`\n\n**[${command.title}]**\n\n`) },
+        responseStream: responseStream,
         token: token,
     };
     const handlers = [agentHiddenSlashCommandsOwner, agentBenchmarker, agentSlashCommandsOwner];
@@ -128,6 +126,6 @@ function followUpProvider(result: vscode.ChatAgentResult2, token: vscode.Cancell
     return followUp || [];
 }
 
-function getSubCommands(_token: vscode.CancellationToken): vscode.ProviderResult<vscode.ChatAgentSubCommand[]> {
+function getCommands(_token: vscode.CancellationToken): vscode.ProviderResult<vscode.ChatAgentCommand[]> {
     return agentSlashCommandsOwner.getSlashCommands().map(([name, config]) => ({ name: name, description: config.shortDescription }))
 }

@@ -112,25 +112,9 @@ export class AgentBenchmarker implements IAgentRequestHandler {
         // When running a benchmark, create an intermediate response stream that captures information needed to perform validation after the agent is done responding.
         const returnedButtons: vscode.Command[] = [];
         const originalResponseStream = request.responseStream;
-        const runBenchmarkResponseStream: vscode.ChatAgentResponseStream = {
-            markdown: function (value: string | vscode.MarkdownString): vscode.ChatAgentResponseStream {
-                return originalResponseStream.markdown(value);
-            },
-            button: function (command: vscode.Command): vscode.ChatAgentResponseStream {
-                returnedButtons.push(command);
-                return originalResponseStream.button(command);
-            },
-            reference: function (value: vscode.Uri | vscode.Location): vscode.ChatAgentResponseStream {
-                return originalResponseStream.reference(value);
-            },
-            progress: function (value: string): vscode.ChatAgentResponseStream {
-                return originalResponseStream.progress(value);
-            },
-            text: function (_value: string): vscode.ChatAgentResponseStream { throw new Error("Function not implemented."); },
-            files: function (_value: vscode.ChatAgentFileTreeData): vscode.ChatAgentResponseStream { throw new Error("Function not implemented."); },
-            anchor: function (_value: vscode.Uri | vscode.Location, _title?: string | undefined): vscode.ChatAgentResponseStream { throw new Error("Function not implemented."); },
-            report: function (_value: vscode.ChatAgentProgress): void { throw new Error("Function not implemented."); }
-        };
+        const runBenchmarkResponseStream: vscode.ChatAgentResponseStream = getChatAgentResponseStream(originalResponseStream, {
+            button: function (command: vscode.Command): void { returnedButtons.push(command); },
+        });
         const benchmarkRequest: AgentRequest = { ...request, userPrompt: benchmark.prompt, responseStream: runBenchmarkResponseStream };
         const startTime = Date.now();
         const handleResult = await this._agentSlashCommandsOwner.handleRequestOrPrompt(benchmarkRequest);
@@ -186,14 +170,20 @@ export class AgentBenchmarker implements IAgentRequestHandler {
             const handlerChainValidPercentage = numRuns === 0 ? 1 : handlerChainValidCount / numRuns;
             const allRequiredFollowUpsFoundPercentage = numRuns === 0 ? 1 : allRequiredFollowUpsFoundCount / numRuns;
             const allFollowUpsRequiredOrOptionalPercentage = numRuns === 0 ? 1 : allFollowUpsRequiredOrOptionalCount / numRuns;
-            const statsString = `📋 Benchmark (${benchmarkIdx}/${this._benchmarks.length}): ${benchmark.name}\n` +
-                `🔁 Number of runs: ${numRuns}\n` +
-                `⏱️ Average time to complete benchmark: ${avgTime}ms\n` +
-                `🔍 Handler chain valid: ${handlerChainValidCount} (${getColorEmojiForPercentage(handlerChainValidPercentage)} ${handlerChainValidPercentage * 100}%)\n` +
-                `🔍 All required follow ups found: ${allRequiredFollowUpsFoundCount} (${getColorEmojiForPercentage(allRequiredFollowUpsFoundPercentage)} ${allRequiredFollowUpsFoundPercentage * 100}%)\n` +
-                `🔍 All follow ups required or optional: ${allFollowUpsRequiredOrOptionalCount} (${getColorEmojiForPercentage(allFollowUpsRequiredOrOptionalPercentage)} ${allFollowUpsRequiredOrOptionalPercentage * 100}%)\n`;
 
-            this._debugBenchmarking(request.responseStream, statsString);
+            if (numRuns === 0) {
+                const noStatsString = `📋 Benchmark (${benchmarkIdx}/${this._benchmarks.length}): ${benchmark.name}\n` +
+                    `🔁 Number of runs: ${numRuns}\n`;
+                this._debugBenchmarking(request.responseStream, noStatsString);
+            } else {
+                const statsString = `📋 Benchmark (${benchmarkIdx}/${this._benchmarks.length}): ${benchmark.name}\n` +
+                    `🔁 Number of runs: ${numRuns}\n` +
+                    `⏱️ Average time to complete benchmark: ${avgTime}ms\n` +
+                    `🔍 Handler chain valid: ${handlerChainValidCount} (${getColorEmojiForPercentage(handlerChainValidPercentage)} ${handlerChainValidPercentage * 100}%)\n` +
+                    `🔍 All required follow ups found: ${allRequiredFollowUpsFoundCount} (${getColorEmojiForPercentage(allRequiredFollowUpsFoundPercentage)} ${allRequiredFollowUpsFoundPercentage * 100}%)\n` +
+                    `🔍 All follow ups required or optional: ${allFollowUpsRequiredOrOptionalCount} (${getColorEmojiForPercentage(allFollowUpsRequiredOrOptionalPercentage)} ${allFollowUpsRequiredOrOptionalPercentage * 100}%)\n`;
+                this._debugBenchmarking(request.responseStream, statsString);
+            }
         });
 
         return { chatAgentResult: {}, followUp: [], };
@@ -213,30 +203,14 @@ export class AgentBenchmarker implements IAgentRequestHandler {
         const estimatedTimeToRunAll = (this._benchmarks.length * averageDelayBetweenBenchmarks * timesToRunAll) / 1000;
         const estimatedCompletionTime = new Date(Date.now() + estimatedTimeToRunAll * 1000).toLocaleTimeString();
 
-        // When running all benchmarks, create an response stream that writes all benchmark and agent output to a file.
+        // When running all benchmarks, create a response stream that writes all benchmark and agent output to a file.
         const outFile = await getBenchmarkOutFilePath();
-        const benchmarkAllResponseStream: vscode.ChatAgentResponseStream = {
-            markdown: function (value: string | vscode.MarkdownString): vscode.ChatAgentResponseStream {
-                fs.appendFileSync(outFile, typeof value === "string" ? value : value.value);
-                return benchmarkAllResponseStream;
-            },
-            button: function (command: vscode.Command): vscode.ChatAgentResponseStream {
-                fs.appendFileSync(outFile, JSON.stringify(command.toString()));
-                return benchmarkAllResponseStream;
-            },
-            reference: function (value: vscode.Uri | vscode.Location): vscode.ChatAgentResponseStream {
-                fs.appendFileSync(outFile, JSON.stringify(value.toString()));
-                return benchmarkAllResponseStream;
-            },
-            progress: function (value: string): vscode.ChatAgentResponseStream {
-                fs.appendFileSync(outFile, value.toString());
-                return benchmarkAllResponseStream;
-            },
-            text: function (_value: string): vscode.ChatAgentResponseStream { throw new Error("Function not implemented."); },
-            files: function (_value: vscode.ChatAgentFileTreeData): vscode.ChatAgentResponseStream { throw new Error("Function not implemented."); },
-            anchor: function (_value: vscode.Uri | vscode.Location, _title?: string | undefined): vscode.ChatAgentResponseStream { throw new Error("Function not implemented."); },
-            report: function (_value: vscode.ChatAgentProgress): void { throw new Error("Function not implemented."); }
-        };
+        const benchmarkAllResponseStream: vscode.ChatAgentResponseStream = getChatAgentResponseStream(undefined, {
+            markdown: function (value: string | vscode.MarkdownString): void { fs.appendFileSync(outFile, typeof value === "string" ? value : value.value); },
+            button: function (command: vscode.Command): void { fs.appendFileSync(outFile, JSON.stringify(command.toString())); },
+            reference: function (value: vscode.Uri | vscode.Location): void { fs.appendFileSync(outFile, JSON.stringify(value.toString())); },
+            progress: function (value: string): void { fs.appendFileSync(outFile, value.toString()); },
+        });
 
         const benchmarkAllIntroString = `Running all ${this._benchmarks.length} benchmarks ${timesToRunAll} times.\n` +
             `Average delay between benchmarks: ${averageDelayBetweenBenchmarks / 1000} seconds\n` +
@@ -250,7 +224,7 @@ export class AgentBenchmarker implements IAgentRequestHandler {
                 await this._runBenchmark(benchmarkIdx, { ...request, responseStream: benchmarkAllResponseStream });
 
                 const randomDelay = Math.random() * (maxDelayBetweenBenchmarks - minDelayBetweenBenchmarks) + minDelayBetweenBenchmarks;
-                this._debugBenchmarking(request.responseStream, `Delaying ${randomDelay / 1000} seconds before running the next benchmark...`);
+                this._debugBenchmarking(request.responseStream, `Delaying ${randomDelay / 1000} seconds before running the benchmark ${benchmarkIdx}/${this._benchmarks.length}...`);
                 await new Promise((resolve) => setTimeout(resolve, randomDelay));
             }
 
@@ -400,4 +374,59 @@ function generateRandomLetters(length: number): string {
         result += characters.charAt(randomIndex);
     }
     return result;
+}
+
+type InAdditionToChatAgentResponseStream = { [P in keyof vscode.ChatAgentResponseStream]?: (...args: Parameters<vscode.ChatAgentResponseStream[P]>) => void; };
+/**
+ * @param originalResponseStream An original response stream that this stream should ultimately pass through to. If `undefined`, the stream will not do any pass through.
+ * @param inAddition Anything you want this stream to do in addition to doing normal chat agent response stream things.
+ */
+function getChatAgentResponseStream(originalResponseStream: vscode.ChatAgentResponseStream | undefined, inAddition?: InAdditionToChatAgentResponseStream): vscode.ChatAgentResponseStream {
+    const chatAgentResponseStream: vscode.ChatAgentResponseStream = {
+        markdown: function (value: string | vscode.MarkdownString): vscode.ChatAgentResponseStream {
+            if (inAddition?.markdown) { inAddition.markdown(value); }
+            if (originalResponseStream) { return originalResponseStream.markdown(value); }
+            return chatAgentResponseStream;
+        },
+        button: function (command: vscode.Command): vscode.ChatAgentResponseStream {
+            if (inAddition?.button) { inAddition.button(command); }
+            if (originalResponseStream) { return originalResponseStream.button(command); }
+            return chatAgentResponseStream;
+        },
+        reference: function (value: vscode.Uri | vscode.Location): vscode.ChatAgentResponseStream {
+            if (inAddition?.reference) { inAddition.reference(value); }
+            if (originalResponseStream) { return originalResponseStream.reference(value); }
+            return chatAgentResponseStream;
+        },
+        progress: function (value: string): vscode.ChatAgentResponseStream {
+            if (inAddition?.progress) { inAddition.progress(value); }
+            if (originalResponseStream) { return originalResponseStream.progress(value); }
+            return chatAgentResponseStream;
+        },
+        text: function (value: string): vscode.ChatAgentResponseStream {
+            if (inAddition?.text) { inAddition.text(value); }
+            if (originalResponseStream) { return originalResponseStream.text(value); }
+            return chatAgentResponseStream;
+        },
+        anchor: function (value: vscode.Uri | vscode.Location, title?: string | undefined): vscode.ChatAgentResponseStream {
+            if (inAddition?.anchor) { inAddition.anchor(value, title); }
+            if (originalResponseStream) { return originalResponseStream.anchor(value, title); }
+            return chatAgentResponseStream;
+        },
+        filetree: function (value: vscode.ChatResponseFileTree[], baseUri: vscode.Uri): vscode.ChatAgentResponseStream {
+            if (inAddition?.filetree) { inAddition.filetree(value, baseUri); }
+            if (originalResponseStream) { return originalResponseStream.filetree(value, baseUri); }
+            return chatAgentResponseStream;
+        },
+        push: function (part: vscode.ChatResponsePart): vscode.ChatAgentResponseStream {
+            if (inAddition?.push) { inAddition.push(part); }
+            if (originalResponseStream) { return originalResponseStream.push(part); }
+            return chatAgentResponseStream;
+        },
+        report: function (value: vscode.ChatAgentProgress): void {
+            if (inAddition?.report) { inAddition.report(value); }
+            if (originalResponseStream) { return originalResponseStream.report(value); }
+        }
+    };
+    return chatAgentResponseStream;
 }

@@ -6,7 +6,7 @@
 import { type SimpleCommandConfig } from "@microsoft/vscode-azext-utils";
 import type * as vscode from "vscode";
 import { type AgentRequest } from "../agent";
-import { isUserSignedInToAzure } from "../azureSignIn";
+import { getSignInCommand, isUserSignedInToAzure } from "../azureSignIn";
 import { type SlashCommand, type SlashCommandHandlerResult } from "../slashCommands";
 import { type AzureExtension } from "./AzureExtension";
 
@@ -30,15 +30,10 @@ export function slashCommandFromSimpleCommand(command: SimpleCommandConfig, exte
                 if (command.requiresAzureLogin === true && !isSignedIn) {
                     request.responseStream.markdown(`Before I can help you though, you need to be signed in to Azure.\n\nPlease sign in and then try again.`);
 
-                    // @todo: switch to request.responseStream.button once chat extension supports it
-                    // request.responseStream.button(getSignInCommand());
+                    request.responseStream.button(getSignInCommand());
                 } else {
                     request.responseStream.markdown(`\n\You can go ahead and start with that by clicking the **${command.displayName}** button below.`);
-
-                    // @todo: switch to request.responseStream.button once chat extension supports it
-                    const button = extension.getRunSimpleCommandCommand(command);
-                    // request.responseStream.button(extension.getRunWizardCommandWithInputsCommand(command, inputQueue));
-                    followUps.push({ title: button.title, commandId: button.command, args: button.arguments } as unknown as vscode.ChatAgentFollowup);
+                    request.responseStream.button(extension.getRunSimpleCommandCommand(command));
                 }
 
                 return { chatAgentResult: {}, followUp: followUps };

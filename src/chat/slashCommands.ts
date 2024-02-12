@@ -123,9 +123,9 @@ export class SlashCommandsOwner implements IAgentRequestHandler {
             this._previousSlashCommandHandlerResult = result;
             if (result !== undefined) {
                 if (!result?.handlerChain) {
-                    result.handlerChain = [refinedRequest.slashCommand || "unknown"];
+                    result.handlerChain = [refinedRequest.command || "unknown"];
                 } else {
-                    result.handlerChain.unshift(refinedRequest.slashCommand || "unknown");
+                    result.handlerChain.unshift(refinedRequest.command || "unknown");
                 }
             }
             return result;
@@ -152,7 +152,7 @@ export class SlashCommandsOwner implements IAgentRequestHandler {
         const { prompt: prompt, command: parsedCommand } = this._preProcessPrompt(request.userPrompt);
 
         // Trust VS Code to parse the command out for us, but also look for a parsed command for any "hidden" commands that VS Code doesn't know to parse out.
-        const command = request.slashCommand || parsedCommand;
+        const command = request.command || parsedCommand;
 
         let result: { refinedRequest: AgentRequest, handler: SlashCommandHandler | undefined } | undefined;
 
@@ -163,7 +163,7 @@ export class SlashCommandsOwner implements IAgentRequestHandler {
             // If there is no prompt and no command, then use the noInput fallback handler (or no handler if there is no noInput fallback handler).
             if (!result && prompt === "" && !command) {
                 result = {
-                    refinedRequest: { ...request, slashCommand: "noInput", userPrompt: prompt, },
+                    refinedRequest: { ...request, command: "noInput", userPrompt: prompt, },
                     handler: typeof this._fallbackHandlers.noInput === "string" ?
                         this._invokeableSlashCommands.get(this._fallbackHandlers.noInput)?.handler :
                         this._fallbackHandlers.noInput
@@ -175,7 +175,7 @@ export class SlashCommandsOwner implements IAgentRequestHandler {
                 const slashCommand = this._invokeableSlashCommands.get(command);
                 if (slashCommand !== undefined) {
                     result = {
-                        refinedRequest: { ...request, slashCommand: command, userPrompt: prompt, },
+                        refinedRequest: { ...request, command: command, userPrompt: prompt, },
                         handler: slashCommand.handler
                     };
                 }
@@ -191,7 +191,7 @@ export class SlashCommandsOwner implements IAgentRequestHandler {
                     const slashCommand = this._invokeableSlashCommands.get(command);
                     if (slashCommand !== undefined) {
                         result = {
-                            refinedRequest: { ...request, slashCommand: command, userPrompt: prompt, },
+                            refinedRequest: { ...request, command: command, userPrompt: prompt, },
                             handler: slashCommand.handler
                         };
                     }
@@ -201,7 +201,7 @@ export class SlashCommandsOwner implements IAgentRequestHandler {
             // If after all of that, there is still no result, then use the default fallback handler (or no handler if there is no default fallback handler).
             if (!result) {
                 result = {
-                    refinedRequest: { ...request, slashCommand: defaultSlashCommandName, userPrompt: prompt, },
+                    refinedRequest: { ...request, command: defaultSlashCommandName, userPrompt: prompt, },
                     handler: typeof this._fallbackHandlers.default === "string" ?
                         this._invokeableSlashCommands.get(this._fallbackHandlers.default)?.handler :
                         this._fallbackHandlers.default
