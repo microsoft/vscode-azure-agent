@@ -102,10 +102,11 @@ export const getRagStatusSlashCommand: SlashCommand = [
     }
 ]
 
-export async function getMicrosoftLearnRagContent(context: IActionContext, input: string): Promise<MicrosoftLearnKnowledgeServiceDocument | undefined> {
+export async function getMicrosoftLearnRagContent(context: IActionContext, input: string, request: AgentRequest): Promise<MicrosoftLearnKnowledgeServiceDocument | undefined> {
     if (!ragEnabled) {
         return undefined;
     }
+    request.responseStream.progress(`Searching Microsoft Learn for related content...`);
 
     const openAiConfig = await getOpenAiConfig(context);
     if (!openAiConfig) {

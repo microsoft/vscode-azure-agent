@@ -92,7 +92,10 @@ async function handler(request: vscode.ChatAgentRequest, context: vscode.ChatAge
     const agentRequest: AgentRequest = {
         command: request.command,
         userPrompt: request.prompt,
-        context: context,
+        context: {
+            ...context,
+            history2: convertHistorytoHistory2(context.history),
+        },
         responseStream: responseStream,
         token: token,
     };
@@ -129,4 +132,15 @@ function followUpProvider(result: vscode.ChatAgentResult2, token: vscode.Cancell
 
 function getCommands(_token: vscode.CancellationToken): vscode.ProviderResult<vscode.ChatAgentCommand[]> {
     return agentSlashCommandsOwner.getSlashCommands().map(([name, config]) => ({ name: name, description: config.shortDescription }))
+}
+
+function convertHistorytoHistory2(history: vscode.ChatAgentHistoryEntry[]): (vscode.ChatAgentRequestTurn | vscode.ChatAgentResponseTurn)[] {
+    const history2: (vscode.ChatAgentRequestTurn | vscode.ChatAgentResponseTurn)[] = [];
+    for (const entry of history) {
+        // Push the request turn
+        history2.push({ agentId: entry.request.agentId, prompt: entry.request.prompt, command: entry.request.command, variables: [] });
+        // Push the response turn
+        history2.push({ agentId: entry.request.agentId, response: entry.response, result: entry.result, });
+    }
+    return history2;
 }

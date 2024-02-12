@@ -138,8 +138,9 @@ export class AgentBenchmarker implements IAgentRequestHandler {
 
             if (handleResult) {
                 let validationString = "🔍 Automated Validation:\n";
-                const handlerChainIsOptional = this._validateHandlerChain(handleResult.handlerChain || [], step.acceptableHandlerChains);
-                validationString += handlerChainIsOptional ? `✅ Handler chain is valid (${JSON.stringify(handleResult.handlerChain)}).\n` : `❌ Handler chain is invalid. Expected one of: ${JSON.stringify(step.acceptableHandlerChains)}, Actual: ${JSON.stringify(handleResult.handlerChain)}\n`;
+                const handlerChain = handleResult.chatAgentResult.metadata?.handlerChain || [];
+                const handlerChainIsOptional = this._validateHandlerChain(handlerChain || [], step.acceptableHandlerChains);
+                validationString += handlerChainIsOptional ? `✅ Handler chain is valid (${JSON.stringify(handlerChain)}).\n` : `❌ Handler chain is invalid. Expected one of: ${JSON.stringify(step.acceptableHandlerChains)}, Actual: ${JSON.stringify(handlerChain)}\n`;
 
                 const followUps = handleResult.followUp || [];
                 if (followUps.length > 0) {

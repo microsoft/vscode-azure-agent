@@ -35,14 +35,14 @@ function learnHandler(config: LearnCommandConfig, request: AgentRequest): Promis
             request.responseStream.markdown(`If you want to learn more about ${config.topic}, simply ask me what it is you'd like to learn.\n`);
             return { chatAgentResult: {}, followUp: config.noInputSuggestions?.map((suggestion) => ({ message: `@${agentName} ${suggestion}` })), };
         } else {
-            const ragContent = await getMicrosoftLearnRagContent(actionContext, request.userPrompt);
+            const ragContent = await getMicrosoftLearnRagContent(actionContext, request.userPrompt, request);
             const availableCommands: BaseCommandConfig[] = config.associatedExtension !== undefined ? [
                 ...await config.associatedExtension.getWizardCommands(),
                 ...await config.associatedExtension.getSimpleCommands(),
             ] : [];
             const systemPrompt = getLearnSystemPrompt(config, ragContent?.content, availableCommands);
 
-            const { copilotResponded, copilotResponse } = await verbatimCopilotInteraction(systemPrompt, request);
+            const { copilotResponded, copilotResponse } = await verbatimCopilotInteraction(systemPrompt, request, { includeHistory: "all" });
             if (!copilotResponded) {
                 request.responseStream.markdown("Sorry, I can't help with that right now.\n");
                 return { chatAgentResult: {}, followUp: [], };
@@ -93,7 +93,7 @@ export function getMightBeInterestedHandler(config: MightBeInterestedHandlerConf
 
                 request.responseStream.button({ title: `Install the ${config.associatedExtension.extensionDisplayName} Extension`, command: "workbench.extensions.search", arguments: [config.associatedExtension.extensionId] });
             }
-            const ragContent = await getMicrosoftLearnRagContent(actionContext, `Getting started or learning about ${config.topic}`);
+            const ragContent = await getMicrosoftLearnRagContent(actionContext, `Getting started or learning about ${config.topic}`, request);
             followUps.push(...await generateSampleQuestionsFollowUps(config.topic, ragContent?.content, request));
             request.responseStream.markdown(`Hi! It sounds like you are interested in ${config.topic}, however, I can't quite help with what you're asking about. Try asking something else.`);
             return { chatAgentResult: {}, followUp: followUps, };
