@@ -35,7 +35,7 @@ export class AzureExtension {
         if (this.extensionId !== "") {
             this._extension = this._extension || vscode.extensions.getExtension(this.extensionId);
             if (this._extension !== undefined) {
-                request.responseStream.progress(`Activating the ${this.extensionDisplayName} extension...`);
+                request?.responseStream.progress(`Activating the ${this.extensionDisplayName} extension...`);
                 await this._extension.activate();
             }
         }

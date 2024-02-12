@@ -3,14 +3,15 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { type AgentRequest } from "../agent";
+import { CancellationToken, ChatAgentFollowup, ChatAgentResult2 } from "vscode";
+import { IAgentRequestHandler, type AgentRequest } from "../agent";
 import { getLearnCommand, getMightBeInterestedHandler } from "../commonCommandsAndHandlers";
 import { SlashCommandsOwner, type SlashCommand, type SlashCommandHandlerResult, type SlashCommands } from "../slashCommands";
 import { AzureExtension } from "./AzureExtension";
 import { slashCommandFromSimpleCommand } from "./slashCommandFromSimpleCommand";
 import { slashCommandFromWizardCommand } from "./slashCommandFromWizardCommand";
 
-export class ExtensionSlashCommandsOwner {
+export class ExtensionSlashCommandsOwner implements IAgentRequestHandler {
     private _extension: AzureExtension;
     private _commandName: string;
     private _extensionDisplayName: string;
@@ -28,6 +29,16 @@ export class ExtensionSlashCommandsOwner {
         this._commandName = commandName;
     }
 
+    public async handleRequestOrPrompt(request: AgentRequest, handlerChain: string[]): Promise<SlashCommandHandlerResult> {
+        return (await this._getExtensionSlashCommandsOwner(request)).handleRequestOrPrompt(request, handlerChain);
+    }
+
+    public getFollowUpForLastHandledSlashCommand(result: ChatAgentResult2, token: CancellationToken): ChatAgentFollowup[] | undefined {
+        // Should be ok to call the property directly, if the extension slash commands owner has
+        // not been loaded then there shouldn't even be a follow up to get.
+        return this._extensionSlashCommandsOwner?.getFollowUpForLastHandledSlashCommand(result, token);
+    }
+
     public getTopLevelSlashCommand(): SlashCommand {
         return [
             this._commandName,
@@ -35,18 +46,13 @@ export class ExtensionSlashCommandsOwner {
                 shortDescription: `Work with ${this._azureServiceName} and/or the ${this._extensionDisplayName} extension for VS Code.`,
                 longDescription: `Use the command when you want to learn about or work with ${this._azureServiceName} and/or the ${this._extensionDisplayName} extension for VS Code.`,
                 intentDescription: `This is best when a user prompt could be related to ${this._azureServiceName} and/or the ${this._extensionDisplayName} extension for VS Code.`,
-                handler: (...args) => this._handleExtensionSlashCommand(...args),
+                handler: (...args) => this.handleRequestOrPrompt(...args),
             }
         ]
     }
 
     public getExtension(): AzureExtension {
         return this._extension;
-    }
-
-    private async _handleExtensionSlashCommand(request: AgentRequest): Promise<SlashCommandHandlerResult> {
-        const extensionLevelSlashCommandsOwner = await this._getExtensionSlashCommandsOwner(request);
-        return await extensionLevelSlashCommandsOwner.handleRequestOrPrompt(request);
     }
 
     private async _getExtensionSlashCommandsOwner(request: AgentRequest): Promise<SlashCommandsOwner> {

@@ -5,6 +5,7 @@
 
 import { type AgentRequest } from "./agent";
 import { getResponseAsStringCopilotInteraction, getStringFieldFromCopilotResponseMaybeWithStrJson } from "./copilotInteractions";
+import { summarizeHistoryThusFar } from "./summarizing";
 
 export type IntentDetectionTarget = {
     name: string,
@@ -13,7 +14,8 @@ export type IntentDetectionTarget = {
 
 export async function detectIntent(targets: IntentDetectionTarget[], request: AgentRequest): Promise<IntentDetectionTarget | undefined> {
     const systemPrompt = getDetectIntentSystemPrompt1(targets.concat([{ name: "none", intentDetectionDescription: "None of the options are the best option or are applicable." }]));
-    const maybeJsonCopilotResponse = await getResponseAsStringCopilotInteraction(systemPrompt, request);
+    const statementForIntentDetection = request.context.history2.length === 0 ? request.userPrompt : await summarizeHistoryThusFar(request);
+    const maybeJsonCopilotResponse = await getResponseAsStringCopilotInteraction(systemPrompt, { ...request, userPrompt: statementForIntentDetection });
     const determinedOption =
         getStringFieldFromCopilotResponseMaybeWithStrJson(maybeJsonCopilotResponse, "option") ||
         getStringFieldFromCopilotResponseMaybeWithStrJson(maybeJsonCopilotResponse, "intent");

@@ -62,8 +62,8 @@ export class AgentBenchmarker implements IAgentRequestHandler {
         this._benchmarksRunsStats.push(...convertedBenchmarkConfigs.map((config) => config.steps.map(() => [])));
     }
 
-    public handleRequestOrPrompt(request: AgentRequest): Promise<SlashCommandHandlerResult> {
-        return this._benchmarkerSlashCommandsOwner.handleRequestOrPrompt(request);
+    public handleRequestOrPrompt(request: AgentRequest, handlerChain: string[]): Promise<SlashCommandHandlerResult> {
+        return this._benchmarkerSlashCommandsOwner.handleRequestOrPrompt(request, handlerChain);
     }
 
     public getFollowUpForLastHandledSlashCommand(result: vscode.ChatAgentResult2, token: vscode.CancellationToken): vscode.ChatAgentFollowup[] | undefined {
@@ -133,7 +133,7 @@ export class AgentBenchmarker implements IAgentRequestHandler {
             };
 
             const startTime = Date.now();
-            const handleResult = await this._agentSlashCommandsOwner.handleRequestOrPrompt(agentRequestAtStep);
+            const handleResult = await this._agentSlashCommandsOwner.handleRequestOrPrompt(agentRequestAtStep, []);
             const endTime = Date.now();
 
             if (handleResult) {

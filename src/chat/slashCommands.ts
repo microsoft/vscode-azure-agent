@@ -37,7 +37,7 @@ export type SlashCommandHandlerResult = {
 /**
  * A handler for a slash command.
  */
-export type SlashCommandHandler = (request: AgentRequest) => Promise<SlashCommandHandlerResult>;
+export type SlashCommandHandler = (request: AgentRequest, handlerChain: string[]) => Promise<SlashCommandHandlerResult>;
 
 /**
  * The configuration for a slash command.
@@ -110,30 +110,18 @@ export class SlashCommandsOwner implements IAgentRequestHandler {
         }
     }
 
-    /**
-     * Handles an agent request.
-     *
-     * Will only handle the request if:
-     * - There is a command and it is in the list of invokeable commands OR
-     * - Intent detection is not disabled and there is a prompt from which intent can be detected.
-     */
-    public async handleRequestOrPrompt(request: AgentRequest): Promise<SlashCommandHandlerResult> {
+    public async handleRequestOrPrompt(request: AgentRequest, handlerChain: string[]): Promise<SlashCommandHandlerResult> {
         const getHandlerResult = await this._getSlashCommandHandlerForRequest(request);
         if (getHandlerResult?.handler !== undefined) {
             const handler = getHandlerResult.handler;
             const refinedRequest = getHandlerResult.refinedRequest;
 
-            const result = await handler(refinedRequest);
+            handlerChain.push(refinedRequest.command || "unknown");
+            const result = await handler(refinedRequest, handlerChain);
 
             this._previousSlashCommandHandlerResult = result;
-            if (result !== undefined) {
-                result.chatAgentResult.metadata = result?.chatAgentResult.metadata || { handlerChain: [] };
-
-                if (result.chatAgentResult.metadata.handlerChain.length === 0) {
-                    result.chatAgentResult.metadata.handlerChain = [refinedRequest.command || "unknown"];
-                } else {
-                    result.chatAgentResult.metadata.handlerChain.unshift(refinedRequest.command || "unknown");
-                }
+            if (result !== undefined && result.chatAgentResult.metadata === undefined) {
+                result.chatAgentResult.metadata = { handlerChain: handlerChain };
             }
             return result;
         } else {

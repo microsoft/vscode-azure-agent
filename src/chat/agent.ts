@@ -26,7 +26,17 @@ export type AgentRequest = {
 }
 
 export interface IAgentRequestHandler {
-    handleRequestOrPrompt(request: AgentRequest): Promise<SlashCommandHandlerResult>;
+    /**
+     * Handles an agent request.
+     *
+     * Will only handle the request if:
+     * - There is a command and it is in the list of invokeable commands OR
+     * - Intent detection is not disabled and there is a prompt from which intent can be detected.
+     *
+     * @param request The request to handle.
+     * @param handlerChain The chain of handlers that have been called so far.
+     */
+    handleRequestOrPrompt(request: AgentRequest, handlerChain: string[]): Promise<SlashCommandHandlerResult>;
     getFollowUpForLastHandledSlashCommand(result: vscode.ChatAgentResult2, token: vscode.CancellationToken): vscode.ChatAgentFollowup[] | undefined;
 }
 
@@ -103,7 +113,7 @@ async function handler(request: vscode.ChatAgentRequest, context: vscode.ChatAge
 
     let handleResult: SlashCommandHandlerResult | undefined;
     for (const handler of handlers) {
-        handleResult = await handler.handleRequestOrPrompt(agentRequest);
+        handleResult = await handler.handleRequestOrPrompt(agentRequest, []);
         if (handleResult !== undefined) {
             break;
         }
