@@ -8,7 +8,7 @@ import { getResponseAsStringCopilotInteraction } from "./copilotInteractions";
 
 export async function summarizeHistoryThusFar(request: AgentRequest): Promise<string> {
     const systemPrompt = summarizeHistoryToSingleQuestionSystemPrompt1;
-    const maybeJsonCopilotResponse = await getResponseAsStringCopilotInteraction(systemPrompt, request, { includeHistory: "all" });
+    const maybeJsonCopilotResponse = await getResponseAsStringCopilotInteraction(systemPrompt, request, { includeHistory: "all", setCache: true, useCache: true });
     return maybeJsonCopilotResponse || request.userPrompt;
 }
 
