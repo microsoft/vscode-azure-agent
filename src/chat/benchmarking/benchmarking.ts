@@ -86,17 +86,17 @@ export class AgentBenchmarker implements IAgentRequestHandler {
 
             if (this._continuationIndex === this._benchmarks.length) {
                 this._debugBenchmarking(request.responseStream, `🎉 Done benchmarking!`);
-                followUps.push({ message: `@${agentName} /${benchmarkStatsCommandName}` });
+                followUps.push({ prompt: `/${benchmarkStatsCommandName}` });
                 this._continuationIndex = 0;
             }
-            followUps.push({ message: `@${agentName} /${benchmarkCommandName}` });
+            followUps.push({ prompt: `/${benchmarkCommandName}` });
         } else {
             await this._runBenchmark(requestedBenchmarkIndex, request);
 
-            followUps.push({ message: `@${agentName} /${benchmarkCommandName}` });
-            followUps.push({ message: `@${agentName} /${benchmarkCommandName} ${requestedBenchmarkIndex}` });
-            followUps.push({ message: `@${agentName} /${benchmarkCommandName} ${requestedBenchmarkIndex === this._benchmarks.length - 1 ? 0 : requestedBenchmarkIndex + 1}` });
-            followUps.push({ message: `@${agentName} /${benchmarkStatsCommandName}` });
+            followUps.push({ prompt: `/${benchmarkCommandName}` });
+            followUps.push({ prompt: `/${benchmarkCommandName} ${requestedBenchmarkIndex}` });
+            followUps.push({ prompt: `/${benchmarkCommandName} ${requestedBenchmarkIndex === this._benchmarks.length - 1 ? 0 : requestedBenchmarkIndex + 1}` });
+            followUps.push({ prompt: `/${benchmarkStatsCommandName}` });
         }
 
         return {
@@ -174,9 +174,9 @@ export class AgentBenchmarker implements IAgentRequestHandler {
                 this._benchmarksRunsStats[benchmarkIdx][benchmark.steps.indexOf(step)].push(stats);
 
                 // Push the request turn
-                history.push({ agentId: agentName, prompt: step.prompt, command: request.command, variables: [] });
+                history.push({ agent: { extensionId: "ms-azuretools.vscode-azure-agent", agentId: agentName, }, agentId: agentName, prompt: step.prompt, command: request.command, variables: [] });
                 // Push the response turn
-                history.push({ agentId: agentName, response: responses, result: handleResult.chatAgentResult || {}, });
+                history.push({ agent: { extensionId: "ms-azuretools.vscode-azure-agent", agentId: agentName, }, agentId: agentName, response: responses, result: handleResult.chatAgentResult || {}, });
 
                 await new Promise((resolve) => setTimeout(resolve, 1000));
             }
@@ -337,11 +337,11 @@ export class AgentBenchmarker implements IAgentRequestHandler {
         let allFollowUpsRequiredOrOptional = true;
         const foundRequiredFollowUps: boolean[] = new Array<boolean>(followUpValidation.required.length).fill(false);
         for (const followUp of followUps) {
-            const requiredFollowUpIndex = followUpValidation.required.findIndex((requiredFollowUp) => followUp.message.includes(requiredFollowUp.messageContains));
+            const requiredFollowUpIndex = followUpValidation.required.findIndex((requiredFollowUp) => followUp.prompt.includes(requiredFollowUp.messageContains));
             if (requiredFollowUpIndex !== -1) {
                 foundRequiredFollowUps[requiredFollowUpIndex] = true;
             } else {
-                const optionalFollowUpIndex = followUpValidation.optional.findIndex((optionalFollowUp) => followUp.message.includes(optionalFollowUp.messageContains));
+                const optionalFollowUpIndex = followUpValidation.optional.findIndex((optionalFollowUp) => followUp.prompt.includes(optionalFollowUp.messageContains));
                 if (optionalFollowUpIndex === -1) {
                     allFollowUpsRequiredOrOptional = false;
                 }

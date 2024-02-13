@@ -38,10 +38,15 @@ declare module 'vscode' {
 		 */
 		readonly prompt: string;
 
+		// TODO@API NAME agent
+		// TODO@API TYPE {agent:string, extension:string}
+		/** @deprecated */
+		readonly agentId: string;
+
 		/**
 		 * The ID of the chat agent to which this request was directed.
 		 */
-		readonly agentId: string;
+		readonly agent: { extensionId: string; agentId: string };
 
 		/**
 		 * The name of the {@link ChatAgentCommand command} that was selected for this request.
@@ -54,7 +59,7 @@ declare module 'vscode' {
 		// TODO@API is this needed?
 		readonly variables: ChatAgentResolvedVariable[];
 
-		private constructor(prompt: string, agentId: string, command: string | undefined, variables: ChatAgentResolvedVariable[],);
+		private constructor(prompt: string, command: string | undefined, variables: ChatAgentResolvedVariable[], agent: { extensionId: string; agentId: string });
 	}
 
 	// TODO@API name: Turn?
@@ -70,23 +75,23 @@ declare module 'vscode' {
 		 */
 		readonly result: ChatAgentResult2;
 
+		/** @deprecated */
 		readonly agentId: string;
 
-		private constructor(response: ReadonlyArray<ChatResponseTextPart | ChatResponseMarkdownPart | ChatResponseFileTreePart | ChatResponseAnchorPart | ChatResponseCommandButtonPart>, result: ChatAgentResult2, agentId: string);
+		readonly agent: { extensionId: string; agentId: string };
+
+		private constructor(response: ReadonlyArray<ChatResponseTextPart | ChatResponseMarkdownPart | ChatResponseFileTreePart | ChatResponseAnchorPart | ChatResponseCommandButtonPart>, result: ChatAgentResult2, agentId: { extensionId: string; agentId: string });
 	}
 
 	export interface ChatAgentContext {
 		/**
-		 * @deprecated
-		 */
-		history: ChatAgentHistoryEntry[];
-
-		// location:
-
-		/**
 		 * All of the chat messages so far in the current chat session.
 		 */
-		// TODO@API name: histroy
+		readonly history: ReadonlyArray<ChatAgentRequestTurn | ChatAgentResponseTurn>;
+
+		/**
+		 * @deprecated, use histroy
+		 */
 		readonly history2: ReadonlyArray<ChatAgentRequestTurn | ChatAgentResponseTurn>;
 	}
 
@@ -180,19 +185,10 @@ declare module 'vscode' {
 		readonly sampleRequest?: string;
 
 		/**
-		 * Whether executing the command puts the
-		 * chat into a persistent mode, where the
-		 * command is prepended to the chat input.
+		 * Whether executing the command puts the chat into a persistent mode, where the command is automatically added to the chat input for the next message.
+		 * If this is not set, the chat input will fall back to the agent after submitting this command.
 		 */
-		readonly shouldRepopulate?: boolean;
-
-		/**
-		 * Placeholder text to render in the chat input
-		 * when the command has been repopulated.
-		 * Has no effect if `shouldRepopulate` is `false`.
-		 */
-		// TODO@API merge this with shouldRepopulate? so that invalid state cannot be represented?
-		readonly followupPlaceholder?: string;
+		readonly isSticky?: boolean;
 	}
 
 	export interface ChatAgentCommandProvider {
@@ -216,8 +212,16 @@ declare module 'vscode' {
 	export interface ChatAgentFollowup {
 		/**
 		 * The message to send to the chat.
+		 * TODO@API is it ok for variables to resolved from the text of this prompt, using the `#` syntax?
 		 */
-		message: string;
+		prompt: string;
+
+		/**
+		 * By default, the followup goes to the same agent/command. But these properties can be set to override that.
+		 */
+		agentId?: string;
+
+		command?: string;
 
 		/**
 		 * A tooltip to show when hovering over the followup.
@@ -287,7 +291,7 @@ declare module 'vscode' {
 		// TODO@API
 		// notify(request: ChatResponsePart, reference: string): boolean;
 		// BETTER
-		// requestResponseStream(callback: (stream: ChatAgentResponseStream) => void, why?: string): void;
+		// requestResponseStream(result: ChatAgentResult, callback: (stream: ChatAgentResponseStream) => void, why?: string): void;
 
 		// TODO@API
 		// clear NEVER happens
@@ -368,6 +372,7 @@ declare module 'vscode' {
 		 * @param value A plain text value.
 		 * @returns This stream.
 		 */
+		// TODO@API remove?
 		text(value: string): ChatAgentResponseStream;
 
 		/**
@@ -378,6 +383,7 @@ declare module 'vscode' {
 		 * @param value A markdown string or a string that should be interpreted as markdown.
 		 * @returns This stream.
 		 */
+		// TODO@API NAME: content
 		markdown(value: string | MarkdownString): ChatAgentResponseStream;
 
 		/**

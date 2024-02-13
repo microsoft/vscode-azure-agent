@@ -10,7 +10,6 @@ import { sendRequestWithTimeout, type AzExtRequestPrepareOptions } from "@micros
 import { type IActionContext } from "@microsoft/vscode-azext-utils";
 import { ext } from "../extensionVariables";
 import { type AgentRequest } from "./agent";
-import { agentName } from "./agentConsts";
 import { type SlashCommand, type SlashCommandHandlerResult } from "./slashCommands";
 
 const microsoftLearnEndpoint = "https://learn.microsoft.com/api/knowledge/vector/document/relevantItems";
@@ -79,7 +78,7 @@ export const toggleRagSlashCommand: SlashCommand = [
         handler: async (request: AgentRequest): Promise<SlashCommandHandlerResult> => {
             const newState = await toggleRag();
             request.responseStream.markdown(`RAG is now ${newState ? "on" : "off"}.`);
-            return { chatAgentResult: {}, followUp: [{ message: `@${agentName} /${getRagStatusCommand}` }] };
+            return { chatAgentResult: {}, followUp: [{ prompt: `/${getRagStatusCommand}` }] };
         },
     }
 ]
@@ -97,7 +96,7 @@ export const getRagStatusSlashCommand: SlashCommand = [
             request.responseStream.markdown(`- RAG is ${ragEnabled ? "on" : "off"}.\n`);
             request.responseStream.markdown(`- Extension identity config endpoint is: ${extensionIdentityConfigEndpoint ? extensionIdentityConfigEndpoint : "missing"}.\n`);
             request.responseStream.markdown(`- OpenAI config endpoint is: ${openAiConfigEndpoint ? openAiConfigEndpoint : "missing"}.\n`);
-            return { chatAgentResult: {}, followUp: [{ message: `@${agentName} /${toggleRagCommand}` }] };
+            return { chatAgentResult: {}, followUp: [{ prompt: `/${toggleRagCommand}` }] };
         },
     }
 ]

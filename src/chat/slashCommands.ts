@@ -129,8 +129,10 @@ export class SlashCommandsOwner implements IAgentRequestHandler {
         }
     }
 
-    public getFollowUpForLastHandledSlashCommand(result: vscode.ChatAgentResult2, _token: vscode.CancellationToken): vscode.ChatAgentFollowup[] | undefined {
-        if (result === this._previousSlashCommandHandlerResult?.chatAgentResult) {
+    public getFollowUpForLastHandledSlashCommand(_result: vscode.ChatAgentResult2, _token: vscode.CancellationToken): vscode.ChatAgentFollowup[] | undefined {
+        // Workaround: https://github.com/microsoft/vscode-copilot/issues/4150
+        // if (result === this._previousSlashCommandHandlerResult?.chatAgentResult) {
+        if (this._previousSlashCommandHandlerResult !== undefined) {
             const followUpForLastHandledSlashCommand = this._previousSlashCommandHandlerResult?.followUp;
             this._previousSlashCommandHandlerResult = undefined;
             return followUpForLastHandledSlashCommand;

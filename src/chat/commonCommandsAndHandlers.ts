@@ -6,7 +6,6 @@
 import { callWithTelemetryAndErrorHandling, type BaseCommandConfig } from "@microsoft/vscode-azext-utils";
 import * as vscode from "vscode";
 import { type AgentRequest } from "./agent";
-import { agentName } from "./agentConsts";
 import { verbatimCopilotInteraction } from "./copilotInteractions";
 import { type AzureExtension } from "./extensions/AzureExtension";
 import { generateExtensionCommandFollowUps, generateNextQuestionsFollowUps, generateSampleQuestionsFollowUps } from "./followUpGenerator";
@@ -34,7 +33,7 @@ function learnHandler(config: LearnCommandConfig, request: AgentRequest): Promis
     return callWithTelemetryAndErrorHandling("learnHandler", async (actionContext) => {
         if (request.userPrompt.length === 0) {
             request.responseStream.markdown(`If you want to learn more about ${config.topic}, simply ask me what it is you'd like to learn.\n`);
-            return { chatAgentResult: {}, followUp: config.noInputSuggestions?.map((suggestion) => ({ message: `@${agentName} ${suggestion}` })), };
+            return { chatAgentResult: {}, followUp: config.noInputSuggestions?.map((suggestion) => ({ prompt: `${suggestion}` })), };
         } else {
             const questionForRagContent = await summarizeHistoryThusFar(request);
             const ragContent = await getMicrosoftLearnRagContent(actionContext, questionForRagContent, request);

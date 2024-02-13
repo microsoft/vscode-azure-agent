@@ -6,7 +6,6 @@
 import { type BaseCommandConfig } from "@microsoft/vscode-azext-utils";
 import type * as vscode from "vscode";
 import { type AgentRequest } from "./agent";
-import { agentName } from "./agentConsts";
 import { getResponseAsStringCopilotInteraction, getStringFieldFromCopilotResponseMaybeWithStrJson } from "./copilotInteractions";
 import { type AzureExtension } from "./extensions/AzureExtension";
 import { detectIntent } from "./intentDetection";
@@ -23,7 +22,7 @@ export async function generateExtensionCommandFollowUpsOther(copilotContent: str
     const detectedIntentionTarget = await detectIntent(intentDetectionTargets, copilotContentAgentRequest);
     const detectedCommand = availableCommands.find((command) => command.name === detectedIntentionTarget?.name);
     if (detectedCommand !== undefined) {
-        return [{ message: `@${agentName} ${detectedCommand.displayName}` }]
+        return [{ prompt: `${detectedCommand.displayName}` }]
     }
     return [];
 }
@@ -41,7 +40,7 @@ export async function generateExtensionCommandFollowUps(copilotContent: string, 
     const matchingCommand = availableCommands.find((command) => command.displayName === action);
 
     if (action !== undefined && actionPhrase !== undefined && matchingCommand !== undefined) {
-        return [{ message: `@${agentName} ${actionPhrase}` }]
+        return [{ prompt: `${actionPhrase}` }]
     }
 
     return [];
@@ -71,7 +70,7 @@ export async function generateNextQuestionsFollowUps(copilotContent: string, req
     return copilotGeneratedFollowUpQuestions
         .map((q) => {
             if (q !== undefined && q !== "") {
-                return { message: `@${agentName} ${q}` };
+                return { prompt: `${q}` };
             } else {
                 return undefined;
             }
@@ -106,7 +105,7 @@ export async function generateSampleQuestionsFollowUps(topic: string, ragContent
     return copilotGeneratedFollowUpQuestions
         .map((q) => {
             if (q !== undefined && q !== "") {
-                return { message: `@${agentName} ${q}` };
+                return { prompt: `${q}` };
             } else {
                 return undefined;
             }

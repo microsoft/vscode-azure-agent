@@ -32,7 +32,6 @@
         "onStartupFinished"
     ],
     "enabledApiProposals": [
-        "chat",
         "chatAgents2",
         "chatAgents2Additions",
         "chatProvider",
