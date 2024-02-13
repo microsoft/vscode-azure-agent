@@ -28,11 +28,20 @@ export type CopilotInteractionOptions = {
 
 export type CopilotInteractionResult = { copilotResponded: true, copilotResponse: string } | { copilotResponded: false, copilotResponse: undefined };
 
+const languageModelPreference: string[] = ["copilot-gpt-4", "copilot"];
 const maxCachedAccessAge = 1000 * 30;
 let cachedAccess: { access: vscode.LanguageModelAccess, requestedAt: number } | undefined;
 async function getLanguageModelAccess(): Promise<vscode.LanguageModelAccess> {
     if (cachedAccess === undefined || cachedAccess.access.isRevoked || cachedAccess.requestedAt < Date.now() - maxCachedAccessAge) {
-        const newAccess = await vscode.chat.requestLanguageModelAccess("copilot-gpt-4", { justification: `Access to Copilot for the @${agentName} agent.` });
+        const model = vscode.chat.languageModels
+            .filter((model) => languageModelPreference.includes(model))
+            .sort((a, b) => languageModelPreference.indexOf(a) - languageModelPreference.indexOf(b))
+            .at(0) || vscode.chat.languageModels.at(0);
+        if (!model) {
+            throw new Error(`No language model available.`);
+        }
+
+        const newAccess = await vscode.chat.requestLanguageModelAccess(model, { justification: `Access to Copilot for the @${agentName} agent.` });
         cachedAccess = { access: newAccess, requestedAt: Date.now() };
     }
     return cachedAccess.access;
