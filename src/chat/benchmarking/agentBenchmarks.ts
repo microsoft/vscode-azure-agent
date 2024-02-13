@@ -12,17 +12,26 @@ export const multiPromptBenchmarks: AgentBenchmarkWithStepsConfig[] = [
         name: "Multi Prompt Benchmark 1",
         steps: [
             {
-                prompt: "How do I use you?",
-                acceptableHandlerChains: [[agentHelpCommandName]]
+                prompt: "Show me how to upload to blob storage in Python?",
+                acceptableHandlerChains: [["storage", "learn"]]
             },
             {
-                prompt: "What can you do?",
-                acceptableHandlerChains: [[agentHelpCommandName]]
+                prompt: "Actually, show me how with JavaScript please.",
+                acceptableHandlerChains: [["storage", "learn"]]
+            },
+        ]
+    },
+    {
+        name: "Multi Prompt Benchmark 2",
+        steps: [
+            {
+                prompt: "What is are the pros and cons of Azure functions?",
+                acceptableHandlerChains: [["functions", "learn"]]
             },
             {
-                prompt: "How does this bot help me?",
-                acceptableHandlerChains: [[agentHelpCommandName]]
-            }
+                prompt: "Tell me more!",
+                acceptableHandlerChains: [["functions", "learn"]]
+            },
         ]
     },
 ];
