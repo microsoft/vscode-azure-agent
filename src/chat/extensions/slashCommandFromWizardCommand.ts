@@ -11,6 +11,11 @@ import { getResponseAsStringCopilotInteraction, getStringFieldFromCopilotRespons
 import { type SlashCommand, type SlashCommandHandlerResult } from "../slashCommands";
 import { type AzureExtension } from "./AzureExtension";
 
+export type WizardContinuation = {
+    handlerChainStr: string;
+    inputQueue: AzureUserInputQueue;
+};
+
 export function slashCommandFromWizardCommand(command: WizardCommandConfig, extension: AzureExtension): SlashCommand {
     return [
         command.name,
@@ -18,8 +23,9 @@ export function slashCommandFromWizardCommand(command: WizardCommandConfig, exte
             shortDescription: command.displayName,
             longDescription: command.displayName,
             intentDescription: command.intentDescription || command.displayName,
-            handler: async (request: AgentRequest): Promise<SlashCommandHandlerResult> => {
+            handler: async (request: AgentRequest, handlerChain: string[]): Promise<SlashCommandHandlerResult> => {
                 const followUps: vscode.ChatFollowup[] = [];
+                let wizardContinuation: WizardContinuation | undefined = checkForWizardContinuation(request, handlerChain);
 
                 request.responseStream.markdown(`Ok, I can help you by using the the **${command.displayName}** command from the **${extension.extensionDisplayName}** extension.`);
 
@@ -34,10 +40,11 @@ export function slashCommandFromWizardCommand(command: WizardCommandConfig, exte
                 } else {
                     request.responseStream.progress("Analyzing conversation...");
 
-                    const agentAzureUserInput = new AgentAzureUserInput(request);
+                    const agentAzureUserInput = new AgentAzureUserInput(request, wizardContinuation);
                     await extension.runWizardCommandWithoutExecutionId(command, agentAzureUserInput);
 
                     const { pickedParameters, unfulfilledParameters, inputQueue } = agentAzureUserInput.getInteractionResults();
+                    wizardContinuation = { inputQueue: inputQueue, handlerChainStr: JSON.stringify(handlerChain), };
 
                     if (Object.keys(pickedParameters).length > 0) {
                         request.responseStream.markdown(`I have determined the following information needed for **${command.displayName}** based on our conversation:\n`);
@@ -59,10 +66,30 @@ export function slashCommandFromWizardCommand(command: WizardCommandConfig, exte
                     request.responseStream.button(extension.getRunWizardCommandWithInputsCommand(command, inputQueue));
                 }
 
-                return { chatAgentResult: {}, followUp: followUps };
+                return {
+                    chatAgentResult: {
+                        metadata: {
+                            wizardContinuation: wizardContinuation
+                        }
+                    }, followUp: followUps
+                };
             }
         }
     ]
+}
+
+function checkForWizardContinuation(request: AgentRequest, handlerChain: string[]): WizardContinuation | undefined {
+    const handlerChainStr = JSON.stringify(handlerChain);
+    const lastResponseWithWizardContinuation = request.context.history
+        .slice(0)
+        .reverse()
+        .find((entry) => ((entry as vscode.ChatResponseTurn)?.result?.metadata?.wizardContinuation as WizardContinuation) !== undefined) as vscode.ChatResponseTurn | undefined;
+    const lastWizardContinuation = lastResponseWithWizardContinuation?.result?.metadata?.wizardContinuation as WizardContinuation;
+    if (lastWizardContinuation !== undefined && lastWizardContinuation.handlerChainStr === handlerChainStr) {
+        return lastWizardContinuation;
+    } else {
+        return undefined;
+    }
 }
 
 type PickedParameters = { [parameterName: string]: ParameterAgentMetadata & { pickedValueLabel: string } };
@@ -75,13 +102,15 @@ class AgentAzureUserInput implements IAzureAgentInput {
     private _unfulfilledParameters: UnfulfilledParameters;
     private _userInputReturnValueQueue: AzureUserInputQueue;
     private _onDidFinishPromptEventEmitter: vscode.EventEmitter<PromptResult>;
+    private _wizardContinuation: WizardContinuation | undefined;
 
-    constructor(request: AgentRequest) {
+    constructor(request: AgentRequest, wizardContinuation: WizardContinuation | undefined) {
         this._request = request;
         this._pickedParameters = {};
         this._unfulfilledParameters = {};
         this._userInputReturnValueQueue = [];
         this._onDidFinishPromptEventEmitter = new vscode.EventEmitter<PromptResult>();
+        this._wizardContinuation = wizardContinuation;
     }
 
     public async showQuickPick<T extends AgentQuickPickItem>(items: T[] | Promise<T[]>, options: (AgentQuickPickOptions & { canPickMany: true }) | AgentQuickPickOptions): Promise<T | T[]> {
@@ -142,6 +171,12 @@ class AgentAzureUserInput implements IAzureAgentInput {
     }
 
     private async _pickQuickPickItem<T extends AgentQuickPickItem>(request: AgentRequest, items: T[] | Promise<T[]>, options: AgentQuickPickOptions): Promise<T | undefined> {
+        const itemFromWizardContinuation = this._getItemFromWizardContinuation();
+        // @todo: check better
+        if (itemFromWizardContinuation !== undefined && itemFromWizardContinuation !== null) {
+            return itemFromWizardContinuation as T;
+        }
+
         const resolvedApplicableItems = (await Promise.resolve(items))
             .map((item) => ({ ...item, agentMetadata: options.agentMetadata || {} }))
             .filter((item) => item.kind !== vscode.QuickPickItemKind.Separator)
@@ -180,6 +215,12 @@ class AgentAzureUserInput implements IAzureAgentInput {
     }
 
     private async _provideInput(request: AgentRequest, options: AgentInputBoxOptions): Promise<string | undefined> {
+        const itemFromWizardContinuation = this._getItemFromWizardContinuation();
+        // @todo: check better
+        if (itemFromWizardContinuation !== undefined && itemFromWizardContinuation !== null) {
+            return itemFromWizardContinuation as string;
+        }
+
         const systemPrompt = this._getProvideInputSystemPrompt1(options);
         const maybeJsonCopilotResponse = await getResponseAsStringCopilotInteraction(systemPrompt, request);
         const copilotProvidedInput = getStringFieldFromCopilotResponseMaybeWithStrJson(maybeJsonCopilotResponse, ["value", "parameter", "parameterValue", options.agentMetadata.parameterDisplayTitle || "value"]);
@@ -193,5 +234,9 @@ class AgentAzureUserInput implements IAzureAgentInput {
             `Given the user's input, your job is to determine a string value for '${options.agentMetadata.parameterDisplayTitle}'.`,
             `Only repsond with a JSON summary (for example, '{value: "xyz"}') of the value you determine. Do not respond in a coverstaional tone, only JSON.`,
         ].filter(s => !!s).join(" ");
+    }
+
+    private _getItemFromWizardContinuation(): string | vscode.QuickPickItem | vscode.MessageItem | vscode.Uri[] | null | undefined {
+        return this._wizardContinuation?.inputQueue.shift();
     }
 }
