@@ -19,6 +19,14 @@ export const multiPromptBenchmarks: AgentBenchmarkWithStepsConfig[] = [
                 prompt: "Actually, show me how with JavaScript please.",
                 acceptableHandlerChains: [["storage", "learn"]]
             },
+            {
+                prompt: "Can you add some more comments to that?",
+                acceptableHandlerChains: [["storage", "learn"]]
+            },
+            {
+                prompt: "Great! Can you also help me learn about any concept that the code requires knowing aobut?",
+                acceptableHandlerChains: [["storage", "learn"]]
+            }
         ]
     },
     {
@@ -31,6 +39,35 @@ export const multiPromptBenchmarks: AgentBenchmarkWithStepsConfig[] = [
             {
                 prompt: "Tell me more!",
                 acceptableHandlerChains: [["functions", "learn"]]
+            },
+            {
+                prompt: "Hmmm ok. I think I'd rather get to know more about Azure app service before going any further.",
+                acceptableHandlerChains: [["appservice", "learn"]]
+            },
+        ]
+    },
+    {
+        name: "Multi Prompt Benchmark 2",
+        steps: [
+            {
+                prompt: "What is the max size of a block blob?",
+                acceptableHandlerChains: [["storage", "learn"]]
+            },
+            {
+                prompt: "What if my blobs are video files?",
+                acceptableHandlerChains: [["storage", "learn"]]
+            },
+            {
+                prompt: "How about if I use azure files instead?",
+                acceptableHandlerChains: [["storage", "learn"]]
+            },
+            {
+                prompt: "For now let's assume I use blobs then. How can I save cost on storing my large video blobs?",
+                acceptableHandlerChains: [["storage", "learn"]]
+            },
+            {
+                prompt: "Will they still be easily accessible even if I do that?",
+                acceptableHandlerChains: [["storage", "learn"]]
             },
         ]
     },

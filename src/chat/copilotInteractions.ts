@@ -12,8 +12,9 @@ export type CopilotInteractionOptions = {
      * What type of history to include in the context for the Copilot interaction.
      * - `"none"`: No history will be included (default)
      * - `"all"`: All history will be included
+     * - `"requests"`: Only the user requests will be included
      */
-    includeHistory?: "none" | "all";
+    includeHistory?: "none" | "all" | "requests";
 
     /**
      * Whether or not to cache the result of the Copilot interaction. Default is `false`.
@@ -124,18 +125,30 @@ const maxCachedInteractionAge = 1000 * 30;
 const copilotInteractionCache: { [key: string]: { lastHit: number, joinedResponseFragments: string } } = {};
 
 async function doCopilotInteraction(onResponseFragment: (fragment: string) => void, systemPrompt: string, agentRequest: AgentRequest, options: Required<CopilotInteractionOptions>): Promise<void> {
+    let historyMessages: vscode.ChatMessage[] = [];
+    if (options.includeHistory === "all") {
+        historyMessages = agentRequest.context.history2.map((turn) => {
+            return {
+                role: isRequestTurn(turn) ? vscode.ChatMessageRole.User : vscode.ChatMessageRole.Assistant,
+                content: isRequestTurn(turn) ? turn.prompt : getResponseTurnContent(turn),
+            }
+        });
+    } else if (options.includeHistory === "requests") {
+        historyMessages = agentRequest.context.history2.filter(isRequestTurn).map((turn) => {
+            return {
+                role: vscode.ChatMessageRole.User,
+                content: turn.prompt
+            }
+        });
+    }
+
     try {
         const messages: vscode.ChatMessage[] = [
             {
                 role: vscode.ChatMessageRole.System,
                 content: systemPrompt
             },
-            ...(options.includeHistory === "none" ? [] : agentRequest.context.history2.map((turn) => {
-                return {
-                    role: isRequestTurn(turn) ? vscode.ChatMessageRole.User : vscode.ChatMessageRole.Assistant,
-                    content: isRequestTurn(turn) ? turn.prompt : getResponseTurnContent(turn),
-                }
-            })),
+            ...historyMessages,
             {
                 role: vscode.ChatMessageRole.User,
                 content: agentRequest.userPrompt

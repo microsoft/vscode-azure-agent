@@ -6,7 +6,7 @@
 import * as fs from "fs";
 import * as os from "os";
 import * as path from "path";
-import type * as vscode from "vscode";
+import * as vscode from "vscode";
 import { type AgentRequest, type IAgentRequestHandler } from "../agent";
 import { agentName } from "../agentConsts";
 import { type AzureExtension } from "../extensions/AzureExtension";
@@ -117,13 +117,16 @@ export class AgentBenchmarker implements IAgentRequestHandler {
 
             // When running a step:
             // - Keep track of agent responses so we can add a new entry to history after the agent is done responding.
-            const responses: (vscode.ChatAgentHistoryEntry["response"]) = [];
+            const responses: vscode.ChatResponseMarkdownPart[] = [];
             // - Keep track of buttons returned so we can validate them after each step
             const returnedButtons: vscode.Command[] = [];
             // - Create an intermediate response stream that captures information needed to perform validation after the agent is done responding.
             const originalResponseStream = request.responseStream;
-            const runBenchmarkResponseStream: vscode.ChatAgentResponseStream = getBenchmarkChatAgentResponseStream(originalResponseStream, {
+            const runBenchmarkResponseStream: vscode.ChatAgentResponseStream = getBenchmarkChatAgentResponseStream(originalResponseStream, originalResponseStream, {
                 button: function (command: vscode.Command): void { returnedButtons.push(command); },
+                markdown: function (value: string | vscode.MarkdownString): void {
+                    responses.push(new vscode.ChatResponseMarkdownPart(typeof value === "string" ? new vscode.MarkdownString(value) : value));
+                },
             });
             const agentRequestAtStep: AgentRequest = {
                 context: { ...request.context, history2: history },
@@ -239,7 +242,7 @@ export class AgentBenchmarker implements IAgentRequestHandler {
 
         // When running all benchmarks, create a response stream that writes all benchmark and agent output to a file.
         const outFile = await getBenchmarkOutFilePath();
-        const benchmarkAllResponseStream: vscode.ChatAgentResponseStream = getBenchmarkChatAgentResponseStream(undefined, {
+        const benchmarkAllResponseStream: vscode.ChatAgentResponseStream = getBenchmarkChatAgentResponseStream(undefined, undefined, {
             markdown: function (value: string | vscode.MarkdownString): void { fs.appendFileSync(outFile, typeof value === "string" ? value : value.value); },
             button: function (command: vscode.Command): void { fs.appendFileSync(outFile, JSON.stringify(command.toString())); },
             reference: function (value: vscode.Uri | vscode.Location): void { fs.appendFileSync(outFile, JSON.stringify(value.toString())); },
@@ -404,9 +407,11 @@ function generateRandomLetters(length: number): string {
 type InAdditionToChatAgentResponseStream = { [P in keyof vscode.ChatAgentResponseStream]?: (...args: Parameters<vscode.ChatAgentResponseStream[P]>) => void; };
 /**
  * @param originalResponseStream An original response stream that this stream should ultimately pass through to. If `undefined`, the stream will not do any pass through.
+ * @param debugBenchmarkingResponseStream A response stream that this stream should use to write debug information. If `undefined` debug information will be written to {@link originalResponseStream}.
  * @param inAddition Anything you want this stream to do in addition to doing normal chat agent response stream things.
  */
-function getBenchmarkChatAgentResponseStream(originalResponseStream: vscode.ChatAgentResponseStream | undefined, inAddition?: InAdditionToChatAgentResponseStream): vscode.ChatAgentResponseStream {
+function getBenchmarkChatAgentResponseStream(originalResponseStream: vscode.ChatAgentResponseStream | undefined, debugBenchmarkingResponseStream: vscode.ChatAgentResponseStream | undefined, inAddition?: InAdditionToChatAgentResponseStream): vscode.ChatAgentResponseStream {
+    debugBenchmarkingResponseStream = debugBenchmarkingResponseStream ?? originalResponseStream;
     const chatAgentResponseStream: vscode.ChatAgentResponseStream = {
         markdown: function (value: string | vscode.MarkdownString): vscode.ChatAgentResponseStream {
             if (inAddition?.markdown) { inAddition.markdown(value); }
@@ -415,19 +420,19 @@ function getBenchmarkChatAgentResponseStream(originalResponseStream: vscode.Chat
         },
         button: function (command: vscode.Command): vscode.ChatAgentResponseStream {
             if (inAddition?.button) { inAddition.button(command); }
-            debugBenchmarking(chatAgentResponseStream, `🔘 ${JSON.stringify(command)}`);
+            if (debugBenchmarkingResponseStream) { debugBenchmarking(debugBenchmarkingResponseStream, `🔘 ${JSON.stringify(command)}`); }
             if (originalResponseStream) { return originalResponseStream; }
             return chatAgentResponseStream;
         },
         reference: function (value: vscode.Uri | vscode.Location): vscode.ChatAgentResponseStream {
             if (inAddition?.reference) { inAddition.reference(value); }
-            debugBenchmarking(chatAgentResponseStream, `📕 ${value.toString()}`);
+            if (debugBenchmarkingResponseStream) { debugBenchmarking(debugBenchmarkingResponseStream, `📕 ${value.toString()}`); }
             if (originalResponseStream) { return originalResponseStream; }
             return chatAgentResponseStream;
         },
         progress: function (value: string): vscode.ChatAgentResponseStream {
             if (inAddition?.progress) { inAddition.progress(value); }
-            debugBenchmarking(chatAgentResponseStream, `🔄 ${value.toString()}`);
+            if (debugBenchmarkingResponseStream) { debugBenchmarking(debugBenchmarkingResponseStream, `🔄 ${value.toString()}`); }
             if (originalResponseStream) { return originalResponseStream; }
             return chatAgentResponseStream;
         },
