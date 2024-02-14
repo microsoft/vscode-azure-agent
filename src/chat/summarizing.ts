@@ -11,7 +11,7 @@ export async function summarizeHistoryThusFar(request: AgentRequest): Promise<st
         return request.userPrompt;
     } else {
         const systemPrompt = summarizeHistoryToSingleQuestionSystemPrompt1;
-        const maybeJsonCopilotResponse = await getResponseAsStringCopilotInteraction(systemPrompt, request, { includeHistory: "all", setCache: true, useCache: true });
+        const maybeJsonCopilotResponse = await getResponseAsStringCopilotInteraction(systemPrompt, request, { includeHistory: "requests", setCache: true, useCache: true });
         return maybeJsonCopilotResponse || request.userPrompt;
     }
 }
