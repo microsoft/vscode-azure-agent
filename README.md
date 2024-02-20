@@ -21,6 +21,15 @@ The Azure Agent for VS Code is your assistant for helping you use the [Azure Ext
 1. [Authorize the extension to use proposed APIs](https://code.visualstudio.com/api/advanced-topics/using-proposed-api#sharing-extensions-using-the-proposed-api) (extension ID `ms-azuretools.vscode-azure-agent`)
 1. Restart VS Code (Insiders)
 
+## Last-Tested-With Versions of Dependencies
+
+- VS Code (Insiders):
+   - 1.87.0-insider
+   - Commit: 01ce8d869e4220577e194b2dd57bfa12437dfcf5
+   - Date: 2024-02-20T02:04:15.870Z
+- GitHub Copilot extension: v1.162.714 (pre-release)
+- GitHub Copilot Chat extension: v0.13.2024022003 (pre-release)
+
 <!-- region exclude-from-marketplace -->
 
 ## Contributing
