@@ -3,9 +3,8 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import  { type CancellationToken, type ChatAgentFollowup, type ChatAgentResult2 } from "vscode";
-import  { type IAgentRequestHandler} from "../agent";
-import { type AgentRequest } from "../agent";
+import { type CancellationToken, type ChatFollowup, type ChatResult } from "vscode";
+import { type AgentRequest, type IAgentRequestHandler } from "../agent";
 import { getLearnCommand, getMightBeInterestedHandler } from "../commonCommandsAndHandlers";
 import { SlashCommandsOwner, type SlashCommand, type SlashCommandHandlerResult, type SlashCommands } from "../slashCommands";
 import { AzureExtension } from "./AzureExtension";
@@ -34,7 +33,7 @@ export class ExtensionSlashCommandsOwner implements IAgentRequestHandler {
         return (await this._getExtensionSlashCommandsOwner(request)).handleRequestOrPrompt(request, handlerChain);
     }
 
-    public getFollowUpForLastHandledSlashCommand(result: ChatAgentResult2, token: CancellationToken): ChatAgentFollowup[] | undefined {
+    public getFollowUpForLastHandledSlashCommand(result: ChatResult, token: CancellationToken): ChatFollowup[] | undefined {
         // Should be ok to call the property directly, if the extension slash commands owner has
         // not been loaded then there shouldn't even be a follow up to get.
         return this._extensionSlashCommandsOwner?.getFollowUpForLastHandledSlashCommand(result, token);

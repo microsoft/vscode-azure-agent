@@ -3,6 +3,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
+import * as crypto from "crypto";
 import type * as vscode from "vscode";
 import { type AgentRequest, type IAgentRequestHandler } from "./agent";
 import { detectIntent } from "./intentDetection";
@@ -17,6 +18,8 @@ export type ChatAgentResultMetadata = {
      * The chain of slash command handlers that were invoked to produce this result.
      */
     handlerChain: string[]
+
+    resultId: string;
 }
 
 /**
@@ -26,12 +29,12 @@ export type SlashCommandHandlerResult = {
     /**
      * The VsCode chat agent result.
      */
-    chatAgentResult: Omit<vscode.ChatAgentResult2, "metadata"> & { metadata?: ChatAgentResultMetadata },
+    chatAgentResult: Omit<vscode.ChatResult, "metadata"> & { metadata?: ChatAgentResultMetadata },
 
     /**
      * Any follow-up messages to be given for this result.
      */
-    followUp?: vscode.ChatAgentFollowup[],
+    followUp?: vscode.ChatFollowup[],
 } | undefined;
 
 /**
@@ -121,7 +124,7 @@ export class SlashCommandsOwner implements IAgentRequestHandler {
 
             this._previousSlashCommandHandlerResult = result;
             if (result !== undefined && result.chatAgentResult.metadata === undefined) {
-                result.chatAgentResult.metadata = { handlerChain: handlerChain };
+                result.chatAgentResult.metadata = { handlerChain: handlerChain, resultId: crypto.randomUUID() };
             }
             return result;
         } else {
@@ -129,10 +132,8 @@ export class SlashCommandsOwner implements IAgentRequestHandler {
         }
     }
 
-    public getFollowUpForLastHandledSlashCommand(_result: vscode.ChatAgentResult2, _token: vscode.CancellationToken): vscode.ChatAgentFollowup[] | undefined {
-        // Workaround: https://github.com/microsoft/vscode-copilot/issues/4150
-        // if (result === this._previousSlashCommandHandlerResult?.chatAgentResult) {
-        if (this._previousSlashCommandHandlerResult !== undefined) {
+    public getFollowUpForLastHandledSlashCommand(result: vscode.ChatResult, _token: vscode.CancellationToken): vscode.ChatFollowup[] | undefined {
+        if (this._previousSlashCommandHandlerResult?.chatAgentResult?.metadata?.resultId === result.metadata?.["resultId"]) {
             const followUpForLastHandledSlashCommand = this._previousSlashCommandHandlerResult?.followUp;
             this._previousSlashCommandHandlerResult = undefined;
             return followUpForLastHandledSlashCommand;
