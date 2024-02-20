@@ -19,7 +19,7 @@ export function slashCommandFromWizardCommand(command: WizardCommandConfig, exte
             longDescription: command.displayName,
             intentDescription: command.intentDescription || command.displayName,
             handler: async (request: AgentRequest): Promise<SlashCommandHandlerResult> => {
-                const followUps: vscode.ChatAgentFollowup[] = [];
+                const followUps: vscode.ChatFollowup[] = [];
 
                 request.responseStream.markdown(`Ok, I can help you by using the the **${command.displayName}** command from the **${extension.extensionDisplayName}** extension.`);
 

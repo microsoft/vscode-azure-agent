@@ -10,7 +10,7 @@ import { getResponseAsStringCopilotInteraction, getStringFieldFromCopilotRespons
 import { type AzureExtension } from "./extensions/AzureExtension";
 import { detectIntent } from "./intentDetection";
 
-export async function generateExtensionCommandFollowUpsOther(copilotContent: string, apiProvider: AzureExtension, request: AgentRequest): Promise<vscode.ChatAgentFollowup[]> {
+export async function generateExtensionCommandFollowUpsOther(copilotContent: string, apiProvider: AzureExtension, request: AgentRequest): Promise<vscode.ChatFollowup[]> {
     const copilotContentAgentRequest: AgentRequest = { ...request, userPrompt: copilotContent, }
     const availableCommands = [
         ...await apiProvider.getWizardCommands(),
@@ -27,7 +27,7 @@ export async function generateExtensionCommandFollowUpsOther(copilotContent: str
     return [];
 }
 
-export async function generateExtensionCommandFollowUps(copilotContent: string, apiProvider: AzureExtension, request: AgentRequest): Promise<vscode.ChatAgentFollowup[]> {
+export async function generateExtensionCommandFollowUps(copilotContent: string, apiProvider: AzureExtension, request: AgentRequest): Promise<vscode.ChatFollowup[]> {
     const copilotContentAgentRequest: AgentRequest = { ...request, userPrompt: copilotContent, }
     const availableCommands = [
         ...await apiProvider.getWizardCommands(),
@@ -59,7 +59,7 @@ function generateNextActionsFollowUpsSystemPrompt1(actions: BaseCommandConfig[])
     Result: { "action": "none", "actionPhrase": "" }`;
 }
 
-export async function generateNextQuestionsFollowUps(copilotContent: string, request: AgentRequest): Promise<vscode.ChatAgentFollowup[]> {
+export async function generateNextQuestionsFollowUps(copilotContent: string, request: AgentRequest): Promise<vscode.ChatFollowup[]> {
     const copilotContentAgentRequest: AgentRequest = { ...request, userPrompt: copilotContent, }
     const maybeJsonCopilotResponse = await getResponseAsStringCopilotInteraction(generateNextQuestionsFollowUpsSystemPrompt1, copilotContentAgentRequest);
     const copilotGeneratedFollowUpQuestions = [
@@ -75,7 +75,7 @@ export async function generateNextQuestionsFollowUps(copilotContent: string, req
                 return undefined;
             }
         })
-        .filter((q): q is vscode.ChatAgentFollowup => q !== undefined);
+        .filter((q): q is vscode.ChatFollowup => q !== undefined);
 }
 
 const generateNextQuestionsFollowUpsSystemPrompt1 = `You are an expert in Azure development. Your job is to come up with follow up questions a user might have given the following information. Think about what the user might want to do next, or what they might want to know more about. Only focus on topics related to Azure. Suggest a up to three follow up questions. Only repsond with a JSON summary of the follow up questions. Do not respond in a coverstaional tone, only JSON.
@@ -95,7 +95,7 @@ Text: A storage account allows you to store data remotely in Azure as blobs. The
 Result: { "followUpOne": "How can I disable HTTP access for my storage account?", "followUpTwo": "How can I enable geo-redundancy for my storage accounts?", "followUpThree": "What is the largest size a blob can be?" }
 `;
 
-export async function generateSampleQuestionsFollowUps(topic: string, ragContent: string | undefined, request: AgentRequest): Promise<vscode.ChatAgentFollowup[]> {
+export async function generateSampleQuestionsFollowUps(topic: string, ragContent: string | undefined, request: AgentRequest): Promise<vscode.ChatFollowup[]> {
     const maybeJsonCopilotResponse = await getResponseAsStringCopilotInteraction(generateSampleQuestionsFollowUpsSystemPrompt(topic, ragContent), request);
     const copilotGeneratedFollowUpQuestions = [
         getStringFieldFromCopilotResponseMaybeWithStrJson(maybeJsonCopilotResponse, "sampleQuestionOne")?.trim(),
@@ -110,7 +110,7 @@ export async function generateSampleQuestionsFollowUps(topic: string, ragContent
                 return undefined;
             }
         })
-        .filter((q): q is vscode.ChatAgentFollowup => q !== undefined);
+        .filter((q): q is vscode.ChatFollowup => q !== undefined);
 }
 
 function generateSampleQuestionsFollowUpsSystemPrompt(topic: string, ragContent: string | undefined): string {

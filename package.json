@@ -32,11 +32,12 @@
         "onStartupFinished"
     ],
     "enabledApiProposals": [
-        "chatAgents2",
-        "chatAgents2Additions",
+        "chatParticipant",
+        "chatParticipantAdditions",
         "chatProvider",
-        "chatRequestAccess",
-        "interactive"
+        "chatVariableResolver",
+        "interactive",
+        "languageModels"
     ],
     "main": "./main.js",
     "contributes": {},
@@ -82,5 +83,7 @@
     },
     "extensionDependencies": [
         "ms-azuretools.vscode-azureresourcegroups"
-    ]
+    ],
+    "openAiConfigEndpoint": "https://aka.ms/vscode-azure-agent/open-ai-config",
+    "extensionIdentityConfigEndpoint": "https://aka.ms/vscode-azure-agent/extension-identity-config"
 }

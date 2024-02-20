@@ -20,8 +20,8 @@ export type AgentRequest = {
     command?: string;
     userPrompt: string;
 
-    context: Omit<vscode.ChatAgentContext, "history">;
-    responseStream: vscode.ChatAgentResponseStream;
+    context: vscode.ChatContext;
+    responseStream: vscode.ChatExtendedResponseStream;
     token: vscode.CancellationToken;
 }
 
@@ -37,7 +37,7 @@ export interface IAgentRequestHandler {
      * @param handlerChain The chain of handlers that have been called so far.
      */
     handleRequestOrPrompt(request: AgentRequest, handlerChain: string[]): Promise<SlashCommandHandlerResult>;
-    getFollowUpForLastHandledSlashCommand(result: vscode.ChatAgentResult2, token: vscode.CancellationToken): vscode.ChatAgentFollowup[] | undefined;
+    getFollowUpForLastHandledSlashCommand(result: vscode.ChatResult, token: vscode.CancellationToken): vscode.ChatFollowup[] | undefined;
 }
 
 /**
@@ -85,27 +85,25 @@ const agentHiddenSlashCommandsOwner = new SlashCommandsOwner(
 );
 agentHiddenSlashCommandsOwner.addInvokeableSlashCommands(new Map([toggleRagSlashCommand, getRagStatusSlashCommand]));
 
-export function registerChatAgent() {
+export function registerChatParticipant() {
     try {
-        const agent2 = vscode.chat.createChatAgent(agentName, handler);
+        const agent2 = vscode.chat.createChatParticipant(agentName, handler);
         agent2.description = agentDescription;
         agent2.fullName = agentFullName;
         agent2.iconPath = vscode.Uri.joinPath(ext.context.extensionUri, "resources", "azure-color.svg");
         agent2.commandProvider = { provideCommands: getCommands };
         agent2.followupProvider = { provideFollowups: followUpProvider };
+        agent2.isSticky = true;
     } catch (e) {
         console.log(e);
     }
 }
 
-async function handler(request: vscode.ChatAgentRequest, context: vscode.ChatAgentContext, responseStream: vscode.ChatAgentExtendedResponseStream, token: vscode.CancellationToken): Promise<vscode.ChatAgentResult2 | undefined> {
+async function handler(request: vscode.ChatRequest, context: vscode.ChatContext, responseStream: vscode.ChatExtendedResponseStream, token: vscode.CancellationToken): Promise<vscode.ChatResult | undefined> {
     const agentRequest: AgentRequest = {
         command: request.command,
         userPrompt: request.prompt,
-        context: {
-            ...context,
-            history2: context.history,
-        },
+        context: context,
         responseStream: responseStream,
         token: token,
     };
@@ -127,10 +125,10 @@ async function handler(request: vscode.ChatAgentRequest, context: vscode.ChatAge
     }
 }
 
-function followUpProvider(result: vscode.ChatAgentResult2, token: vscode.CancellationToken): vscode.ProviderResult<vscode.ChatAgentFollowup[]> {
+function followUpProvider(result: vscode.ChatResult, token: vscode.CancellationToken): vscode.ProviderResult<vscode.ChatFollowup[]> {
     const providers = [agentHiddenSlashCommandsOwner, agentBenchmarker, agentSlashCommandsOwner];
 
-    let followUp: vscode.ChatAgentFollowup[] | undefined;
+    let followUp: vscode.ChatFollowup[] | undefined;
     for (const provider of providers) {
         followUp = provider.getFollowUpForLastHandledSlashCommand(result, token);
         if (followUp !== undefined) {
@@ -140,6 +138,6 @@ function followUpProvider(result: vscode.ChatAgentResult2, token: vscode.Cancell
     return followUp || [];
 }
 
-function getCommands(_token: vscode.CancellationToken): vscode.ProviderResult<vscode.ChatAgentCommand[]> {
+function getCommands(_token: vscode.CancellationToken): vscode.ProviderResult<vscode.ChatCommand[]> {
     return agentSlashCommandsOwner.getSlashCommands().map(([name, config]) => ({ name: name, description: config.shortDescription }))
 }

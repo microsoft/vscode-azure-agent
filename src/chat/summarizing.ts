@@ -7,7 +7,7 @@ import { type AgentRequest } from "./agent";
 import { getResponseAsStringCopilotInteraction } from "./copilotInteractions";
 
 export async function summarizeHistoryThusFar(request: AgentRequest): Promise<string> {
-    if (request.context.history2.length === 0) {
+    if (request.context.history.length === 0) {
         return request.userPrompt;
     } else {
         const systemPrompt = summarizeHistoryToSingleQuestionSystemPrompt1;

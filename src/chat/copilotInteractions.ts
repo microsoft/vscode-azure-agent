@@ -34,24 +34,24 @@ const maxCachedAccessAge = 1000 * 30;
 let cachedAccess: { access: vscode.LanguageModelAccess, requestedAt: number } | undefined;
 async function getLanguageModelAccess(): Promise<vscode.LanguageModelAccess> {
     if (cachedAccess === undefined || cachedAccess.access.isRevoked || cachedAccess.requestedAt < Date.now() - maxCachedAccessAge) {
-        const model = vscode.chat.languageModels
+        const model = vscode.lm.languageModels
             .filter((model) => languageModelPreference.includes(model))
             .sort((a, b) => languageModelPreference.indexOf(a) - languageModelPreference.indexOf(b))
-            .at(0) || vscode.chat.languageModels.at(0);
+            .at(0) || vscode.lm.languageModels.at(0);
         if (!model) {
             throw new Error(`No language model available.`);
         }
 
-        const newAccess = await vscode.chat.requestLanguageModelAccess(model, { justification: `Access to Copilot for the @${agentName} agent.` });
+        const newAccess = await vscode.lm.requestLanguageModelAccess(model, { justification: `Access to Copilot for the @${agentName} agent.` });
         cachedAccess = { access: newAccess, requestedAt: Date.now() };
     }
     return cachedAccess.access;
 }
 
 const showDebugCopilotInteractionAsProgress = false;
-function debugCopilotInteraction(progress: vscode.Progress<vscode.ChatAgentExtendedProgress>, msg: string) {
+function debugCopilotInteraction(responseStream: vscode.ChatResponseStream, msg: string) {
     if (showDebugCopilotInteractionAsProgress) {
-        progress.report({ content: `\n\n${new Date().toISOString()} >> \`${msg.replace(/\n/g, "").trim()}\`\n\n` });
+        responseStream.markdown(new vscode.MarkdownString(`\n\n${new Date().toISOString()} >> \`${msg.replace(/\n/g, "").trim()}\`\n\n`));
     }
     console.log(`${new Date().toISOString()} >> \`${msg.replace(/\n/g, "").trim()}\``);
 }
@@ -125,34 +125,24 @@ const maxCachedInteractionAge = 1000 * 30;
 const copilotInteractionCache: { [key: string]: { lastHit: number, joinedResponseFragments: string } } = {};
 
 async function doCopilotInteraction(onResponseFragment: (fragment: string) => void, systemPrompt: string, agentRequest: AgentRequest, options: Required<CopilotInteractionOptions>): Promise<void> {
-    let historyMessages: vscode.ChatMessage[] = [];
+    let historyMessages: (vscode.LanguageModelUserMessage | vscode.LanguageModelAssistantMessage)[] = [];
     if (options.includeHistory === "all") {
-        historyMessages = agentRequest.context.history2.map((turn) => {
-            return {
-                role: isRequestTurn(turn) ? vscode.ChatMessageRole.User : vscode.ChatMessageRole.Assistant,
-                content: isRequestTurn(turn) ? turn.prompt : getResponseTurnContent(turn),
-            }
+        historyMessages = agentRequest.context.history.map((turn) => {
+            return isRequestTurn(turn) ?
+                new vscode.LanguageModelUserMessage(turn.prompt) :
+                new vscode.LanguageModelAssistantMessage(getResponseTurnContent(turn));
         });
     } else if (options.includeHistory === "requests") {
-        historyMessages = agentRequest.context.history2.filter(isRequestTurn).map((turn) => {
-            return {
-                role: vscode.ChatMessageRole.User,
-                content: turn.prompt
-            }
-        });
+        historyMessages = agentRequest.context.history
+            .filter(isRequestTurn)
+            .map((turn) => new vscode.LanguageModelUserMessage(turn.prompt));
     }
 
     try {
-        const messages: vscode.ChatMessage[] = [
-            {
-                role: vscode.ChatMessageRole.System,
-                content: systemPrompt
-            },
+        const messages: vscode.LanguageModelMessage[] = [
+            new vscode.LanguageModelSystemMessage(systemPrompt),
             ...historyMessages,
-            {
-                role: vscode.ChatMessageRole.User,
-                content: agentRequest.userPrompt
-            },
+            new vscode.LanguageModelUserMessage(agentRequest.userPrompt)
         ];
 
         debugCopilotInteraction(agentRequest.responseStream, `System Prompt:\n\n${systemPrompt}\n`);
@@ -189,7 +179,7 @@ function clearOldEntriesFromCopilotInteractionCache() {
     }
 }
 
-function encodeCopilotInteractionToCacheKey(messages: vscode.ChatMessage[]): string {
+function encodeCopilotInteractionToCacheKey(messages: vscode.LanguageModelMessage[]): string {
     return Buffer.from(JSON.stringify(messages)).toString("base64");
 }
 
@@ -275,11 +265,11 @@ function findPossibleValuesOfFieldFromParsedCopilotResponse(parsedCopilotRespons
     return [];
 }
 
-function isRequestTurn(turn: vscode.ChatAgentRequestTurn | vscode.ChatAgentResponseTurn): turn is vscode.ChatAgentRequestTurn {
-    return (turn as vscode.ChatAgentRequestTurn).prompt !== undefined;
+function isRequestTurn(turn: vscode.ChatRequestTurn | vscode.ChatResponseTurn): turn is vscode.ChatRequestTurn {
+    return (turn as vscode.ChatRequestTurn).prompt !== undefined;
 }
 
-function getResponseTurnContent(turn: vscode.ChatAgentResponseTurn): string {
+function getResponseTurnContent(turn: vscode.ChatResponseTurn): string {
     return turn.response.map((response) => {
         const responseContent = response.value;
         if (responseContent instanceof vscode.MarkdownString) {

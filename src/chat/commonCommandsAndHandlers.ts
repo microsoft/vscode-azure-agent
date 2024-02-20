@@ -51,7 +51,7 @@ function learnHandler(config: LearnCommandConfig, request: AgentRequest): Promis
                 if (ragContent !== undefined) {
                     request.responseStream.reference(vscode.Uri.parse(ragContent.contentUrl));
                 }
-                const followUps: vscode.ChatAgentFollowup[] = [];
+                const followUps: vscode.ChatFollowup[] = [];
                 if (config.associatedExtension !== undefined && config.associatedExtension.isInstalled()) {
                     followUps.push(...(await generateExtensionCommandFollowUps(copilotResponse, config.associatedExtension, request)));
                 } else if (config.associatedExtension !== undefined && !config.associatedExtension.isInstalled()) {
@@ -88,7 +88,7 @@ export type MightBeInterestedHandlerConfig = {
 export function getMightBeInterestedHandler(config: MightBeInterestedHandlerConfig): SlashCommandHandler {
     return async (request: AgentRequest) => {
         return callWithTelemetryAndErrorHandling("mightBeInterested", async (actionContext) => {
-            const followUps: vscode.ChatAgentFollowup[] = [];
+            const followUps: vscode.ChatFollowup[] = [];
             if (config.associatedExtension !== undefined && !config.associatedExtension.isInstalled()) {
                 request.responseStream.markdown(`\n\nAlso consider installing the ${config.associatedExtension.extensionDisplayName} extension for VS Code.`);
 

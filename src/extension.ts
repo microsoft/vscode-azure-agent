@@ -8,7 +8,7 @@
 import { registerAzureUtilsExtensionVariables } from '@microsoft/vscode-azext-azureutils';
 import { callWithTelemetryAndErrorHandling, createAzExtOutputChannel, registerUIExtensionVariables, type IActionContext } from '@microsoft/vscode-azext-utils';
 import type * as vscode from 'vscode';
-import { registerChatAgent } from './chat/agent';
+import { registerChatParticipant } from './chat/agent';
 import { ext } from './extensionVariables';
 
 export async function activateInternal(context: vscode.ExtensionContext, perfStats: { loadStartTime: number; loadEndTime: number }, ignoreBundle?: boolean): Promise<void> {
@@ -23,7 +23,7 @@ export async function activateInternal(context: vscode.ExtensionContext, perfSta
         activateContext.telemetry.properties.isActivationEvent = 'true';
         activateContext.telemetry.measurements.mainFileLoad = (perfStats.loadEndTime - perfStats.loadStartTime) / 1000;
 
-        registerChatAgent();
+        registerChatParticipant();
     });
 }
 
