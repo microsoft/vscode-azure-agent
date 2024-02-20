@@ -43,7 +43,7 @@ function learnHandler(config: LearnCommandConfig, request: AgentRequest): Promis
             ] : [];
             const systemPrompt = getLearnSystemPrompt(config, ragContent?.content, availableCommands);
 
-            const { copilotResponded, copilotResponse } = await verbatimCopilotInteraction(systemPrompt, request, { includeHistory: "all" });
+            const { copilotResponded, copilotResponse } = await verbatimCopilotInteraction(systemPrompt, request, { includeHistory: "all", progressMessage: "Getting an answer..." });
             if (!copilotResponded) {
                 request.responseStream.markdown("Sorry, I can't help with that right now.\n");
                 return { chatAgentResult: {}, followUp: [], };
