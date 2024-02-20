@@ -109,6 +109,8 @@ async function handler(request: vscode.ChatRequest, context: vscode.ChatContext,
     };
     const handlers = [agentHiddenSlashCommandsOwner, agentBenchmarker, agentSlashCommandsOwner];
 
+    agentRequest.responseStream.progress("Processing request...");
+
     let handleResult: SlashCommandHandlerResult | undefined;
     for (const handler of handlers) {
         handleResult = await handler.handleRequestOrPrompt(agentRequest, []);

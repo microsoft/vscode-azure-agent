@@ -25,6 +25,13 @@ export type CopilotInteractionOptions = {
      * Whether or not to use the cached result of a previous Copilot interaction that matches this one. Default is `true`.
      */
     useCache?: boolean;
+
+    /**
+     * A progress message to display to the user while waiting for a response from Copilot.
+     *
+     * Should not be used if this interaction is being done in parallel with other interactions.
+     */
+    progressMessage?: string;
 };
 
 export type CopilotInteractionResult = { copilotResponded: true, copilotResponse: string } | { copilotResponded: false, copilotResponse: undefined };
@@ -64,7 +71,7 @@ export async function verbatimCopilotInteraction(systemPrompt: string, request: 
     await queueCopilotInteraction((fragment) => {
         joinedFragements += fragment;
         request.responseStream.markdown(fragment);
-    }, systemPrompt, request, { includeHistory: "none", setCache: false, useCache: true, ...options });
+    }, systemPrompt, request, { includeHistory: "none", setCache: false, useCache: true, progressMessage: "", ...options });
     if (joinedFragements === "") {
         return { copilotResponded: false, copilotResponse: undefined };
     } else {
@@ -79,7 +86,7 @@ export async function getResponseAsStringCopilotInteraction(systemPrompt: string
     let joinedFragements = "";
     await queueCopilotInteraction((fragment) => {
         joinedFragements += fragment;
-    }, systemPrompt, request, { includeHistory: "none", setCache: false, useCache: true, ...options });
+    }, systemPrompt, request, { includeHistory: "none", setCache: false, useCache: true, progressMessage: "", ...options });
     debugCopilotInteraction(request.responseStream, `Copilot response:\n\n${joinedFragements}\n`);
     return joinedFragements;
 }
@@ -89,6 +96,10 @@ type CopilotInteractionQueueItem = { onResponseFragment: (fragment: string) => v
 const copilotInteractionQueue: CopilotInteractionQueueItem[] = [];
 
 export async function queueCopilotInteraction(onResponseFragment: (fragment: string) => void, systemPrompt: string, request: AgentRequest, options: Required<CopilotInteractionOptions>): Promise<void> {
+    if (options.progressMessage.length > 0) {
+        request.responseStream.progress(options.progressMessage);
+    }
+
     return new Promise<void>((resolve) => {
         copilotInteractionQueue.push({ onResponseFragment: onResponseFragment, systemPrompt: systemPrompt, request: request, options: options, resolve: resolve });
         if (!copilotInteractionQueueRunning) {
