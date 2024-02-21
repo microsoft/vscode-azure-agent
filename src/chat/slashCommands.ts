@@ -6,7 +6,7 @@
 import * as crypto from "crypto";
 import type * as vscode from "vscode";
 import { type AgentRequest, type IAgentRequestHandler } from "./agent";
-import { WizardContinuation } from "./extensions/slashCommandFromWizardCommand";
+import { type WizardContinuation } from "./extensions/slashCommandFromWizardCommand";
 import { detectIntent } from "./intentDetection";
 
 /**
