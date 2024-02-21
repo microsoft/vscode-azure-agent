@@ -9,7 +9,7 @@ import { getSignInCommand, isUserSignedInToAzure } from "../azureSignIn";
 import { getResponseAsStringCopilotInteraction, getStringFieldFromCopilotResponseMaybeWithStrJson } from "../copilotInteractions";
 import { type SlashCommand, type SlashCommandHandlerResult } from "../slashCommands";
 import { type AzureExtension } from "./AzureExtension";
-import { type SnippetCommandConfig } from "./SnippetBasedCommandConfig";
+import { type SnippetCommandConfig } from "./SnippetCommandConfig";
 
 export function slashCommandFromSnippetCommand(command: SnippetCommandConfig, extension: AzureExtension): SlashCommand {
     return [

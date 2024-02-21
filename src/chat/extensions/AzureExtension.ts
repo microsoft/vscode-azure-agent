@@ -9,7 +9,7 @@ import * as vscode from "vscode";
 import { type AzureUserInputQueue, type ExtensionAgentMetadata, type IAzureAgentInput, type SimpleCommandConfig, type WizardCommandConfig } from "@microsoft/vscode-azext-utils";
 import { type AgentRequest } from "../agent";
 import { type AgentBenchmarkConfig, type AgentBenchmarkWithStepsConfig } from "../benchmarking/NewBenchmarkTypes";
-import { type SnippetCommandConfig } from "./SnippetBasedCommandConfig";
+import { type SnippetCommandConfig } from "./SnippetCommandConfig";
 
 export class AzureExtension {
     public readonly extensionId: string;
