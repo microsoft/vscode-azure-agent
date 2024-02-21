@@ -6,6 +6,7 @@
 import * as crypto from "crypto";
 import type * as vscode from "vscode";
 import { type AgentRequest, type IAgentRequestHandler } from "./agent";
+import { type WizardContinuation } from "./extensions/slashCommandFromWizardCommand";
 import { detectIntent } from "./intentDetection";
 
 /**
@@ -17,9 +18,11 @@ export type ChatAgentResultMetadata = {
     /**
      * The chain of slash command handlers that were invoked to produce this result.
      */
-    handlerChain: string[]
+    handlerChain?: string[]
 
-    resultId: string;
+    resultId?: string;
+
+    wizardContinuation?: WizardContinuation;
 }
 
 /**
@@ -123,8 +126,8 @@ export class SlashCommandsOwner implements IAgentRequestHandler {
             const result = await handler(refinedRequest, handlerChain);
 
             this._previousSlashCommandHandlerResult = result;
-            if (result !== undefined && result.chatAgentResult.metadata === undefined) {
-                result.chatAgentResult.metadata = { handlerChain: handlerChain, resultId: crypto.randomUUID() };
+            if (result !== undefined) {
+                result.chatAgentResult.metadata = { handlerChain: handlerChain, resultId: crypto.randomUUID(), ...result.chatAgentResult.metadata };
             }
             return result;
         } else {
