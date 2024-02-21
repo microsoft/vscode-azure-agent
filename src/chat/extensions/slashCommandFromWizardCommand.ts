@@ -171,12 +171,6 @@ class AgentAzureUserInput implements IAzureAgentInput {
     }
 
     private async _pickQuickPickItem<T extends AgentQuickPickItem>(request: AgentRequest, items: T[] | Promise<T[]>, options: AgentQuickPickOptions): Promise<T | undefined> {
-        const itemFromWizardContinuation = this._getItemFromWizardContinuation();
-        // @todo: check better
-        if (itemFromWizardContinuation !== undefined && itemFromWizardContinuation !== null) {
-            return itemFromWizardContinuation as T;
-        }
-
         const resolvedApplicableItems = (await Promise.resolve(items))
             .map((item) => ({ ...item, agentMetadata: options.agentMetadata || {} }))
             .filter((item) => item.kind !== vscode.QuickPickItemKind.Separator)
@@ -189,7 +183,13 @@ class AgentAzureUserInput implements IAzureAgentInput {
             const systemPrompt = this._getPickQuickPickItemSystemPrompt1(resolvedApplicableItems, options);
             const maybeJsonCopilotResponse = await getResponseAsStringCopilotInteraction(systemPrompt, request);
             const copilotPickedItemTitle = getStringFieldFromCopilotResponseMaybeWithStrJson(maybeJsonCopilotResponse, ["value", "parameter", "parameterValue", options.agentMetadata.parameterDisplayTitle || "value"]);
-            return copilotPickedItemTitle === undefined ? undefined : resolvedApplicableItems.find((i) => i.label === copilotPickedItemTitle);
+            const itemMatchingCopilotItem = copilotPickedItemTitle === undefined ? undefined : resolvedApplicableItems.find((i) => i.label === copilotPickedItemTitle);
+
+            const itemFromWizardContinuation = this._getItemFromWizardContinuation() as T | null | undefined;
+            const itemFromWizardContinuationTitle = itemFromWizardContinuation?.label;
+            const itemMatchingWizardContinuationItem = itemFromWizardContinuationTitle === undefined ? undefined : resolvedApplicableItems.find((i) => i.label === itemFromWizardContinuationTitle);
+
+            return itemMatchingCopilotItem || itemMatchingWizardContinuationItem;
         }
     }
 
@@ -215,16 +215,14 @@ class AgentAzureUserInput implements IAzureAgentInput {
     }
 
     private async _provideInput(request: AgentRequest, options: AgentInputBoxOptions): Promise<string | undefined> {
-        const itemFromWizardContinuation = this._getItemFromWizardContinuation();
-        // @todo: check better
-        if (itemFromWizardContinuation !== undefined && itemFromWizardContinuation !== null) {
-            return itemFromWizardContinuation as string;
-        }
-
         const systemPrompt = this._getProvideInputSystemPrompt1(options);
         const maybeJsonCopilotResponse = await getResponseAsStringCopilotInteraction(systemPrompt, request);
         const copilotProvidedInput = getStringFieldFromCopilotResponseMaybeWithStrJson(maybeJsonCopilotResponse, ["value", "parameter", "parameterValue", options.agentMetadata.parameterDisplayTitle || "value"]);
-        return copilotProvidedInput;
+
+        const itemFromWizardContinuation = this._getItemFromWizardContinuation();
+        const inputFromWizardContinuation = typeof itemFromWizardContinuation === "string" ? itemFromWizardContinuation : undefined;
+
+        return copilotProvidedInput || inputFromWizardContinuation;
     }
 
     private _getProvideInputSystemPrompt1(options: AgentInputBoxOptions): string {

@@ -9,7 +9,7 @@ import { agentName } from "./agentConsts";
 
 export type CopilotInteractionOptions = {
     /**
-     * What type of history to include in the context for the Copilot interaction.
+     * What type of history (aka, users requests prior to the current one) to include in the context for the Copilot interaction.
      * - `"none"`: No history will be included (default)
      * - `"all"`: All history will be included
      * - `"requests"`: Only the user requests will be included
