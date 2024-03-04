@@ -177,9 +177,9 @@ export class AgentBenchmarker implements IAgentRequestHandler {
                 this._benchmarksRunsStats[benchmarkIdx][benchmark.steps.indexOf(step)].push(stats);
 
                 // Push the request turn
-                history.push({ participant: { extensionId: "ms-azuretools.vscode-azure-agent", participant: agentName, }, prompt: step.prompt, command: request.command, variables: [] });
+                history.push({ participant: { extensionId: "ms-azuretools.vscode-azure-agent", name: agentName, }, prompt: step.prompt, command: request.command, variables: [] });
                 // Push the response turn
-                history.push({ participant: { extensionId: "ms-azuretools.vscode-azure-agent", participant: agentName, }, response: responses, result: handleResult.chatAgentResult || {}, });
+                history.push({ participant: { extensionId: "ms-azuretools.vscode-azure-agent", name: agentName, }, response: responses, result: handleResult.chatAgentResult || {}, });
 
                 await new Promise((resolve) => setTimeout(resolve, 1000));
             }

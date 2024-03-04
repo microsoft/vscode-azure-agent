@@ -37,23 +37,6 @@ export type CopilotInteractionOptions = {
 export type CopilotInteractionResult = { copilotResponded: true, copilotResponse: string } | { copilotResponded: false, copilotResponse: undefined };
 
 const languageModelPreference: string[] = ["copilot-gpt-4", "copilot"];
-const maxCachedAccessAge = 1000 * 30;
-let cachedAccess: { access: vscode.LanguageModelAccess, requestedAt: number } | undefined;
-async function getLanguageModelAccess(): Promise<vscode.LanguageModelAccess> {
-    if (cachedAccess === undefined || cachedAccess.access.isRevoked || cachedAccess.requestedAt < Date.now() - maxCachedAccessAge) {
-        const model = vscode.lm.languageModels
-            .filter((model) => languageModelPreference.includes(model))
-            .sort((a, b) => languageModelPreference.indexOf(a) - languageModelPreference.indexOf(b))
-            .at(0) || vscode.lm.languageModels.at(0);
-        if (!model) {
-            throw new Error(`No language model available.`);
-        }
-
-        const newAccess = await vscode.lm.requestLanguageModelAccess(model, { justification: `Access to Copilot for the @${agentName} agent.` });
-        cachedAccess = { access: newAccess, requestedAt: Date.now() };
-    }
-    return cachedAccess.access;
-}
 
 const showDebugCopilotInteractionAsProgress = false;
 function debugCopilotInteraction(responseStream: vscode.ChatResponseStream, msg: string) {
@@ -136,24 +119,24 @@ const maxCachedInteractionAge = 1000 * 30;
 const copilotInteractionCache: { [key: string]: { lastHit: number, joinedResponseFragments: string } } = {};
 
 async function doCopilotInteraction(onResponseFragment: (fragment: string) => void, systemPrompt: string, agentRequest: AgentRequest, options: Required<CopilotInteractionOptions>): Promise<void> {
-    let historyMessages: (vscode.LanguageModelUserMessage | vscode.LanguageModelAssistantMessage)[] = [];
+    let historyMessages: (vscode.LanguageModelChatUserMessage | vscode.LanguageModelChatAssistantMessage)[] = [];
     if (options.includeHistory === "all") {
         historyMessages = agentRequest.context.history.map((turn) => {
             return isRequestTurn(turn) ?
-                new vscode.LanguageModelUserMessage(turn.prompt) :
-                new vscode.LanguageModelAssistantMessage(getResponseTurnContent(turn));
+                new vscode.LanguageModelChatUserMessage(turn.prompt) :
+                new vscode.LanguageModelChatAssistantMessage(getResponseTurnContent(turn));
         });
     } else if (options.includeHistory === "requests") {
         historyMessages = agentRequest.context.history
             .filter(isRequestTurn)
-            .map((turn) => new vscode.LanguageModelUserMessage(turn.prompt));
+            .map((turn) => new vscode.LanguageModelChatUserMessage(turn.prompt));
     }
 
     try {
-        const messages: vscode.LanguageModelMessage[] = [
-            new vscode.LanguageModelSystemMessage(systemPrompt),
+        const messages: vscode.LanguageModelChatMessage[] = [
+            new vscode.LanguageModelChatSystemMessage(systemPrompt),
             ...historyMessages,
-            new vscode.LanguageModelUserMessage(agentRequest.userPrompt)
+            new vscode.LanguageModelChatUserMessage(agentRequest.userPrompt)
         ];
 
         debugCopilotInteraction(agentRequest.responseStream, `System Prompt:\n\n${systemPrompt}\n`);
@@ -165,8 +148,13 @@ async function doCopilotInteraction(onResponseFragment: (fragment: string) => vo
             onResponseFragment(copilotInteractionCache[cacheKey].joinedResponseFragments);
             copilotInteractionCache[cacheKey].lastHit = Date.now();
         } else {
-            const access = await getLanguageModelAccess();
-            const request = access.makeChatRequest(messages, {}, agentRequest.token);
+            const chatRequestModel = vscode.lm.languageModels
+                .filter((model) => languageModelPreference.includes(model))
+                .sort((a, b) => languageModelPreference.indexOf(a) - languageModelPreference.indexOf(b))
+                .at(0) || vscode.lm.languageModels.at(0);
+            const chatRequestOptions = { justification: `Access to Copilot for the @${agentName} agent.` };
+            const request = await vscode.lm.sendChatRequest(chatRequestModel as string, messages, chatRequestOptions, agentRequest.token)
+
             for await (const fragment of request.stream) {
                 if (options.setCache) {
                     if (!copilotInteractionCache[cacheKey]) {
@@ -190,7 +178,7 @@ function clearOldEntriesFromCopilotInteractionCache() {
     }
 }
 
-function encodeCopilotInteractionToCacheKey(messages: vscode.LanguageModelMessage[]): string {
+function encodeCopilotInteractionToCacheKey(messages: vscode.LanguageModelChatMessage[]): string {
     return Buffer.from(JSON.stringify(messages)).toString("base64");
 }
 

@@ -28,9 +28,7 @@
         "chat",
         "copilot"
     ],
-    "activationEvents": [
-        "onStartupFinished"
-    ],
+    "activationEvents": [],
     "enabledApiProposals": [
         "chatParticipant",
         "chatParticipantAdditions",
@@ -40,7 +38,15 @@
         "languageModels"
     ],
     "main": "./main.js",
-    "contributes": {},
+    "contributes": {
+        "chatParticipants": [
+            {
+                "name": "azure",
+                "description": "Agent for working with all things Azure",
+                "commands": []
+            }
+        ]
+    },
     "scripts": {
         "vscode:prepublish": "npm run webpack-prod",
         "build": "tsc",
