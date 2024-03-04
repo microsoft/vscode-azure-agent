@@ -28,6 +28,7 @@
         "chat",
         "copilot"
     ],
+    "activationEvents": [],
     "enabledApiProposals": [
         "chatParticipant",
         "chatParticipantAdditions",
