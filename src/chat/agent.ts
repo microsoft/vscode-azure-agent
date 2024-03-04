@@ -7,7 +7,7 @@
 
 import * as vscode from "vscode";
 import { ext } from '../extensionVariables';
-import { agentDescription, agentFullName, agentName, maxFollowUps } from "./agentConsts";
+import { agentDescription, agentName, maxFollowUps } from "./agentConsts";
 import { agentHelpCommandName, getAgentHelpCommand } from "./agentHelpSlashCommand";
 import { defaultBenchmarks, helpBenchmarks, multiPromptBenchmarks } from "./benchmarking/agentBenchmarks";
 import { AgentBenchmarker } from "./benchmarking/benchmarking";
@@ -89,9 +89,7 @@ export function registerChatParticipant() {
     try {
         const agent2 = vscode.chat.createChatParticipant(agentName, handler);
         agent2.description = agentDescription;
-        agent2.fullName = agentFullName;
         agent2.iconPath = vscode.Uri.joinPath(ext.context.extensionUri, "resources", "azure-color.svg");
-        agent2.commandProvider = { provideCommands: getCommands };
         agent2.followupProvider = { provideFollowups: followUpProvider };
         agent2.isSticky = true;
     } catch (e) {
@@ -127,7 +125,7 @@ async function handler(request: vscode.ChatRequest, context: vscode.ChatContext,
     }
 }
 
-function followUpProvider(result: vscode.ChatResult, token: vscode.CancellationToken): vscode.ProviderResult<vscode.ChatFollowup[]> {
+function followUpProvider(result: vscode.ChatResult, _context: vscode.ChatContext, token: vscode.CancellationToken): vscode.ProviderResult<vscode.ChatFollowup[]> {
     const providers = [agentHiddenSlashCommandsOwner, agentBenchmarker, agentSlashCommandsOwner];
 
     let followUp: vscode.ChatFollowup[] | undefined;
@@ -138,8 +136,4 @@ function followUpProvider(result: vscode.ChatResult, token: vscode.CancellationT
         }
     }
     return followUp || [];
-}
-
-function getCommands(_token: vscode.CancellationToken): vscode.ProviderResult<vscode.ChatCommand[]> {
-    return agentSlashCommandsOwner.getSlashCommands().map(([name, config]) => ({ name: name, description: config.shortDescription }))
 }
