@@ -93,7 +93,6 @@
     "dependencies": {
         "@azure/identity": "^4.0.0",
         "@azure/openai": "^1.0.0-beta.8",
-        "@microsoft/vscode-azext-azureauth": "^2.3.0",
         "@microsoft/vscode-azext-azureutils": "^3.0.0",
         "@microsoft/vscode-azext-utils": "^2.3.0"
     },
