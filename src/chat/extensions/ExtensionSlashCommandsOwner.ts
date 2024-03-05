@@ -15,17 +15,15 @@ export class ExtensionSlashCommandsOwner implements IAgentRequestHandler {
     private _extension: AzureExtension;
     private _commandName: string;
     private _extensionDisplayName: string;
-    private _azureServiceName: string;
 
     /**
      * Lazily loaded.
      */
     private _extensionSlashCommandsOwner: SlashCommandsOwner | undefined;
 
-    constructor(extensionId: string, extensionDisplayName: string, azureServiceName: string, commandName: string) {
+    constructor(extensionId: string, extensionDisplayName: string, _azureServiceName: string, commandName: string) {
         this._extension = new AzureExtension(extensionId, extensionDisplayName);
         this._extensionDisplayName = extensionDisplayName;
-        this._azureServiceName = azureServiceName;
         this._commandName = commandName;
     }
 
