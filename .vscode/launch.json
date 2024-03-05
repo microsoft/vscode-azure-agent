@@ -27,7 +27,8 @@
             "request": "launch",
             "args": [
                 "--extensionDevelopmentPath=${workspaceFolder}",
-                "--extensionTestsPath=${workspaceFolder}/out/test/index"
+                "--extensionTestsPath=${workspaceFolder}/out/test/index",
+                "--enable-proposed-api"
             ],
             "env": {
                 "DEBUGTELEMETRY": "1"
