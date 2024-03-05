@@ -16,14 +16,17 @@ let perfStats = {
 
 Object.defineProperty(exports, "__esModule", { value: true });
 
-const extension = require('./out/src/extension');
+// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-var-requires, import/no-internal-modules
+const extension = require('./dist/extension.bundle');
 
 async function activate(ctx) {
-    return await extension.activateInternal(ctx, perfStats, true /* ignoreBundle */);
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
+    return await extension.activateInternal(ctx, perfStats);
 }
 
 async function deactivate(ctx) {
-    return await extension.deactivateInternal(ctx, perfStats);
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
+    return await extension.deactivateInternal(ctx);
 }
 
 // Export as entrypoints for vscode

@@ -1,11 +1,5 @@
 # Azure Agent for VS Code
 
-<!-- region exclude-from-marketplace -->
-
-[![Build Status](https://dev.azure.com/ms-azuretools/AzCode/_apis/build/status%2Fmicrosoft.vscode-azure-agent?branchName=main)](https://dev.azure.com/ms-azuretools/AzCode/_build/latest?definitionId=45&branchName=main)
-
-<!-- endregion exclude-from-marketplace -->
-
 The Azure Agent for VS Code is your assistant for helping you use the [Azure Extensions for VS Code](https://code.visualstudio.com/docs/azure/extensions), and learn about and write code for Azure. Talk to the Azure Agent by typing `@azure` in the GitHub Copilot Chat sash in VS Code.
 
 > Sign up today for your free Azure account and receive 12 months of free popular services, $200 free credit and 25+ always free services 👉 [Start Free](https://azure.microsoft.com/free/open-source).
@@ -30,8 +24,6 @@ The Azure Agent for VS Code is your assistant for helping you use the [Azure Ext
 - GitHub Copilot extension: v1.171.750 (pre-release)
 - GitHub Copilot Chat extension: v0.14.2024030401 (pre-release)
 
-<!-- region exclude-from-marketplace -->
-
 ## Contributing
 
 There are several ways you can contribute to our [repo](https://github.com/microsoft/vscode-azure-agent):
@@ -52,8 +44,6 @@ Before we can accept your pull request you will need to sign a **Contribution Li
 ## Code of Conduct
 
 This project has adopted the [Microsoft Open Source Code of Conduct](https://opensource.microsoft.com/codeofconduct/). For more information see the [Code of Conduct FAQ](https://opensource.microsoft.com/codeofconduct/faq/) or contact [opencode@microsoft.com](mailto:opencode@microsoft.com) with any additional questions or comments.
-
-<!-- endregion exclude-from-marketplace -->
 
 ## Telemetry
 

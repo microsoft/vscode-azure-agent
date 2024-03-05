@@ -7,23 +7,17 @@
             "es6"
         ],
         "sourceMap": true,
-        "rootDir": ".",
-        "noUnusedLocals": true,
+        "rootDir": "src",
+        "strict": true, /* enable all strict type-checking options */
+        "alwaysStrict": true,
+        "noUnusedLocals": false, // ESLint takes care of this for us
         "noImplicitThis": true,
         "noImplicitReturns": true,
         "strictNullChecks": true,
-        "noUnusedParameters": true,
-        "baseUrl": "./",
-        "paths": {
-            "*": [
-                "node_modules/@types/*",
-                "*"
-            ]
-        }
+        "noUnusedParameters": false, // ESLint takes care of this for us
     },
     "exclude": [
         "node_modules",
-        ".vscode-test",
-        "gulpfile.ts"
+        ".vscode-test"
     ]
 }

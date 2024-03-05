@@ -1,5 +1,7 @@
 {
     "recommendations": [
-        "ms-azuretools.vscode-azureresourcegroups"
+        "ms-azuretools.vscode-azureresourcegroups",
+        "dbaeumer.vscode-eslint",
+        "amodio.tsl-problem-matcher"
     ]
 }
