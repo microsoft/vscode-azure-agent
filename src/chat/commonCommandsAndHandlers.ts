@@ -97,7 +97,7 @@ export function getDefaultAzureExtensionCommandHandler(config: DefaultAzureExten
             request.responseStream.markdown(`In order to help you I'd need to use the ${config.associatedExtension.extensionDisplayName} extension. However it is not currently installed.`);
             request.responseStream.button({ title: `Install the ${config.associatedExtension.extensionDisplayName} Extension`, command: "workbench.extensions.search", arguments: [config.associatedExtension.extensionId] });
         } else {
-            request.responseStream.markdown(`Hi! It sounds like you are interested in ${config.associatedExtension.extensionDisplayName}, however, I can't quite help with what you're asking about. Try asking something else.`);
+            request.responseStream.markdown(`It sounds like you are interested in the ${config.associatedExtension.extensionDisplayName} extension, however, I can't quite help with what you're asking about. Try asking something else.`);
         }
         return { chatAgentResult: {}, followUp: followUps, };
     }
