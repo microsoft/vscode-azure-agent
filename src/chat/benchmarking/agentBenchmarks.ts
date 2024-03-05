@@ -4,6 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 import { agentHelpCommandName } from "../agentHelpSlashCommand";
+import { learnCommandName } from "../commonCommandsAndHandlers";
 import { defaultSlashCommandName } from "../slashCommands";
 import { type AgentBenchmarkWithStepsConfig } from "./NewBenchmarkTypes";
 
@@ -13,19 +14,19 @@ export const multiPromptBenchmarks: AgentBenchmarkWithStepsConfig[] = [
         steps: [
             {
                 prompt: "Show me how to upload to blob storage in Python?",
-                acceptableHandlerChains: [["storage", "learn"]]
+                acceptableHandlerChains: [[learnCommandName]]
             },
             {
                 prompt: "Actually, show me how with JavaScript please.",
-                acceptableHandlerChains: [["storage", "learn"]]
+                acceptableHandlerChains: [[learnCommandName]]
             },
             {
                 prompt: "Can you add some more comments to that?",
-                acceptableHandlerChains: [["storage", "learn"]]
+                acceptableHandlerChains: [[learnCommandName]]
             },
             {
                 prompt: "Great! Can you also help me learn about any concept that the code requires knowing aobut?",
-                acceptableHandlerChains: [["storage", "learn"]]
+                acceptableHandlerChains: [[learnCommandName]]
             }
         ]
     },
@@ -34,15 +35,15 @@ export const multiPromptBenchmarks: AgentBenchmarkWithStepsConfig[] = [
         steps: [
             {
                 prompt: "What is are the pros and cons of Azure functions?",
-                acceptableHandlerChains: [["functions", "learn"]]
+                acceptableHandlerChains: [[learnCommandName]]
             },
             {
                 prompt: "Tell me more!",
-                acceptableHandlerChains: [["functions", "learn"]]
+                acceptableHandlerChains: [[learnCommandName]]
             },
             {
                 prompt: "Hmmm ok. I think I'd rather get to know more about Azure app service before going any further.",
-                acceptableHandlerChains: [["appservice", "learn"]]
+                acceptableHandlerChains: [[learnCommandName]]
             },
         ]
     },
@@ -51,23 +52,23 @@ export const multiPromptBenchmarks: AgentBenchmarkWithStepsConfig[] = [
         steps: [
             {
                 prompt: "What is the max size of a block blob?",
-                acceptableHandlerChains: [["storage", "learn"]]
+                acceptableHandlerChains: [[learnCommandName]]
             },
             {
                 prompt: "What if my blobs are video files?",
-                acceptableHandlerChains: [["storage", "learn"]]
+                acceptableHandlerChains: [[learnCommandName]]
             },
             {
                 prompt: "How about if I use azure files instead?",
-                acceptableHandlerChains: [["storage", "learn"]]
+                acceptableHandlerChains: [[learnCommandName]]
             },
             {
                 prompt: "For now let's assume I use blobs then. How can I save cost on storing my large video blobs?",
-                acceptableHandlerChains: [["storage", "learn"]]
+                acceptableHandlerChains: [[learnCommandName]]
             },
             {
                 prompt: "Will they still be easily accessible even if I do that?",
-                acceptableHandlerChains: [["storage", "learn"]]
+                acceptableHandlerChains: [[learnCommandName]]
             },
         ]
     },

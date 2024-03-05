@@ -5,7 +5,7 @@
 
 import { type CancellationToken, type ChatFollowup, type ChatResult } from "vscode";
 import { type AgentRequest, type IAgentRequestHandler } from "../agent";
-import { getLearnCommand, getMightBeInterestedHandler } from "../commonCommandsAndHandlers";
+import { getDefaultAzureExtensionCommandHandler } from "../commonCommandsAndHandlers";
 import { SlashCommandsOwner, type SlashCommand, type SlashCommandHandlerResult, type SlashCommands } from "../slashCommands";
 import { AzureExtension } from "./AzureExtension";
 import { slashCommandFromSimpleCommand } from "./slashCommandFromSimpleCommand";
@@ -15,17 +15,15 @@ export class ExtensionSlashCommandsOwner implements IAgentRequestHandler {
     private _extension: AzureExtension;
     private _commandName: string;
     private _extensionDisplayName: string;
-    private _azureServiceName: string;
 
     /**
      * Lazily loaded.
      */
     private _extensionSlashCommandsOwner: SlashCommandsOwner | undefined;
 
-    constructor(extensionId: string, extensionDisplayName: string, azureServiceName: string, commandName: string) {
+    constructor(extensionId: string, extensionDisplayName: string, _azureServiceName: string, commandName: string) {
         this._extension = new AzureExtension(extensionId, extensionDisplayName);
         this._extensionDisplayName = extensionDisplayName;
-        this._azureServiceName = azureServiceName;
         this._commandName = commandName;
     }
 
@@ -43,9 +41,9 @@ export class ExtensionSlashCommandsOwner implements IAgentRequestHandler {
         return [
             this._commandName,
             {
-                shortDescription: `Work with ${this._azureServiceName} and/or the ${this._extensionDisplayName} extension for VS Code.`,
-                longDescription: `Use the command when you want to learn about or work with ${this._azureServiceName} and/or the ${this._extensionDisplayName} extension for VS Code.`,
-                intentDescription: `This is best when a user prompt could be related to ${this._azureServiceName} and/or the ${this._extensionDisplayName} extension for VS Code.`,
+                shortDescription: `Work with the ${this._extensionDisplayName} extension for VS Code.`,
+                longDescription: `Use the command when you want to learn about or work with the ${this._extensionDisplayName} extension for VS Code.`,
+                intentDescription: `This is best when a user prompt could be related to the ${this._extensionDisplayName} extension for VS Code.`,
                 handler: (...args) => this.handleRequestOrPrompt(...args),
             }
         ]
@@ -60,7 +58,9 @@ export class ExtensionSlashCommandsOwner implements IAgentRequestHandler {
             await this._extension.activate(request);
 
             const extensionSlashCommands: SlashCommands = new Map([
-                getLearnCommand({ topic: `${this._azureServiceName} and/or the ${this._extensionDisplayName} extension for VS Code`, associatedExtension: this._extension }),
+                // Having a /learn for each extension is currently off the table. We'll just have a /learn at the top level.
+                // Uncomment this in the future if we decide to have a /learn for each extension/service.
+                // getLearnCommand({ topic: `${this._azureServiceName} and/or the ${this._extensionDisplayName} extension for VS Code`, associatedExtension: this._extension }),
             ]);
 
             if (this._extension.isInstalled()) {
@@ -77,10 +77,11 @@ export class ExtensionSlashCommandsOwner implements IAgentRequestHandler {
                 }
             }
 
-            const mightBeInterestedHandler = getMightBeInterestedHandler({ topic: `${this._azureServiceName} and/or the ${this._extensionDisplayName} extension for VS Code`, associatedExtension: this._extension });
+            const mightBeInterestedHandler = getDefaultAzureExtensionCommandHandler({ associatedExtension: this._extension });
             this._extensionSlashCommandsOwner = new SlashCommandsOwner({ noInput: mightBeInterestedHandler, default: mightBeInterestedHandler });
             this._extensionSlashCommandsOwner.addInvokeableSlashCommands(extensionSlashCommands);
         }
         return this._extensionSlashCommandsOwner;
     }
 }
+

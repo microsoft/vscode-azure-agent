@@ -43,7 +43,16 @@
             {
                 "name": "azure",
                 "description": "Agent for working with all things Azure",
-                "commands": []
+                "commands": [
+                    {
+                        "name": "azureExtensions",
+                        "description": "Do things with the Azure Extensions for VS Code"
+                    },
+                    {
+                        "name": "learn",
+                        "description": "Learn about Azure"
+                    }
+                ]
             }
         ]
     },

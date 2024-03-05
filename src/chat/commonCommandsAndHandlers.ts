@@ -8,7 +8,7 @@ import * as vscode from "vscode";
 import { type AgentRequest } from "./agent";
 import { verbatimCopilotInteraction } from "./copilotInteractions";
 import { type AzureExtension } from "./extensions/AzureExtension";
-import { generateExtensionCommandFollowUps, generateNextQuestionsFollowUps, generateSampleQuestionsFollowUps } from "./followUpGenerator";
+import { generateExtensionCommandFollowUps, generateNextQuestionsFollowUps } from "./followUpGenerator";
 import { getMicrosoftLearnRagContent } from "./rag";
 import { type SlashCommand, type SlashCommandHandler, type SlashCommandHandlerResult } from "./slashCommands";
 import { summarizeHistoryThusFar } from "./summarizing";
@@ -16,15 +16,21 @@ import { summarizeHistoryThusFar } from "./summarizing";
 export type LearnCommandConfig = {
     topic: string;
     noInputSuggestions?: string[];
+    /**
+     * @deprecated
+     * @todo dynamically determine the associated extension based on the prompt/answer
+     */
     associatedExtension?: AzureExtension;
 }
 
+export const learnCommandName = "learn";
+
 export function getLearnCommand(config: LearnCommandConfig): SlashCommand {
-    return ["learn",
+    return [learnCommandName,
         {
             shortDescription: `Learn about how you can use ${config.topic}`,
             longDescription: `Learn more information about ${config.topic}`,
-            intentDescription: `This is best when users ask a question, don't understand something, want you to show them something, ask how to do something, or anything like that; about or related to ${config.topic}. This is not a good option if the user asks you to do an action, like creating something, starting something, deploying something, etc.`,
+            intentDescription: `This is best when users ask a question, don't understand something, want you to show them something, ask how to do something, or anything like that; about or related to ${config.topic}. This is not a good option if the user asks you to explicitly do an action, like creating something, starting something, deploying something, etc.`,
             handler: (request: AgentRequest) => learnHandler(config, request)
         }];
 }
@@ -80,24 +86,19 @@ function getLearnSystemPrompt(config: LearnCommandConfig, ragContent: string | u
     return initialSection + ragSection;
 }
 
-export type MightBeInterestedHandlerConfig = {
-    topic: string;
-    associatedExtension?: AzureExtension;
+export type DefaultAzureExtensionCommandConfig = {
+    associatedExtension: AzureExtension;
 };
 
-export function getMightBeInterestedHandler(config: MightBeInterestedHandlerConfig): SlashCommandHandler {
+export function getDefaultAzureExtensionCommandHandler(config: DefaultAzureExtensionCommandConfig): SlashCommandHandler {
     return async (request: AgentRequest) => {
-        return callWithTelemetryAndErrorHandling("mightBeInterested", async (actionContext) => {
-            const followUps: vscode.ChatFollowup[] = [];
-            if (config.associatedExtension !== undefined && !config.associatedExtension.isInstalled()) {
-                request.responseStream.markdown(`\n\nAlso consider installing the ${config.associatedExtension.extensionDisplayName} extension for VS Code.`);
-
-                request.responseStream.button({ title: `Install the ${config.associatedExtension.extensionDisplayName} Extension`, command: "workbench.extensions.search", arguments: [config.associatedExtension.extensionId] });
-            }
-            const ragContent = await getMicrosoftLearnRagContent(actionContext, `Getting started or learning about ${config.topic}`, request);
-            followUps.push(...await generateSampleQuestionsFollowUps(config.topic, ragContent?.content, request));
-            request.responseStream.markdown(`Hi! It sounds like you are interested in ${config.topic}, however, I can't quite help with what you're asking about. Try asking something else.`);
-            return { chatAgentResult: {}, followUp: followUps, };
-        });
+        const followUps: vscode.ChatFollowup[] = [];
+        if (!config.associatedExtension.isInstalled()) {
+            request.responseStream.markdown(`In order to help you I'd need to use the ${config.associatedExtension.extensionDisplayName} extension. However it is not currently installed.`);
+            request.responseStream.button({ title: `Install the ${config.associatedExtension.extensionDisplayName} Extension`, command: "workbench.extensions.search", arguments: [config.associatedExtension.extensionId] });
+        } else {
+            request.responseStream.markdown(`It sounds like you are interested in the ${config.associatedExtension.extensionDisplayName} extension, however, I can't quite help with what you're asking about. Try asking something else.`);
+        }
+        return { chatAgentResult: {}, followUp: followUps, };
     }
 }

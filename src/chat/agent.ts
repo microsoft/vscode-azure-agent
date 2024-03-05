@@ -9,10 +9,10 @@ import * as vscode from "vscode";
 import { ext } from '../extensionVariables';
 import { agentDescription, agentName, maxFollowUps } from "./agentConsts";
 import { agentHelpCommandName, getAgentHelpCommand } from "./agentHelpSlashCommand";
+import { AgentBenchmarker } from "./benchmarking/AgentBenchmarker";
 import { defaultBenchmarks, helpBenchmarks, multiPromptBenchmarks } from "./benchmarking/agentBenchmarks";
-import { AgentBenchmarker } from "./benchmarking/benchmarking";
 import { getLearnCommand } from "./commonCommandsAndHandlers";
-import { appServiceExtensionSlashCommandsOwner, containerAppsExtensionSlashCommandsOwner, databasesExtensionCosmosDbSlashCommandsOwner, databasesExtensionPostgreSQLSlashCommandsOwner, functionsExtensionSlashCommandsOwner, staticWebAppsExtensionSlashCommandsOwner, storageExtensionSlashCommandsOwner, virtualMachinesExtensionSlashCommandsOwner } from "./extensions/extensions";
+import { appServiceExtensionSlashCommandsOwner, azureExtensionsCommand, containerAppsExtensionSlashCommandsOwner, databasesExtensionCosmosDbSlashCommandsOwner, databasesExtensionPostgreSQLSlashCommandsOwner, functionsExtensionSlashCommandsOwner, staticWebAppsExtensionSlashCommandsOwner, storageExtensionSlashCommandsOwner, virtualMachinesExtensionSlashCommandsOwner } from "./extensions/azureExtensionsCommand";
 import { getRagStatusSlashCommand, toggleRagSlashCommand } from "./rag";
 import { SlashCommandsOwner, type SlashCommandHandlerResult } from "./slashCommands";
 
@@ -40,19 +40,15 @@ export interface IAgentRequestHandler {
     getFollowUpForLastHandledSlashCommand(result: vscode.ChatResult, token: vscode.CancellationToken): vscode.ChatFollowup[] | undefined;
 }
 
+const agentLearnCommand = getLearnCommand({ topic: "Azure" });
+
 /**
  * Owns slash commands that are knowingly exposed to the user.
  */
-const agentSlashCommandsOwner = new SlashCommandsOwner({ noInput: agentHelpCommandName, default: getLearnCommand({ topic: "Azure" })[1].handler, });
+const agentSlashCommandsOwner = new SlashCommandsOwner({ noInput: agentHelpCommandName, default: agentLearnCommand[0], });
 agentSlashCommandsOwner.addInvokeableSlashCommands(new Map([
-    appServiceExtensionSlashCommandsOwner.getTopLevelSlashCommand(),
-    containerAppsExtensionSlashCommandsOwner.getTopLevelSlashCommand(),
-    databasesExtensionCosmosDbSlashCommandsOwner.getTopLevelSlashCommand(),
-    databasesExtensionPostgreSQLSlashCommandsOwner.getTopLevelSlashCommand(),
-    functionsExtensionSlashCommandsOwner.getTopLevelSlashCommand(),
-    staticWebAppsExtensionSlashCommandsOwner.getTopLevelSlashCommand(),
-    storageExtensionSlashCommandsOwner.getTopLevelSlashCommand(),
-    virtualMachinesExtensionSlashCommandsOwner.getTopLevelSlashCommand(),
+    azureExtensionsCommand,
+    agentLearnCommand,
     getAgentHelpCommand(agentSlashCommandsOwner),
 ]));
 
