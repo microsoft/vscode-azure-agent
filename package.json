@@ -60,8 +60,8 @@
         "watch": "webpack --watch",
         "build": "webpack --mode production --devtool hidden-source-map",
         "ci-build": "npm test",
-        "package": "vsce package",
-        "ci-package": "npm test && vsce package",
+        "package": "node ./scripts/writeExtraPackageInfo && vsce package",
+        "ci-package": "npm test && node ./scripts/writeExtraPackageInfo && vsce package",
         "lint": "eslint --max-warnings 0 src --ext ts",
         "test": "node ./out/test/runTest.js",
         "pretest": "tsc -p ./",
@@ -95,7 +95,5 @@
         "@azure/openai": "^1.0.0-beta.8",
         "@microsoft/vscode-azext-azureutils": "^3.0.0",
         "@microsoft/vscode-azext-utils": "^2.3.0"
-    },
-    "openAiConfigEndpoint": "https://aka.ms/vscode-azure-agent/open-ai-config",
-    "extensionIdentityConfigEndpoint": "https://aka.ms/vscode-azure-agent/extension-identity-config"
+    }
 }
