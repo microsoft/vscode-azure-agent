@@ -1,5 +1,5 @@
 import * as vscode from "vscode";
-import { Result, success } from "../result";
+import { Result, error, success } from "../result";
 
 export type CopilotInteractionResult = { copilotResponded: true, copilotResponse: string } | { copilotResponded: false, copilotResponse: undefined };
 
@@ -21,8 +21,8 @@ export const typechatLanguageModel = {
                 responseText += fragment;
             }
             return success(responseText);
-        } catch (error) {
-            console.log("Failed to complete prompt", error);
+        } catch (errorThrown: unknown) {
+            console.log("Failed to complete prompt", errorThrown);
             return error("Failed to complete prompt.");
         }
     }
