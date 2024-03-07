@@ -41,6 +41,27 @@ export class AzureExtension {
         }
     }
 
+    typechatSchema: { content: string, export: string } | undefined;
+    public async getTypechatSchema(): Promise<{ content: string, export: string } | undefined> {
+        if (!this._extensionAgentMetadata) {
+            return undefined;
+        } else if ((this._extensionAgentMetadata as any).getTypechatSchemaCommandId !== undefined) {
+            try {
+                if (this.typechatSchema === undefined) {
+                    const schema = await vscode.commands.executeCommand<{ schemaText: string, mainExport: string }>((this._extensionAgentMetadata as any).getTypechatSchemaCommandId);
+                    this.typechatSchema = { content: schema.schemaText, export: schema.mainExport };
+                }
+                return this.typechatSchema;
+            } catch (error) {
+                this._cachedCommandConfigs = [];
+                console.log(`Error getting typechat schema from ${this.extensionDisplayName} extension: ${JSON.stringify(error)}`);
+                return undefined;
+            }
+        } else {
+            return undefined;
+        }
+    }
+
     public async getWizardCommands(): Promise<WizardCommandConfig[]> {
         try {
             return (await this._getCommandConfigs())

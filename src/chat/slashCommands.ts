@@ -8,6 +8,7 @@ import type * as vscode from "vscode";
 import { type AgentRequest, type IAgentRequestHandler } from "./agent";
 import { type WizardContinuation } from "./extensions/slashCommandFromWizardCommand";
 import { detectIntent } from "./intentDetection";
+import { detectIntent as detectIntentTypechat } from "./typechat/agent/intentDetection";
 
 /**
  * A camel cased string that names the slash command. Will be used as the string that the user types to invoke the command.
@@ -90,6 +91,11 @@ export type SlashCommmandOwnerOptions = {
      * the user provides input without a slash command specified.
      */
     disableIntentDetection?: boolean;
+
+    /**
+     * Optional. Schema to use for typechat to detect user intent.
+     */
+    schema?: { content: string, export: string };
 };
 
 export const defaultSlashCommandName = "default";
@@ -101,6 +107,7 @@ export class SlashCommandsOwner implements IAgentRequestHandler {
     private _invokeableSlashCommands: SlashCommands;
     private _fallbackHandlers: FallbackSlashCommandHandlers;
     private _disableIntentDetection: boolean;
+    private _schema: { content: string, export: string } | undefined;
 
     private _previousSlashCommandHandlerResult: SlashCommandHandlerResult;
 
@@ -108,6 +115,7 @@ export class SlashCommandsOwner implements IAgentRequestHandler {
         this._invokeableSlashCommands = new Map();
         this._fallbackHandlers = fallbackHandlers;
         this._disableIntentDetection = options?.disableIntentDetection || false;
+        this._schema = options?.schema;
     }
 
     public addInvokeableSlashCommands(slashCommands: SlashCommands): void {
@@ -184,17 +192,31 @@ export class SlashCommandsOwner implements IAgentRequestHandler {
 
             // If intent detection is not disabled and there is a prompt from which intent can be detected, then use intent detection to find a command.
             if (!result && prompt !== "" && this._disableIntentDetection !== true) {
-                const intentDetectionTargets = Array.from(this._invokeableSlashCommands.entries())
-                    .map(([name, config]) => ({ name: name, intentDetectionDescription: config.intentDescription || config.shortDescription }));
-                const detectedTarget = await detectIntent(intentDetectionTargets, request);
-                if (detectedTarget !== undefined) {
-                    const command = detectedTarget.name;
-                    const slashCommand = this._invokeableSlashCommands.get(command);
-                    if (slashCommand !== undefined) {
-                        result = {
-                            refinedRequest: { ...request, command: command, userPrompt: prompt, },
-                            handler: slashCommand.handler
-                        };
+                if (!this._schema) {
+                    const intentDetectionTargets = Array.from(this._invokeableSlashCommands.entries())
+                        .map(([name, config]) => ({ name: name, intentDetectionDescription: config.intentDescription || config.shortDescription }));
+                    const detectedTarget = await detectIntent(intentDetectionTargets, request);
+                    if (detectedTarget !== undefined) {
+                        const command = detectedTarget.name;
+                        const slashCommand = this._invokeableSlashCommands.get(command);
+                        if (slashCommand !== undefined) {
+                            result = {
+                                refinedRequest: { ...request, command: command, userPrompt: prompt, },
+                                handler: slashCommand.handler
+                            };
+                        }
+                    }
+                } else {
+                    const intent = await detectIntentTypechat(request.userPrompt, this._schema);
+                    if (intent !== undefined) {
+                        const actionType = intent.action.actionType;
+                        const slashCommand = this._invokeableSlashCommands.get(actionType);
+                        if (slashCommand !== undefined) {
+                            result = {
+                                refinedRequest: { ...request, command: actionType, userPrompt: prompt, },
+                                handler: slashCommand.handler
+                            };
+                        }
                     }
                 }
             }
