@@ -8,7 +8,7 @@ import { learnCommandName } from "../commonCommandsAndHandlers";
 import { defaultSlashCommandName } from "../slashCommands";
 import { type AgentBenchmarkWithStepsConfig } from "./NewBenchmarkTypes";
 
-function generateBenchMarkWithNumberLabel(config: AgentBenchmarkWithStepsConfig, numericalLabel: number) {
+function getNumbericallyLabeledBenchmarkConfig(config: AgentBenchmarkWithStepsConfig, numericalLabel: number) {
     return {
         ...config,
         name: `${config.name} ${numericalLabel}`
@@ -80,7 +80,7 @@ export const multiPromptBenchmarks: AgentBenchmarkWithStepsConfig[] = ([
             },
         ]
     },
-]).map((config, index) => generateBenchMarkWithNumberLabel(config, index + 1));
+]).map((config, index) => getNumbericallyLabeledBenchmarkConfig(config, index + 1));
 
 const helpBenchmarkName = "Agent Help Benchmark";
 export const helpBenchmarks: AgentBenchmarkWithStepsConfig[] = ([
@@ -290,7 +290,7 @@ export const helpBenchmarks: AgentBenchmarkWithStepsConfig[] = ([
             }
         ]
     },
-]).map((config, index) => generateBenchMarkWithNumberLabel(config, index + 1));
+]).map((config, index) => getNumbericallyLabeledBenchmarkConfig(config, index + 1));
 
 const defaultBenchmarkName = "Default Benchmark";
 export const defaultBenchmarks: AgentBenchmarkWithStepsConfig[] = ([
@@ -465,4 +465,4 @@ export const defaultBenchmarks: AgentBenchmarkWithStepsConfig[] = ([
             }
         ]
     },
-]).map((config, index) => generateBenchMarkWithNumberLabel(config, index + 1));
+]).map((config, index) => getNumbericallyLabeledBenchmarkConfig(config, index + 1));
