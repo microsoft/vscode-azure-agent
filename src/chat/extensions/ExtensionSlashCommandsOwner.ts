@@ -77,8 +77,10 @@ export class ExtensionSlashCommandsOwner implements IAgentRequestHandler {
                 }
             }
 
+            const schema = await this._extension.getTypechatSchema();
+
             const mightBeInterestedHandler = getDefaultAzureExtensionCommandHandler({ associatedExtension: this._extension });
-            this._extensionSlashCommandsOwner = new SlashCommandsOwner({ noInput: mightBeInterestedHandler, default: mightBeInterestedHandler });
+            this._extensionSlashCommandsOwner = new SlashCommandsOwner({ noInput: mightBeInterestedHandler, default: mightBeInterestedHandler }, { schema });
             this._extensionSlashCommandsOwner.addInvokeableSlashCommands(extensionSlashCommands);
         }
         return this._extensionSlashCommandsOwner;

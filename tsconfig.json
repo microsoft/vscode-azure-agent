@@ -2,10 +2,12 @@
     "compilerOptions": {
         "module": "commonjs",
         "target": "es6",
+        "esModuleInterop": true,
         "outDir": "out",
         "lib": [
             "es6"
         ],
+        "skipLibCheck": true,
         "sourceMap": true,
         "rootDir": "src",
         "strict": true, /* enable all strict type-checking options */
