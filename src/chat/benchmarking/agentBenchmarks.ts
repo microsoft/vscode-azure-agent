@@ -8,9 +8,17 @@ import { learnCommandName } from "../commonCommandsAndHandlers";
 import { defaultSlashCommandName } from "../slashCommands";
 import { type AgentBenchmarkWithStepsConfig } from "./NewBenchmarkTypes";
 
-export const multiPromptBenchmarks: AgentBenchmarkWithStepsConfig[] = [
+function generateBenchMarkWithNumberLabel(config: AgentBenchmarkWithStepsConfig, numericalLabel: number) {
+    return {
+        ...config,
+        name: `${config.name} ${numericalLabel}`
+    }
+}
+
+const multiPromptBenchmarkName = "Multi Prompt Benchmark";
+export const multiPromptBenchmarks: AgentBenchmarkWithStepsConfig[] = ([
     {
-        name: "Multi Prompt Benchmark 1",
+        name: multiPromptBenchmarkName,
         steps: [
             {
                 prompt: "Show me how to upload to blob storage in Python?",
@@ -31,7 +39,7 @@ export const multiPromptBenchmarks: AgentBenchmarkWithStepsConfig[] = [
         ]
     },
     {
-        name: "Multi Prompt Benchmark 2",
+        name: multiPromptBenchmarkName,
         steps: [
             {
                 prompt: "What is are the pros and cons of Azure functions?",
@@ -48,7 +56,7 @@ export const multiPromptBenchmarks: AgentBenchmarkWithStepsConfig[] = [
         ]
     },
     {
-        name: "Multi Prompt Benchmark 2",
+        name: multiPromptBenchmarkName,
         steps: [
             {
                 prompt: "What is the max size of a block blob?",
@@ -72,11 +80,12 @@ export const multiPromptBenchmarks: AgentBenchmarkWithStepsConfig[] = [
             },
         ]
     },
-];
+]).map((config, index) => generateBenchMarkWithNumberLabel(config, index + 1));
 
-export const helpBenchmarks: AgentBenchmarkWithStepsConfig[] = [
+const helpBenchmarkName = "Agent Help Benchmark";
+export const helpBenchmarks: AgentBenchmarkWithStepsConfig[] = ([
     {
-        name: "Agent Help Benchmark 1",
+        name: helpBenchmarkName,
         steps: [
             {
                 prompt: "How do I use you?",
@@ -85,7 +94,7 @@ export const helpBenchmarks: AgentBenchmarkWithStepsConfig[] = [
         ]
     },
     {
-        name: "Agent Help Benchmark 2",
+        name: helpBenchmarkName,
         steps: [
             {
                 prompt: "What can you do?",
@@ -94,7 +103,7 @@ export const helpBenchmarks: AgentBenchmarkWithStepsConfig[] = [
         ]
     },
     {
-        name: "Agent Help Benchmark 3",
+        name: helpBenchmarkName,
         steps: [
             {
                 prompt: "How does this bot help me?",
@@ -103,7 +112,7 @@ export const helpBenchmarks: AgentBenchmarkWithStepsConfig[] = [
         ]
     },
     {
-        name: "Agent Help Benchmark 4",
+        name: helpBenchmarkName,
         steps: [
             {
                 prompt: "Can this thing do anything useful?",
@@ -112,7 +121,7 @@ export const helpBenchmarks: AgentBenchmarkWithStepsConfig[] = [
         ]
     },
     {
-        name: "Agent Help Benchmark 5",
+        name: helpBenchmarkName,
         steps: [
             {
                 prompt: "What is your purpose?",
@@ -121,7 +130,7 @@ export const helpBenchmarks: AgentBenchmarkWithStepsConfig[] = [
         ]
     },
     {
-        name: "Agent Help Benchmark 6",
+        name: helpBenchmarkName,
         steps: [
             {
                 prompt: "I don't know if you can help me...",
@@ -130,7 +139,7 @@ export const helpBenchmarks: AgentBenchmarkWithStepsConfig[] = [
         ]
     },
     {
-        name: "Agent Help Benchmark 7",
+        name: helpBenchmarkName,
         steps: [
             {
                 prompt: "Are you a chatbot?",
@@ -139,7 +148,7 @@ export const helpBenchmarks: AgentBenchmarkWithStepsConfig[] = [
         ]
     },
     {
-        name: "Agent Help Benchmark 8",
+        name: helpBenchmarkName,
         steps: [
             {
                 prompt: "I'd like you to tell me about yourself",
@@ -148,7 +157,7 @@ export const helpBenchmarks: AgentBenchmarkWithStepsConfig[] = [
         ]
     },
     {
-        name: "Agent Help Benchmark 9",
+        name: helpBenchmarkName,
         steps: [
             {
                 prompt: "Sell me on your usefulness",
@@ -157,7 +166,7 @@ export const helpBenchmarks: AgentBenchmarkWithStepsConfig[] = [
         ]
     },
     {
-        name: "Agent Help Benchmark 10",
+        name: helpBenchmarkName,
         steps: [
             {
                 prompt: "Name everything you can help me with",
@@ -166,7 +175,7 @@ export const helpBenchmarks: AgentBenchmarkWithStepsConfig[] = [
         ]
     },
     {
-        name: "Agent Help Benchmark 11",
+        name: helpBenchmarkName,
         steps: [
             {
                 prompt: "I want to know all about the azure agent",
@@ -175,7 +184,7 @@ export const helpBenchmarks: AgentBenchmarkWithStepsConfig[] = [
         ]
     },
     {
-        name: "Agent Help Benchmark 12",
+        name: helpBenchmarkName,
         steps: [
             {
                 prompt: "Tell me more about this agent",
@@ -184,7 +193,7 @@ export const helpBenchmarks: AgentBenchmarkWithStepsConfig[] = [
         ]
     },
     {
-        name: "Agent Help Benchmark 13",
+        name: helpBenchmarkName,
         steps: [
             {
                 prompt: "Give a list of things this bot is capable of",
@@ -192,7 +201,7 @@ export const helpBenchmarks: AgentBenchmarkWithStepsConfig[] = [
             }
         ]
     }, {
-        name: "Agent Help Benchmark 14",
+        name: helpBenchmarkName,
         steps: [
             {
                 prompt: "Are you who I should talk to about azure?",
@@ -201,7 +210,7 @@ export const helpBenchmarks: AgentBenchmarkWithStepsConfig[] = [
         ]
     },
     {
-        name: "Agent Help Benchmark 15",
+        name: helpBenchmarkName,
         steps: [
             {
                 prompt: "You have one chance to convince me you are worth talking to.",
@@ -210,7 +219,7 @@ export const helpBenchmarks: AgentBenchmarkWithStepsConfig[] = [
         ]
     },
     {
-        name: "Agent Help Benchmark 16",
+        name: helpBenchmarkName,
         steps: [
             {
                 prompt: "Talk to me please",
@@ -219,7 +228,7 @@ export const helpBenchmarks: AgentBenchmarkWithStepsConfig[] = [
         ]
     },
     {
-        name: "Agent Help Benchmark 17",
+        name: helpBenchmarkName,
         steps: [
             {
                 prompt: "I want you to tell me everything you can do for me",
@@ -228,7 +237,7 @@ export const helpBenchmarks: AgentBenchmarkWithStepsConfig[] = [
         ]
     },
     {
-        name: "Agent Help Benchmark 18",
+        name: helpBenchmarkName,
         steps: [
             {
                 prompt: "Give me a solid list of things that you're capable of",
@@ -237,7 +246,7 @@ export const helpBenchmarks: AgentBenchmarkWithStepsConfig[] = [
         ]
     },
     {
-        name: "Agent Help Benchmark 19",
+        name: helpBenchmarkName,
         steps: [
             {
                 prompt: "Are you yet another useless tool?",
@@ -246,7 +255,7 @@ export const helpBenchmarks: AgentBenchmarkWithStepsConfig[] = [
         ]
     },
     {
-        name: "Agent Help Benchmark 20",
+        name: helpBenchmarkName,
         steps: [
             {
                 prompt: "explain yourself",
@@ -255,7 +264,7 @@ export const helpBenchmarks: AgentBenchmarkWithStepsConfig[] = [
         ]
     },
     {
-        name: "Agent Help Benchmark 21",
+        name: helpBenchmarkName,
         steps: [
             {
                 prompt: "man page",
@@ -264,7 +273,7 @@ export const helpBenchmarks: AgentBenchmarkWithStepsConfig[] = [
         ]
     },
     {
-        name: "Agent Help Benchmark 22",
+        name: helpBenchmarkName,
         steps: [
             {
                 prompt: "Give me a tldr on this thing",
@@ -273,7 +282,7 @@ export const helpBenchmarks: AgentBenchmarkWithStepsConfig[] = [
         ]
     },
     {
-        name: "Agent Help Benchmark 23",
+        name: helpBenchmarkName,
         steps: [
             {
                 prompt: "halp",
@@ -281,11 +290,12 @@ export const helpBenchmarks: AgentBenchmarkWithStepsConfig[] = [
             }
         ]
     },
-];
+]).map((config, index) => generateBenchMarkWithNumberLabel(config, index + 1));
 
-export const defaultBenchmarks: AgentBenchmarkWithStepsConfig[] = [
+const defaultBenchmarkName = "Default Benchmark";
+export const defaultBenchmarks: AgentBenchmarkWithStepsConfig[] = ([
     {
-        name: "Default Benchmark 1",
+        name: defaultBenchmarkName,
         steps: [
             {
                 prompt: "Teach me about Microsoft Genomics",
@@ -294,7 +304,7 @@ export const defaultBenchmarks: AgentBenchmarkWithStepsConfig[] = [
         ]
     },
     {
-        name: "Default Benchmark 2",
+        name: defaultBenchmarkName,
         steps: [
             {
                 prompt: "I need to lookup my last billing statement",
@@ -303,7 +313,7 @@ export const defaultBenchmarks: AgentBenchmarkWithStepsConfig[] = [
         ]
     },
     {
-        name: "Default Benchmark 3",
+        name: defaultBenchmarkName,
         steps: [
             {
                 prompt: "How do I create an Power BI Embedded project?",
@@ -312,7 +322,7 @@ export const defaultBenchmarks: AgentBenchmarkWithStepsConfig[] = [
         ]
     },
     {
-        name: "Default Benchmark 4",
+        name: defaultBenchmarkName,
         steps: [
             {
                 prompt: "What Azure services are currently in preview?",
@@ -321,7 +331,7 @@ export const defaultBenchmarks: AgentBenchmarkWithStepsConfig[] = [
         ]
     },
     {
-        name: "Default Benchmark 5",
+        name: defaultBenchmarkName,
         steps: [
             {
                 prompt: "Teach me about logic apps",
@@ -330,7 +340,7 @@ export const defaultBenchmarks: AgentBenchmarkWithStepsConfig[] = [
         ]
     },
     {
-        name: "Default Benchmark 6",
+        name: defaultBenchmarkName,
         steps: [
             {
                 prompt: "When was Azure created?",
@@ -339,7 +349,7 @@ export const defaultBenchmarks: AgentBenchmarkWithStepsConfig[] = [
         ]
     },
     {
-        name: "Default Benchmark 7",
+        name: defaultBenchmarkName,
         steps: [
             {
                 prompt: "How many services does Azure support?",
@@ -348,7 +358,7 @@ export const defaultBenchmarks: AgentBenchmarkWithStepsConfig[] = [
         ]
     },
     {
-        name: "Default Benchmark 4",
+        name: defaultBenchmarkName,
         steps: [
             {
                 prompt: "How many languages does Azure speech services support?",
@@ -357,7 +367,7 @@ export const defaultBenchmarks: AgentBenchmarkWithStepsConfig[] = [
         ]
     },
     {
-        name: "Default Benchmark 8",
+        name: defaultBenchmarkName,
         steps: [
             {
                 prompt: "What types of notifications can notification hubs send?",
@@ -366,7 +376,7 @@ export const defaultBenchmarks: AgentBenchmarkWithStepsConfig[] = [
         ]
     },
     {
-        name: "Default Benchmark 9",
+        name: defaultBenchmarkName,
         steps: [
             {
                 prompt: "What other companies does Azure Orbital Ground Station partner with?",
@@ -375,7 +385,7 @@ export const defaultBenchmarks: AgentBenchmarkWithStepsConfig[] = [
         ]
     },
     {
-        name: "Default Benchmark 10",
+        name: defaultBenchmarkName,
         steps: [
             {
                 prompt: "Tell me about some interesting Azure services",
@@ -384,7 +394,7 @@ export const defaultBenchmarks: AgentBenchmarkWithStepsConfig[] = [
         ]
     },
     {
-        name: "Default Benchmark 11",
+        name: defaultBenchmarkName,
         steps: [
             {
                 prompt: "I'm new to cloud computing, give me a rundown on all things Azure",
@@ -393,7 +403,7 @@ export const defaultBenchmarks: AgentBenchmarkWithStepsConfig[] = [
         ]
     },
     {
-        name: "Default Benchmark 12",
+        name: defaultBenchmarkName,
         steps: [
             {
                 prompt: "Tell me a fun fact about Azure",
@@ -402,7 +412,7 @@ export const defaultBenchmarks: AgentBenchmarkWithStepsConfig[] = [
         ]
     },
     {
-        name: "Default Benchmark 13",
+        name: defaultBenchmarkName,
         steps: [
             {
                 prompt: "Give me the equivalent Azure service for the most popular AWS services",
@@ -411,7 +421,7 @@ export const defaultBenchmarks: AgentBenchmarkWithStepsConfig[] = [
         ]
     },
     {
-        name: "Default Benchmark 14",
+        name: defaultBenchmarkName,
         steps: [
             {
                 prompt: "Tell me about the advantages of using Azure over AWS or GCP",
@@ -420,7 +430,7 @@ export const defaultBenchmarks: AgentBenchmarkWithStepsConfig[] = [
         ]
     },
     {
-        name: "Default Benchmark 15",
+        name: defaultBenchmarkName,
         steps: [
             {
                 prompt: "Can I use Azure to create a bot like you?",
@@ -429,7 +439,7 @@ export const defaultBenchmarks: AgentBenchmarkWithStepsConfig[] = [
         ]
     },
     {
-        name: "Default Benchmark 16",
+        name: defaultBenchmarkName,
         steps: [
             {
                 prompt: "Do I have to use VS Code to work with Azure resources?",
@@ -438,7 +448,7 @@ export const defaultBenchmarks: AgentBenchmarkWithStepsConfig[] = [
         ]
     },
     {
-        name: "Default Benchmark 17",
+        name: defaultBenchmarkName,
         steps: [
             {
                 prompt: "I'd rather you help me with AWS instead of Azure",
@@ -447,7 +457,7 @@ export const defaultBenchmarks: AgentBenchmarkWithStepsConfig[] = [
         ]
     },
     {
-        name: "Default Benchmark 18",
+        name: defaultBenchmarkName,
         steps: [
             {
                 prompt: "Explain Azure in the style of a cooking show",
@@ -455,4 +465,4 @@ export const defaultBenchmarks: AgentBenchmarkWithStepsConfig[] = [
             }
         ]
     },
-];
+]).map((config, index) => generateBenchMarkWithNumberLabel(config, index + 1));
