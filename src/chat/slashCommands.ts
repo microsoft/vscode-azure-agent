@@ -9,6 +9,7 @@ import { type AgentRequest, type IAgentRequestHandler } from "./agent";
 import { type WizardContinuation } from "./extensions/slashCommandFromWizardCommand";
 import { detectIntent } from "./intentDetection";
 import { detectIntent as detectIntentTypechat } from "./typechat/agent/intentDetection";
+import { ActionSchema } from "./typechat/commonSchema";
 
 /**
  * A camel cased string that names the slash command. Will be used as the string that the user types to invoke the command.
@@ -207,9 +208,9 @@ export class SlashCommandsOwner implements IAgentRequestHandler {
                         }
                     }
                 } else {
-                    const intent = await detectIntentTypechat(request.userPrompt, this._schema);
+                    const intent: ActionSchema<string, string, any> = await detectIntentTypechat(request.userPrompt, this._schema);
                     if (intent !== undefined) {
-                        const actionType = intent.action.actionType;
+                        const actionType = intent.actionType;
                         const slashCommand = this._invokeableSlashCommands.get(actionType);
                         if (slashCommand !== undefined) {
                             result = {
