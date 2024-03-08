@@ -9,6 +9,7 @@ import * as vscode from "vscode";
 import { type AzureUserInputQueue, type ExtensionAgentMetadata, type IAzureAgentInput, type SimpleCommandConfig, type WizardCommandConfig } from "@microsoft/vscode-azext-utils";
 import { type AgentRequest } from "../agent";
 import { type AgentBenchmarkConfig, type AgentBenchmarkWithStepsConfig } from "../benchmarking/NewBenchmarkTypes";
+import { generateSchemaText } from "../typechat/schemaHelper";
 
 export class AzureExtension {
     public readonly extensionId: string;
@@ -45,11 +46,16 @@ export class AzureExtension {
     public async getTypechatSchema(): Promise<{ content: string, export: string } | undefined> {
         if (!this._extensionAgentMetadata) {
             return undefined;
-        } else if ((this._extensionAgentMetadata as any).getTypechatSchemaCommandId !== undefined) {
+        } else if ((this._extensionAgentMetadata as any).version === "2.0") {
             try {
                 if (this.typechatSchema === undefined) {
-                    const schema = await vscode.commands.executeCommand<{ schemaText: string, mainExport: string }>((this._extensionAgentMetadata as any).getTypechatSchemaCommandId);
-                    this.typechatSchema = { content: schema.schemaText, export: schema.mainExport };
+                    const commandConfigs = await this._getCommandConfigs();
+                    const schema = generateSchemaText(commandConfigs);
+                    console.log(`generateSchema for ${this._extension?.id}`, schema);
+                    this.typechatSchema = {
+                        content: schema,
+                        export: "Action"
+                    }
                 }
                 return this.typechatSchema;
             } catch (error) {
