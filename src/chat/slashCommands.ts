@@ -202,7 +202,11 @@ export class SlashCommandsOwner implements IAgentRequestHandler {
             // If after all of that, there is still no result, then use the default fallback handler (or no handler if there is no default fallback handler).
             if (!result) {
                 result = {
-                    refinedRequest: { ...request, command: defaultSlashCommandName, userPrompt: prompt, },
+                    refinedRequest: {
+                        ...request,
+                        command: typeof this._fallbackHandlers.default === "string" ? this._fallbackHandlers.default : defaultSlashCommandName,
+                        userPrompt: prompt,
+                    },
                     handler: typeof this._fallbackHandlers.default === "string" ?
                         this._invokeableSlashCommands.get(this._fallbackHandlers.default)?.handler :
                         this._fallbackHandlers.default
