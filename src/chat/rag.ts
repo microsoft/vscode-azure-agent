@@ -44,7 +44,7 @@ type PackageJsonWithRagConnectionInfo = {
     extensionIdentityConfigEndpoint?: string;
 };
 
-export type MicrosoftLearnKnowledgeServiceQueryResponse = {
+type MicrosoftLearnKnowledgeServiceQueryResponse = {
     count: number;
     items: MicrosoftLearnKnowledgeServiceDocument[];
 };
