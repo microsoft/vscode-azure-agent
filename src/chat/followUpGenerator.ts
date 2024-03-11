@@ -8,7 +8,7 @@ import { type BaseCommandConfig } from "../../api";
 import { type AgentRequest } from "./agent";
 import { getResponseAsStringCopilotInteraction, getStringFieldFromCopilotResponseMaybeWithStrJson } from "./copilotInteractions";
 import { type AzureExtension } from "./extensions/AzureExtension";
-import { detectIntent } from "./intentDetection";
+import { detectIntentNaturalLanguage } from "./intentDetection";
 
 export async function generateExtensionCommandFollowUpsOther(copilotContent: string, apiProvider: AzureExtension, request: AgentRequest): Promise<vscode.ChatFollowup[]> {
     const copilotContentAgentRequest: AgentRequest = { ...request, userPrompt: copilotContent, }
@@ -19,7 +19,7 @@ export async function generateExtensionCommandFollowUpsOther(copilotContent: str
     const intentDetectionTargets = availableCommands
         .map((command) => ({ name: command.name, intentDetectionDescription: command.intentDescription || command.displayName }));
 
-    const detectedIntentionTarget = await detectIntent(intentDetectionTargets, copilotContentAgentRequest);
+    const detectedIntentionTarget = await detectIntentNaturalLanguage(intentDetectionTargets, copilotContentAgentRequest);
     const detectedCommand = availableCommands.find((command) => command.name === detectedIntentionTarget?.name);
     if (detectedCommand !== undefined) {
         return [{ prompt: `${detectedCommand.displayName}` }]

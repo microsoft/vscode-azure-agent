@@ -12,7 +12,7 @@ export type IntentDetectionTarget = {
     intentDetectionDescription: string,
 }
 
-export async function detectIntent(targets: IntentDetectionTarget[], request: AgentRequest): Promise<IntentDetectionTarget | undefined> {
+export async function detectIntentNaturalLanguage(targets: IntentDetectionTarget[], request: AgentRequest): Promise<IntentDetectionTarget | undefined> {
     const systemPrompt = getDetectIntentSystemPrompt1(targets.concat([{ name: "none", intentDetectionDescription: "None of the options are the best option or are applicable." }]));
     const statementForIntentDetection = await summarizeHistoryThusFar(request);
     const maybeJsonCopilotResponse = await getResponseAsStringCopilotInteraction(systemPrompt, { ...request, userPrompt: statementForIntentDetection });

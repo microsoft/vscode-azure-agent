@@ -7,7 +7,7 @@ import * as crypto from "crypto";
 import type * as vscode from "vscode";
 import { type AgentRequest, type IAgentRequestHandler } from "./agent";
 import { type WizardContinuation } from "./extensions/slashCommandFromWizardCommand";
-import { detectIntent } from "./intentDetection";
+import { detectIntentNaturalLanguage } from "./intentDetection";
 
 /**
  * A camel cased string that names the slash command. Will be used as the string that the user types to invoke the command.
@@ -186,7 +186,7 @@ export class SlashCommandsOwner implements IAgentRequestHandler {
             if (!result && prompt !== "" && this._disableIntentDetection !== true) {
                 const intentDetectionTargets = Array.from(this._invokeableSlashCommands.entries())
                     .map(([name, config]) => ({ name: name, intentDetectionDescription: config.intentDescription || config.shortDescription }));
-                const detectedTarget = await detectIntent(intentDetectionTargets, request);
+                const detectedTarget = await detectIntentNaturalLanguage(intentDetectionTargets, request);
                 if (detectedTarget !== undefined) {
                     const command = detectedTarget.name;
                     const slashCommand = this._invokeableSlashCommands.get(command);
