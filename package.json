@@ -51,6 +51,14 @@
                     {
                         "name": "learn",
                         "description": "Learn about Azure"
+                    },
+                    {
+                        "name": "argQuery",
+                        "description": ""
+                    },
+                    {
+                        "name": "help",
+                        "description": ""
                     }
                 ]
             }
@@ -91,8 +99,10 @@
         "webpack-cli": "^4.6.0"
     },
     "dependencies": {
+        "@azure/arm-resourcegraph": "^4.2.1",
         "@azure/identity": "^4.0.0",
         "@azure/openai": "^1.0.0-beta.8",
+        "@microsoft/vscode-azext-azureauth": "^2.3.0",
         "@microsoft/vscode-azext-azureutils": "^3.0.0",
         "@microsoft/vscode-azext-utils": "^2.3.0"
     }

@@ -9,6 +9,7 @@ import * as vscode from "vscode";
 import { ext } from '../extensionVariables';
 import { agentDescription, agentName, maxFollowUps } from "./agentConsts";
 import { agentHelpCommandName, getAgentHelpCommand } from "./agentHelpSlashCommand";
+import { argQueryCommand } from "./argQuery/argQuerySlashCommand";
 import { AgentBenchmarker } from "./benchmarking/AgentBenchmarker";
 import { defaultBenchmarks, helpBenchmarks, multiPromptBenchmarks } from "./benchmarking/agentBenchmarks";
 import { getLearnCommand } from "./commonCommandsAndHandlers";
@@ -49,6 +50,7 @@ const agentSlashCommandsOwner = new SlashCommandsOwner({ noInput: agentHelpComma
 agentSlashCommandsOwner.addInvokeableSlashCommands(new Map([
     azureExtensionsCommand,
     agentLearnCommand,
+    argQueryCommand,
     getAgentHelpCommand(agentSlashCommandsOwner),
 ]));
 
