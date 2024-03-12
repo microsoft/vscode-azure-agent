@@ -8,6 +8,7 @@ import { createHttpHeaders } from "@azure/core-rest-pipeline";
 import { VSCodeAzureSubscriptionProvider, type AzureSubscription } from "@microsoft/vscode-azext-azureauth";
 import { sendRequestWithTimeout, type AzExtRequestPrepareOptions } from "@microsoft/vscode-azext-azureutils";
 import { type IActionContext } from "@microsoft/vscode-azext-utils";
+import { QueryAzureResourceGraphResult } from "../../../api";
 import { type AgentRequest } from "../agent";
 
 export const agentArgQueryCommandName = "argQuery";
@@ -21,7 +22,7 @@ type ArgGenerateQueryRequestBody = {
 
 type ArgGenerateQueryResponseBody = { query?: string; };
 
-export async function queryAzureResourceGraph(actionContext: IActionContext, prompt: string, request: AgentRequest): Promise<ResourceGraphModels.QueryResponse | undefined> {
+export async function queryAzureResourceGraph(actionContext: IActionContext, prompt: string, request: AgentRequest): Promise<QueryAzureResourceGraphResult | undefined> {
     const subscriptionProvider = new VSCodeAzureSubscriptionProvider();
     const tenants = await subscriptionProvider.getTenants();
     const homeTenant = tenants.filter((t) => t.tenantCategory === "Home").at(0);
@@ -40,7 +41,7 @@ export async function queryAzureResourceGraph(actionContext: IActionContext, pro
             if (generateQueryResponse?.query !== undefined) {
                 const queryResponse = await queryArg(subscriptionForTenant, generateQueryResponse.query, request);
                 if (queryResponse !== undefined) {
-                    return queryResponse._response.parsedBody;
+                    return { query: generateQueryResponse.query, response: queryResponse._response.parsedBody };
                 }
             }
         }

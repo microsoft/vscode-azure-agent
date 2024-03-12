@@ -7,6 +7,17 @@ import { type ResourceGraphModels } from "@azure/arm-resourcegraph";
 import { type IActionContext } from "@microsoft/vscode-azext-utils";
 import * as vscode from "vscode";
 
+export type QueryAzureResourceGraphResult = {
+    /**
+     * The query that was used to query Azure Resource Graph.
+     */
+    query: string;
+    /**
+     * The response from the query to Azure Resource Graph.
+     */
+    response: ResourceGraphModels.QueryResponse;
+};
+
 /**
  * An interface for interacting with the Azure agent.
  */
@@ -14,7 +25,7 @@ export interface IAzureAgent {
     /**
      * Queries Azure Resource Graph based on the given natual language {@param prompt}.
      */
-    queryAzureResourceGraph(context: IActionContext, prompt: string, request: AgentRequest): Promise<ResourceGraphModels.QueryResponse | undefined>;
+    queryAzureResourceGraph(context: IActionContext, prompt: string, request: AgentRequest): Promise<QueryAzureResourceGraphResult | undefined>;
 
     /**
      * Starts an interaction with the VS Code language model API, where the output from the language model is outputted verbatim to the user.
