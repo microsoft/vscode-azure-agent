@@ -3,5 +3,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-export * from "./AgentIntegration";
-export * from "./AzureAgentInput";
+export * from "./types/AgentIntegration";
+export * from "./types/AzureAgent";
+export * from "./types/AzureAgentInput";
+

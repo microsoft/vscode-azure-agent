@@ -3,8 +3,8 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { type BaseCommandConfig } from "@microsoft/vscode-azext-utils";
 import type * as vscode from "vscode";
+import { type BaseCommandConfig } from "../../api";
 import { type AgentRequest } from "./agent";
 import { getResponseAsStringCopilotInteraction, getStringFieldFromCopilotResponseMaybeWithStrJson } from "./copilotInteractions";
 import { type AzureExtension } from "./extensions/AzureExtension";

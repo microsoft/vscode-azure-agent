@@ -7,11 +7,11 @@ import * as fs from "fs";
 import * as os from "os";
 import * as path from "path";
 import * as vscode from "vscode";
+import { type AgentBenchmarkConfig, type AgentBenchmarkWithStepsConfig } from "../../../api";
 import { type AgentRequest, type IAgentRequestHandler } from "../agent";
 import { agentName } from "../agentConsts";
 import { type AzureExtension } from "../extensions/AzureExtension";
 import { SlashCommandsOwner, type FallbackSlashCommandHandlers, type SlashCommand, type SlashCommandConfig, type SlashCommandHandlerResult } from "../slashCommands";
-import { type AgentBenchmarkConfig, type AgentBenchmarkWithStepsConfig } from "./NewBenchmarkTypes";
 
 type AgentBenchmarkRunStats = {
     startTime: number,

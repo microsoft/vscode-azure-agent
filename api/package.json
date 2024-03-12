@@ -8,6 +8,7 @@
     },
     "license": "SEE LICENSE IN LICENSE.md",
     "dependencies": {
+        "@azure/arm-resourcegraph": "^4.2.1",
         "@microsoft/vscode-azext-utils": "^2.4.0"
     }
 }

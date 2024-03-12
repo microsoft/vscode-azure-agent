@@ -6,9 +6,9 @@
 /* eslint-disable-next-line @typescript-eslint/no-unused-vars */
 import * as vscode from "vscode";
 /* eslint-disable-next-line @typescript-eslint/no-unused-vars */
-import { type AzureUserInputQueue, type ExtensionAgentMetadata, type IAzureAgentInput, type SimpleCommandConfig, type WizardCommandConfig } from "@microsoft/vscode-azext-utils";
+import { type AzureUserInputQueue } from "@microsoft/vscode-azext-utils";
+import { type AgentBenchmarkConfig, type AgentBenchmarkWithStepsConfig, type ExtensionAgentMetadata, type IAzureAgentInput, type SimpleCommandConfig, type WizardCommandConfig } from "../../../api";
 import { type AgentRequest } from "../agent";
-import { type AgentBenchmarkConfig, type AgentBenchmarkWithStepsConfig } from "../benchmarking/NewBenchmarkTypes";
 
 export class AzureExtension {
     public readonly extensionId: string;

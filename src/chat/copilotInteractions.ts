@@ -78,7 +78,7 @@ let copilotInteractionQueueRunning = false;
 type CopilotInteractionQueueItem = { onResponseFragment: (fragment: string) => void, systemPrompt: string, request: AgentRequest, options: Required<CopilotInteractionOptions>, resolve: () => void };
 const copilotInteractionQueue: CopilotInteractionQueueItem[] = [];
 
-export async function queueCopilotInteraction(onResponseFragment: (fragment: string) => void, systemPrompt: string, request: AgentRequest, options: Required<CopilotInteractionOptions>): Promise<void> {
+async function queueCopilotInteraction(onResponseFragment: (fragment: string) => void, systemPrompt: string, request: AgentRequest, options: Required<CopilotInteractionOptions>): Promise<void> {
     if (options.progressMessage.length > 0) {
         request.responseStream.progress(options.progressMessage);
     }
