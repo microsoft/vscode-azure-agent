@@ -3,7 +3,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { AzureUserInputQueue, UserCancelledError, type PromptResult } from "@microsoft/vscode-azext-utils";
+import { UserCancelledError, type AzureUserInputQueue, type PromptResult } from "@microsoft/vscode-azext-utils";
 import * as vscode from "vscode";
 import { type AgentInputBoxOptions, type AgentQuickPickItem, type AgentQuickPickOptions, type IAzureAgentInput, type ParameterAgentMetadata, type WizardCommandConfig } from "../../../api";
 import { type AgentRequest } from "../agent";
