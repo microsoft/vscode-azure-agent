@@ -9,6 +9,7 @@ import { getDefaultAzureExtensionCommandHandler } from "../commonCommandsAndHand
 import { SlashCommandsOwner, type SlashCommand, type SlashCommandHandlerResult, type SlashCommands } from "../slashCommands";
 import { AzureExtension } from "./AzureExtension";
 import { slashCommandFromSimpleCommand } from "./slashCommandFromSimpleCommand";
+import { slashCommandFromSkillCommand } from "./slashCommandFromSkillCommand";
 import { slashCommandFromWizardCommand } from "./slashCommandFromWizardCommand";
 
 export class ExtensionSlashCommandsOwner implements IAgentRequestHandler {
@@ -73,6 +74,12 @@ export class ExtensionSlashCommandsOwner implements IAgentRequestHandler {
                 const extensionSimpleCommands = await this._extension.getSimpleCommands();
                 for (const commandConfig of extensionSimpleCommands) {
                     const slashCommand = slashCommandFromSimpleCommand(commandConfig, this._extension);
+                    extensionSlashCommands.set(slashCommand[0], slashCommand[1]);
+                }
+
+                const extensionSkillCommands = await this._extension.getSkillCommands();
+                for (const commandConfig of extensionSkillCommands) {
+                    const slashCommand = slashCommandFromSkillCommand(commandConfig, this._extension);
                     extensionSlashCommands.set(slashCommand[0], slashCommand[1]);
                 }
             }

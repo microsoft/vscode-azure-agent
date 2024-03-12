@@ -50,8 +50,8 @@ function learnHandler(config: LearnCommandConfig, request: AgentRequest): Promis
             ] : [];
             const systemPrompt = getLearnSystemPrompt(config, ragContent?.content, availableCommands);
 
-            const { copilotResponded, copilotResponse } = await verbatimCopilotInteraction(systemPrompt, request, { includeHistory: "all", progressMessage: "Getting an answer..." });
-            if (!copilotResponded) {
+            const { languageModelResponded, languageModelResponse } = await verbatimCopilotInteraction(systemPrompt, request, { includeHistory: "all", progressMessage: "Getting an answer..." });
+            if (!languageModelResponded) {
                 request.responseStream.markdown("Sorry, I can't help with that right now.\n");
                 return { chatAgentResult: {}, followUp: [], };
             } else {
@@ -60,13 +60,13 @@ function learnHandler(config: LearnCommandConfig, request: AgentRequest): Promis
                 }
                 const followUps: vscode.ChatFollowup[] = [];
                 if (config.associatedExtension !== undefined && config.associatedExtension.isInstalled()) {
-                    followUps.push(...(await generateExtensionCommandFollowUps(copilotResponse, config.associatedExtension, request)));
+                    followUps.push(...(await generateExtensionCommandFollowUps(languageModelResponse, config.associatedExtension, request)));
                 } else if (config.associatedExtension !== undefined && !config.associatedExtension.isInstalled()) {
                     request.responseStream.markdown(`\n\nFor additional help related to ${config.topic}, install the ${config.associatedExtension.extensionDisplayName} extension for VS Code.`);
 
                     request.responseStream.button({ title: `Install the ${config.associatedExtension.extensionDisplayName} Extension`, command: "workbench.extensions.search", arguments: [config.associatedExtension.extensionId] });
                 }
-                followUps.push(...(await generateNextQuestionsFollowUps(copilotResponse, request)));
+                followUps.push(...(await generateNextQuestionsFollowUps(languageModelResponse, request)));
 
                 return { chatAgentResult: {}, followUp: followUps, };
             }

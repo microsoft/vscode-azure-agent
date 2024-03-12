@@ -14,7 +14,8 @@ export interface IAzureAgent {
     /**
      * Queries Azure Resource Graph based on the given natual language {@param prompt}.
      */
-    queryAzureResourceGraph(context: IActionContext, prompt: string, request: AgentRequest): Promise<ResourceGraphModels.QueryResponse>;
+    queryAzureResourceGraph(context: IActionContext, prompt: string, request: AgentRequest): Promise<ResourceGraphModels.QueryResponse | undefined>;
+
     /**
      * Starts an interaction with the VS Code language model API, where the output from the language model is outputted verbatim to the user.
      */
@@ -37,11 +38,22 @@ export type LanguageModelInteractionOptions = {
 
     /**
      * Whether or not to cache the result of the language model interaction. Default is `false`.
+     *
+     * This option is `false` by default as to make sure setting the cache is an intentional choice by the developer. Caching the result of a language model
+     * interaction has the potential to cause a negative user experience. For example, the user may not be happy with the answer to a question and is quickly
+     * retrying it. If the line of code that invokes the language model to produce that answer has `setCache` set to true, then the user will simply get the
+     * same answer.
+     *
+     * Alternatively, if there's an interaction which is repeated many times, by the agent itself, in a short period of time; or if there is low risk to
+     * the result of the interaction being "wrong", then setting `setCache` to `true` could be beneficial.
      */
     setCache?: boolean;
 
     /**
      * Whether or not to use the cached result of a previous language model interaction that matches this one. Default is `true`.
+     *
+     * Unlike {@link LanguageModelInteractionOptions.setCache}, this option is `true` by default as if an interaction does set the cache, there shouldn't be any
+     * additional action requried by the developer to also use the cache.
      */
     useCache?: boolean;
 
