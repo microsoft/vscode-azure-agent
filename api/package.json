@@ -1,6 +1,6 @@
 {
     "name": "vscode-azure-agent-api",
-    "version": "1.0.0-beta.2",
+    "version": "1.0.0-beta.3",
     "description": "",
     "typings": "index.d.ts",
     "scripts": {

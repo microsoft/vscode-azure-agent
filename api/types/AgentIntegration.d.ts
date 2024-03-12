@@ -94,7 +94,7 @@ export type ExtensionAgentMetadata = {
      * - A {@link WizardCommandConfig}: the command that should be run.
      * - A {@link IAzureAgentInput}: the input interface that the command should use.
      */
-    runWizardCommandWithoutExecutionCommandId: string;
+    runWizardCommandWithoutExecutionCommandId?: string;
 
     /**
      * The VS Code command ID of a command that the extension implements which can be used to run any of the {@link WizardCommandConfig}
@@ -104,7 +104,7 @@ export type ExtensionAgentMetadata = {
      * - A {@link WizardCommandConfig}: the command that should be run.
      * - A {@link AzureUserInputQueue}: the inputs that the command should use when needing to present user input.
      */
-    runWizardCommandWithInputsCommandId: string;
+    runWizardCommandWithInputsCommandId?: string;
 
     /**
      * The VS Code command ID of a command that the extension implements which can be used to get the list of
@@ -112,7 +112,7 @@ export type ExtensionAgentMetadata = {
      * the performance of the agent with regards to functionality that the subcommands associated with the extension
      * expose.
      */
-    getAgentBenchmarkConfigsCommandId: string;
+    getAgentBenchmarkConfigsCommandId?: string;
 };
 
 

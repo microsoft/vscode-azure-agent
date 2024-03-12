@@ -76,6 +76,9 @@ export class AzureExtension {
             throw new Error(`Extension ${this.extensionDisplayName} does not yet have extension agent metadata initialized`);
         }
 
+        if (this._extensionAgentMetadata.runWizardCommandWithoutExecutionCommandId === undefined) {
+            throw new Error(`Extension ${this.extensionDisplayName} does not provide a runWizardCommandWithoutExecutionCommandId`);
+        }
         await vscode.commands.executeCommand(this._extensionAgentMetadata.runWizardCommandWithoutExecutionCommandId, command, agentAzureUserInput);
     }
 
@@ -84,6 +87,9 @@ export class AzureExtension {
             throw new Error(`Extension ${this.extensionDisplayName} does not yet have extension agent metadata initialized`);
         }
 
+        if (this._extensionAgentMetadata.runWizardCommandWithInputsCommandId === undefined) {
+            throw new Error(`Extension ${this.extensionDisplayName} does not provide a runWizardCommandWithInputsCommandId`);
+        }
         return { title: command.displayName, command: this._extensionAgentMetadata.runWizardCommandWithInputsCommandId, arguments: [command, inputQueue] };
     }
 
@@ -100,7 +106,7 @@ export class AzureExtension {
             throw new Error(`Extension ${this.extensionDisplayName} does not yet have extension agent metadata initialized`);
         }
 
-        await vscode.commands.executeCommand(this._extensionAgentMetadata.runWizardCommandWithoutExecutionCommandId, command, args);
+        await vscode.commands.executeCommand(command.commandId, args);
     }
 
     private _cachedAgentBenchmarkConfigs: (AgentBenchmarkConfig | AgentBenchmarkWithStepsConfig)[] | undefined;
@@ -111,7 +117,11 @@ export class AzureExtension {
 
         try {
             if (this._cachedAgentBenchmarkConfigs === undefined) {
-                this._cachedAgentBenchmarkConfigs = await vscode.commands.executeCommand<(AgentBenchmarkConfig | AgentBenchmarkWithStepsConfig)[]>(this._extensionAgentMetadata.getAgentBenchmarkConfigsCommandId) || [];
+                if (this._extensionAgentMetadata.getAgentBenchmarkConfigsCommandId !== undefined) {
+                    this._cachedAgentBenchmarkConfigs = await vscode.commands.executeCommand<(AgentBenchmarkConfig | AgentBenchmarkWithStepsConfig)[]>(this._extensionAgentMetadata.getAgentBenchmarkConfigsCommandId) || [];
+                } else {
+                    this._cachedAgentBenchmarkConfigs = [];
+                }
             }
             return this._cachedAgentBenchmarkConfigs;
         } catch (error) {
