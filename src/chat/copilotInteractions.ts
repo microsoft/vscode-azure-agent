@@ -4,37 +4,9 @@
  *--------------------------------------------------------------------------------------------*/
 
 import * as vscode from "vscode";
+import { type LanguageModelInteractionOptions, type LanguageModelInteractionResult } from "../../api";
 import { type AgentRequest } from "./agent";
 import { agentName } from "./agentConsts";
-
-export type CopilotInteractionOptions = {
-    /**
-     * What type of history (aka, users requests prior to the current one) to include in the context for the Copilot interaction.
-     * - `"none"`: No history will be included (default)
-     * - `"all"`: All history will be included
-     * - `"requests"`: Only the user requests will be included
-     */
-    includeHistory?: "none" | "all" | "requests";
-
-    /**
-     * Whether or not to cache the result of the Copilot interaction. Default is `false`.
-     */
-    setCache?: boolean;
-
-    /**
-     * Whether or not to use the cached result of a previous Copilot interaction that matches this one. Default is `true`.
-     */
-    useCache?: boolean;
-
-    /**
-     * A progress message to display to the user while waiting for a response from Copilot.
-     *
-     * Should not be used if this interaction is being done in parallel with other interactions.
-     */
-    progressMessage?: string;
-};
-
-export type CopilotInteractionResult = { copilotResponded: true, copilotResponse: string } | { copilotResponded: false, copilotResponse: undefined };
 
 const languageModelPreference: string[] = ["copilot-gpt-4", "copilot"];
 
@@ -49,23 +21,23 @@ function debugCopilotInteraction(responseStream: vscode.ChatResponseStream, msg:
 /**
  * Feeds {@link systemPrompt} and {@link userContent} to Copilot and redirects the response directly to ${@link progress}.
  */
-export async function verbatimCopilotInteraction(systemPrompt: string, request: AgentRequest, options?: CopilotInteractionOptions): Promise<CopilotInteractionResult> {
+export async function verbatimCopilotInteraction(systemPrompt: string, request: AgentRequest, options?: LanguageModelInteractionOptions): Promise<LanguageModelInteractionResult> {
     let joinedFragements = "";
     await queueCopilotInteraction((fragment) => {
         joinedFragements += fragment;
         request.responseStream.markdown(fragment);
     }, systemPrompt, request, { includeHistory: "none", setCache: false, useCache: true, progressMessage: "", ...options });
     if (joinedFragements === "") {
-        return { copilotResponded: false, copilotResponse: undefined };
+        return { languageModelResponded: false, languageModelResponse: undefined };
     } else {
-        return { copilotResponded: true, copilotResponse: joinedFragements };
+        return { languageModelResponded: true, languageModelResponse: joinedFragements };
     }
 }
 
 /**
  * Feeds {@link systemPrompt} and {@link userContent} to Copilot and directly returns its response.
  */
-export async function getResponseAsStringCopilotInteraction(systemPrompt: string, request: AgentRequest, options?: CopilotInteractionOptions): Promise<string | undefined> {
+export async function getResponseAsStringCopilotInteraction(systemPrompt: string, request: AgentRequest, options?: LanguageModelInteractionOptions): Promise<string | undefined> {
     let joinedFragements = "";
     await queueCopilotInteraction((fragment) => {
         joinedFragements += fragment;
@@ -75,10 +47,10 @@ export async function getResponseAsStringCopilotInteraction(systemPrompt: string
 }
 
 let copilotInteractionQueueRunning = false;
-type CopilotInteractionQueueItem = { onResponseFragment: (fragment: string) => void, systemPrompt: string, request: AgentRequest, options: Required<CopilotInteractionOptions>, resolve: () => void };
+type CopilotInteractionQueueItem = { onResponseFragment: (fragment: string) => void, systemPrompt: string, request: AgentRequest, options: Required<LanguageModelInteractionOptions>, resolve: () => void };
 const copilotInteractionQueue: CopilotInteractionQueueItem[] = [];
 
-async function queueCopilotInteraction(onResponseFragment: (fragment: string) => void, systemPrompt: string, request: AgentRequest, options: Required<CopilotInteractionOptions>): Promise<void> {
+async function queueCopilotInteraction(onResponseFragment: (fragment: string) => void, systemPrompt: string, request: AgentRequest, options: Required<LanguageModelInteractionOptions>): Promise<void> {
     if (options.progressMessage.length > 0) {
         request.responseStream.progress(options.progressMessage);
     }
@@ -118,7 +90,7 @@ async function runCopilotInteractionQueue() {
 const maxCachedInteractionAge = 1000 * 30;
 const copilotInteractionCache: { [key: string]: { lastHit: number, joinedResponseFragments: string } } = {};
 
-async function doCopilotInteraction(onResponseFragment: (fragment: string) => void, systemPrompt: string, agentRequest: AgentRequest, options: Required<CopilotInteractionOptions>): Promise<void> {
+async function doCopilotInteraction(onResponseFragment: (fragment: string) => void, systemPrompt: string, agentRequest: AgentRequest, options: Required<LanguageModelInteractionOptions>): Promise<void> {
     let historyMessages: (vscode.LanguageModelChatUserMessage | vscode.LanguageModelChatAssistantMessage)[] = [];
     if (options.includeHistory === "all") {
         historyMessages = agentRequest.context.history.map((turn) => {

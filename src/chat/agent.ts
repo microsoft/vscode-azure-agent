@@ -6,6 +6,7 @@
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 
 import * as vscode from "vscode";
+import { type AgentRequest as AgentRequestApi } from "../../api";
 import { ext } from '../extensionVariables';
 import { agentDescription, agentName, maxFollowUps } from "./agentConsts";
 import { agentHelpCommandName, getAgentHelpCommand } from "./agentHelpSlashCommand";
@@ -17,14 +18,10 @@ import { appServiceExtensionSlashCommandsOwner, azureExtensionsCommand, containe
 import { getRagStatusSlashCommand, toggleRagSlashCommand } from "./rag";
 import { SlashCommandsOwner, type SlashCommandHandlerResult } from "./slashCommands";
 
-export type AgentRequest = {
-    command?: string;
-    userPrompt: string;
-
-    context: vscode.ChatContext;
-    responseStream: vscode.ChatExtendedResponseStream;
-    token: vscode.CancellationToken;
-}
+// @todo: Replace this type with the one from the API.
+// Not doing now becuase it'll change basically every file which I don't want to do right now.
+// Will save such a change for its own dedicated change.
+export type AgentRequest = AgentRequestApi;
 
 export interface IAgentRequestHandler {
     /**

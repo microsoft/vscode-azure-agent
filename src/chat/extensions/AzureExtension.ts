@@ -7,7 +7,7 @@
 import * as vscode from "vscode";
 /* eslint-disable-next-line @typescript-eslint/no-unused-vars */
 import { type AzureUserInputQueue } from "@microsoft/vscode-azext-utils";
-import { type AgentBenchmarkConfig, type AgentBenchmarkWithStepsConfig, type ExtensionAgentMetadata, type IAzureAgentInput, type SimpleCommandConfig, type WizardCommandConfig } from "../../../api";
+import { type AgentBenchmarkConfig, type AgentBenchmarkWithStepsConfig, type ExtensionAgentMetadata, type IAzureAgentInput, type SimpleCommandConfig, type SkillCommandArgs, type SkillCommandConfig, type WizardCommandConfig } from "../../../api";
 import { type AgentRequest } from "../agent";
 
 export class AzureExtension {
@@ -61,6 +61,16 @@ export class AzureExtension {
         }
     }
 
+    public async getSkillCommands(): Promise<SkillCommandConfig[]> {
+        try {
+            return (await this._getCommandConfigs())
+                .filter((commandConfig): commandConfig is SkillCommandConfig => commandConfig.type === "skill");
+        } catch (error) {
+            console.log(`Error getting wizard commands from ${this.extensionDisplayName} extension: ${JSON.stringify(error)}`);
+            return [];
+        }
+    }
+
     public async runWizardCommandWithoutExecutionId(command: WizardCommandConfig, agentAzureUserInput: IAzureAgentInput): Promise<void> {
         if (!this._extensionAgentMetadata) {
             throw new Error(`Extension ${this.extensionDisplayName} does not yet have extension agent metadata initialized`);
@@ -85,6 +95,14 @@ export class AzureExtension {
         return { title: command.displayName, command: command.commandId };
     }
 
+    public async runSkillCommand(command: SkillCommandConfig, args: SkillCommandArgs): Promise<void> {
+        if (!this._extensionAgentMetadata) {
+            throw new Error(`Extension ${this.extensionDisplayName} does not yet have extension agent metadata initialized`);
+        }
+
+        await vscode.commands.executeCommand(this._extensionAgentMetadata.runWizardCommandWithoutExecutionCommandId, command, args);
+    }
+
     private _cachedAgentBenchmarkConfigs: (AgentBenchmarkConfig | AgentBenchmarkWithStepsConfig)[] | undefined;
     public async getAgentBenchmarkConfigs(): Promise<(AgentBenchmarkConfig | AgentBenchmarkWithStepsConfig)[]> {
         if (!this._extensionAgentMetadata) {
@@ -103,8 +121,8 @@ export class AzureExtension {
         }
     }
 
-    private _cachedCommandConfigs: (WizardCommandConfig | SimpleCommandConfig)[] | undefined;
-    private async _getCommandConfigs(): Promise<(WizardCommandConfig | SimpleCommandConfig)[]> {
+    private _cachedCommandConfigs: (WizardCommandConfig | SimpleCommandConfig | SkillCommandConfig)[] | undefined;
+    private async _getCommandConfigs(): Promise<(WizardCommandConfig | SimpleCommandConfig | SkillCommandConfig)[]> {
         if (!this._extensionAgentMetadata) {
             return [];
         }
