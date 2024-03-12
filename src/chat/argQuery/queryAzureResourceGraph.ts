@@ -8,7 +8,7 @@ import { createHttpHeaders } from "@azure/core-rest-pipeline";
 import { VSCodeAzureSubscriptionProvider, type AzureSubscription } from "@microsoft/vscode-azext-azureauth";
 import { sendRequestWithTimeout, type AzExtRequestPrepareOptions } from "@microsoft/vscode-azext-azureutils";
 import { type IActionContext } from "@microsoft/vscode-azext-utils";
-import { QueryAzureResourceGraphResult } from "../../../api";
+import { type QueryAzureResourceGraphResult } from "../../../api";
 import { type AgentRequest } from "../agent";
 
 export const agentArgQueryCommandName = "argQuery";
