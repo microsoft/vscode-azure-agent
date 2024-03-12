@@ -3,8 +3,8 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { type SimpleCommandConfig } from "@microsoft/vscode-azext-utils";
 import type * as vscode from "vscode";
+import { type SimpleCommandConfig } from "../../../api";
 import { type AgentRequest } from "../agent";
 import { getSignInCommand, isUserSignedInToAzure } from "../azureSignIn";
 import { type SlashCommand, type SlashCommandHandlerResult } from "../slashCommands";

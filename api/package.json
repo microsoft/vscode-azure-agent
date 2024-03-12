@@ -1,13 +1,14 @@
 {
     "name": "vscode-azure-agent-api",
-    "version": "1.0.0-beta.1",
+    "version": "1.0.0-beta.2",
     "description": "",
     "typings": "index.d.ts",
     "scripts": {
         "init": "npm install"
     },
     "license": "SEE LICENSE IN LICENSE.md",
-    "dependencies": {
+    "peerDependencies": {
+        "@azure/arm-resourcegraph": "^4.2.1",
         "@microsoft/vscode-azext-utils": "^2.4.0"
     }
 }

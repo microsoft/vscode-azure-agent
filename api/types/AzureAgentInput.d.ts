@@ -4,7 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 import { type AzExtInputBoxOptions, type AzExtOpenDialogOptions, type IAzureMessageOptions, type IAzureQuickPickOptions, type PromptResult } from "@microsoft/vscode-azext-utils";
-import { type Event, type MessageItem, type QuickPickItem, type Uri } from "vscode";
+import * as vscode from "vscode";
 
 export type ParameterAgentMetadata = {
     /**
@@ -30,7 +30,7 @@ export type ParameterAgentMetadata = {
     parameterDisplayDescription: string;
 };
 
-export type AgentQuickPickItem<T extends QuickPickItem = QuickPickItem> = {
+export type AgentQuickPickItem<T extends vscode.QuickPickItem = vscode.QuickPickItem> = {
     agentMetadata: {
         /**
          * If this quick pick item should not be picked by the agent.
@@ -77,12 +77,12 @@ export type AgentInputBoxOptions<T extends AzExtInputBoxOptions = AzExtInputBoxO
  * information is provided to the agent in order to answer the prompts.
  */
 export interface IAzureAgentInput {
-    readonly onDidFinishPrompt: Event<PromptResult>;
-    showQuickPick<ItemsBaseT extends QuickPickItem, OptionsBaseT extends IAzureQuickPickOptions>(items: AgentQuickPickItem<ItemsBaseT>[] | Promise<AgentQuickPickItem<ItemsBaseT>[]>, options: AgentQuickPickOptions<OptionsBaseT> & { canPickMany: true }): Promise<AgentQuickPickItem<ItemsBaseT>[]>;
-    showQuickPick<ItemsBaseT extends QuickPickItem, OptionsBaseT extends IAzureQuickPickOptions>(items: AgentQuickPickItem<ItemsBaseT>[] | Promise<AgentQuickPickItem<ItemsBaseT>[]>, options: AgentQuickPickOptions<OptionsBaseT>): Promise<AgentQuickPickItem<ItemsBaseT>>;
+    readonly onDidFinishPrompt: vscode.Event<PromptResult>;
+    showQuickPick<ItemsBaseT extends vscode.QuickPickItem, OptionsBaseT extends IAzureQuickPickOptions>(items: AgentQuickPickItem<ItemsBaseT>[] | Promise<AgentQuickPickItem<ItemsBaseT>[]>, options: AgentQuickPickOptions<OptionsBaseT> & { canPickMany: true }): Promise<AgentQuickPickItem<ItemsBaseT>[]>;
+    showQuickPick<ItemsBaseT extends vscode.QuickPickItem, OptionsBaseT extends IAzureQuickPickOptions>(items: AgentQuickPickItem<ItemsBaseT>[] | Promise<AgentQuickPickItem<ItemsBaseT>[]>, options: AgentQuickPickOptions<OptionsBaseT>): Promise<AgentQuickPickItem<ItemsBaseT>>;
     showInputBox<OptionsBaseT extends IAzureQuickPickOptions>(options: AgentInputBoxOptions<OptionsBaseT>): Promise<string>;
 
-    showWarningMessage<T extends MessageItem>(message: string, ...items: T[]): Promise<T>;
-    showWarningMessage<T extends MessageItem>(message: string, options: IAzureMessageOptions, ...items: T[]): Promise<T>;
-    showOpenDialog(options: AzExtOpenDialogOptions): Promise<Uri[]>;
+    showWarningMessage<T extends vscode.MessageItem>(message: string, ...items: T[]): Promise<T>;
+    showWarningMessage<T extends vscode.MessageItem>(message: string, options: IAzureMessageOptions, ...items: T[]): Promise<T>;
+    showOpenDialog(options: AzExtOpenDialogOptions): Promise<vscode.Uri[]>;
 }

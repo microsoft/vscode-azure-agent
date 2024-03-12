@@ -3,6 +3,8 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
+import { type AgentRequest, type IAzureAgent } from "./AzureAgent";
+
 export type BaseCommandConfig = {
     /**
      * A camel cased string that names the command.
@@ -63,10 +65,10 @@ export type WizardCommandConfig = BaseCommandConfig & { type: "wizard"; };
 export type SimpleCommandConfig = BaseCommandConfig & { type: "simple"; };
 
 /**
- * A config that describes a command that the extension implements which is a skill command. The definition of a skill command
- * is still in progress.
+ * A config that describes a command that the extension implements which is a skill command. When a skill command is invoked, the
+ * associated command at {@link SkillCommandConfig.commandId} will be invoked. The arguments for the command will be a {@link SkillCommandArgs}.
  */
-export type SkillCommandConfig = BaseCommandConfig & { type: "skill" };
+export type SkillCommandConfig = BaseCommandConfig & { type: "skill"; commandId: string; };
 
 /**
  * Information that should be available on the package.json of an extension which is compabitible with the Azure agent.
@@ -113,17 +115,10 @@ export type ExtensionAgentMetadata = {
     getAgentBenchmarkConfigsCommandId: string;
 };
 
-/**
- * A config that describes a benchmark to be run against the agent.
- */
-export type AgentBenchmarkConfig = {
-    /**
-     * The name of the benchmark. Does not need to be unique, but is useful if it can be.
-     */
-    name: string;
 
+export type AgentBenchmarkStepConfig = {
     /**
-     * The simulated user input to be given to the agent when running the benchmark.
+     * The simulated user input to be given to the agent when running the step.
      */
     prompt: string;
 
@@ -135,7 +130,7 @@ export type AgentBenchmarkConfig = {
     acceptableHandlerChains: string[][];
 
     /**
-     * Follow ups that are required/optional to be returned by the agent given the {@link AgentBenchmarkConfig.prompt}.
+     * Follow ups that are required/optional to be returned by the agent given the {@link AgentBenchmarkStepConfig.prompt}.
      */
     followUps?: {
         required: { type: "message", messageContains: string }[],
@@ -143,10 +138,38 @@ export type AgentBenchmarkConfig = {
     };
 
     /**
-     * Buttons that are required/optional to be returned by the agent given the {@link AgentBenchmarkConfig.prompt}.
+     * Buttons that are required/optional to be returned by the agent given the {@link AgentBenchmarkStepConfig.prompt}.
      */
     buttons?: {
         required: { type: "command", commandId: string }[],
         optional: { type: "command", commandId: string }[],
     }
+};
+
+/**
+ * A config that describes a benchmark which has multiple steps to be run against the agent.
+ */
+export type AgentBenchmarkWithStepsConfig = {
+    /**
+     * The name of the benchmark. Does not need to be unique, but is useful if it can be.
+     */
+    name: string;
+    steps: AgentBenchmarkStepConfig[];
+};
+
+/**
+ * @deprecated Use {@link AgentBenchmarkWithStepsConfig} instead.
+ *
+ * A config that describes a benchmark to be run against the agent.
+ */
+export type AgentBenchmarkConfig = AgentBenchmarkStepConfig & {
+    /**
+     * The name of the benchmark. Does not need to be unique, but is useful if it can be.
+     */
+    name: string;
+};
+
+export type SkillCommandArgs = {
+    agentRequest: AgentRequest;
+    agent: IAzureAgent;
 };

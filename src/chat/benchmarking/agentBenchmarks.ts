@@ -3,10 +3,10 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
+import { type AgentBenchmarkWithStepsConfig } from "../../../api";
 import { agentHelpCommandName } from "../agentHelpSlashCommand";
 import { learnCommandName } from "../commonCommandsAndHandlers";
 import { defaultSlashCommandName } from "../slashCommands";
-import { type AgentBenchmarkWithStepsConfig } from "./NewBenchmarkTypes";
 
 function getNumbericallyLabeledBenchmarkConfig(config: AgentBenchmarkWithStepsConfig, numericalLabel: number) {
     return {
