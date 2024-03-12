@@ -5,6 +5,7 @@
 
 import { createHttpHeaders } from "@azure/core-rest-pipeline";
 import { ClientSecretCredential } from "@azure/identity";
+// @ts-ignore
 import { AzureKeyCredential, OpenAIClient } from "@azure/openai";
 import { sendRequestWithTimeout, type AzExtRequestPrepareOptions } from "@microsoft/vscode-azext-azureutils";
 import { type IActionContext } from "@microsoft/vscode-azext-utils";

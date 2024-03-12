@@ -1,6 +1,6 @@
 {
     "compilerOptions": {
-        "module": "commonjs",
+        "module": "NodeNext",
         "target": "es6",
         "outDir": "out",
         "lib": [
@@ -15,6 +15,7 @@
         "noImplicitReturns": true,
         "strictNullChecks": true,
         "noUnusedParameters": false, // ESLint takes care of this for us
+        "esModuleInterop": true
     },
     "exclude": [
         "node_modules",

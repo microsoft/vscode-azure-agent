@@ -50,6 +50,7 @@ typings/
 
 # Output of 'npm pack'
 *.tgz
+!typechat-0.1.0-vscodeAzureAgent.0.tgz
 
 # Yarn Integrity file
 .yarn-integrity
