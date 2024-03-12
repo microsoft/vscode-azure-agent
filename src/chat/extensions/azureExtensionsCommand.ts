@@ -8,6 +8,7 @@ import { SlashCommandsOwner, type SlashCommand } from "../slashCommands";
 import { ExtensionSlashCommandsOwner } from "./ExtensionSlashCommandsOwner";
 
 export const appServiceExtensionSlashCommandsOwner: ExtensionSlashCommandsOwner = new ExtensionSlashCommandsOwner("ms-azuretools.vscode-azureappservice", "Azure App Service", "Azure App Service", "appservice");
+export const azdExtensionSlashCommandsOwner: ExtensionSlashCommandsOwner = new ExtensionSlashCommandsOwner("ms-azuretools.azure-dev", "Azure Developer CLI", "Azure Developer CLI", "azd");
 export const containerAppsExtensionSlashCommandsOwner: ExtensionSlashCommandsOwner = new ExtensionSlashCommandsOwner("ms-azuretools.vscode-azurecontainerapps", "Azure Container Apps", "Azure Container Apps", "containerApps");
 export const databasesExtensionCosmosDbSlashCommandsOwner: ExtensionSlashCommandsOwner = new ExtensionSlashCommandsOwner("ms-azuretools.vscode-cosmosdb", "Azure Databases", "Azure Cosmos DB", "cosmosDB");
 export const databasesExtensionPostgreSQLSlashCommandsOwner: ExtensionSlashCommandsOwner = new ExtensionSlashCommandsOwner("ms-azuretools.vscode-cosmosdb", "Azure Databases", "Azure Database for PostgreSQL", "postgreSQL");
@@ -24,6 +25,7 @@ export const azureExtensionsCommandName = "azureExtensions";
 const agentSlashCommandsOwner = new SlashCommandsOwner({ noInput: agentHelpCommandName, default: agentHelpCommandName, });
 agentSlashCommandsOwner.addInvokeableSlashCommands(new Map([
     appServiceExtensionSlashCommandsOwner.getTopLevelSlashCommand(),
+    azdExtensionSlashCommandsOwner.getTopLevelSlashCommand(),
     containerAppsExtensionSlashCommandsOwner.getTopLevelSlashCommand(),
     databasesExtensionCosmosDbSlashCommandsOwner.getTopLevelSlashCommand(),
     databasesExtensionPostgreSQLSlashCommandsOwner.getTopLevelSlashCommand(),
