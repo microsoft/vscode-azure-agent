@@ -14,7 +14,7 @@ import { argQueryCommand } from "./argQuery/argQuerySlashCommand";
 import { AgentBenchmarker } from "./benchmarking/AgentBenchmarker";
 import { defaultBenchmarks, helpBenchmarks, multiPromptBenchmarks } from "./benchmarking/agentBenchmarks";
 import { getLearnCommand } from "./commonCommandsAndHandlers";
-import { appServiceExtensionSlashCommandsOwner, azureExtensionsCommand, containerAppsExtensionSlashCommandsOwner, databasesExtensionCosmosDbSlashCommandsOwner, databasesExtensionPostgreSQLSlashCommandsOwner, functionsExtensionSlashCommandsOwner, staticWebAppsExtensionSlashCommandsOwner, storageExtensionSlashCommandsOwner, virtualMachinesExtensionSlashCommandsOwner } from "./extensions/azureExtensionsCommand";
+import { appServiceExtensionSlashCommandsOwner, azdExtensionSlashCommandsOwner, azureExtensionsCommand, containerAppsExtensionSlashCommandsOwner, databasesExtensionCosmosDbSlashCommandsOwner, databasesExtensionPostgreSQLSlashCommandsOwner, functionsExtensionSlashCommandsOwner, staticWebAppsExtensionSlashCommandsOwner, storageExtensionSlashCommandsOwner, virtualMachinesExtensionSlashCommandsOwner } from "./extensions/azureExtensionsCommand";
 import { getRagStatusSlashCommand, toggleRagSlashCommand } from "./rag";
 import { SlashCommandsOwner, type SlashCommandHandlerResult } from "./slashCommands";
 
@@ -62,6 +62,7 @@ agentBenchmarker.addBenchmarkConfigs(
 );
 agentBenchmarker.addExtensionsToBenchmark(
     appServiceExtensionSlashCommandsOwner.getExtension(),
+    azdExtensionSlashCommandsOwner.getExtension(),
     containerAppsExtensionSlashCommandsOwner.getExtension(),
     databasesExtensionCosmosDbSlashCommandsOwner.getExtension(),
     databasesExtensionPostgreSQLSlashCommandsOwner.getExtension(),
