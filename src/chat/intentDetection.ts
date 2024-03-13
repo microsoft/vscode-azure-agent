@@ -9,8 +9,8 @@ import { ext } from "../extensionVariables";
 import { type AgentRequest } from "./agent";
 import { getResponseAsStringCopilotInteraction, getStringFieldFromCopilotResponseMaybeWithStrJson } from "./copilotInteractions";
 import { summarizeHistoryThusFar } from "./summarizing";
-import { typechatLanguageModel } from "./typechat/vscodeTypechatModel";
-import { getZodSchema } from "./typechat/zodSchemaHelper";
+import { typeChatLanguageModel } from "./typechat/vscodeTypeChatModel";
+import { getZodSchema } from "./typechat/zodIntentDetectionHelper";
 
 export type IntentDetectionTarget = {
     name: string,
@@ -23,7 +23,7 @@ export type IntentDetectionTarget = {
 export async function detectIntentTypeChat(targets: IntentDetectionTarget[], request: AgentRequest): Promise<IntentDetectionTarget | undefined> {
     const schema = getZodSchema(targets);
     const validator = createZodJsonValidator(schema, "Action");
-    const translator = createJsonTranslator(typechatLanguageModel, validator);
+    const translator = createJsonTranslator(typeChatLanguageModel, validator);
     const response = await translator.translate(request.userPrompt);
     if (response.success) {
         const data = response.data;

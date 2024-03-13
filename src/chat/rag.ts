@@ -5,6 +5,7 @@
 
 import { createHttpHeaders } from "@azure/core-rest-pipeline";
 import { ClientSecretCredential } from "@azure/identity";
+// See https://github.com/Azure/azure-sdk-for-js/issues/28877
 // @ts-ignore
 import { AzureKeyCredential, OpenAIClient } from "@azure/openai";
 import { sendRequestWithTimeout, type AzExtRequestPrepareOptions } from "@microsoft/vscode-azext-azureutils";

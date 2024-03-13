@@ -1,16 +1,26 @@
-import { PromptSection, Result, error, success } from "typechat";
+import { PromptSection, Result, TypeChatLanguageModel, error, success } from "typechat";
 import * as vscode from "vscode";
 
 export type CopilotInteractionResult = { copilotResponded: true, copilotResponse: string } | { copilotResponded: false, copilotResponse: undefined };
 
-export const typechatLanguageModel = {
-    async complete(prompt: PromptSection[]): Promise<Result<string>> {
-        // @todo: Experiement with more advanced usage of prompts
-        // such as: including history, using both system and user prompts, etc.
-        const promptText = prompt[0].content;
-        const messages = [
-            new vscode.LanguageModelChatUserMessage(promptText)
-        ];
+export const typeChatLanguageModel: TypeChatLanguageModel = {
+    async complete(prompt: string | PromptSection[]): Promise<Result<string>> {
+        let messages;
+        if (typeof prompt === "string") {
+            messages = [
+                new vscode.LanguageModelChatUserMessage(prompt)
+            ];
+        } else {
+            messages = prompt.map((section) => {
+                if (section.role === "user") {
+                    return new vscode.LanguageModelChatUserMessage(section.content);
+                } else if (section.role === "system") {
+                    return new vscode.LanguageModelChatSystemMessage(section.content);
+                } else {
+                    return new vscode.LanguageModelChatAssistantMessage(section.content);
+                }
+            });
+        }
         const cancellationTokenSource = new vscode.CancellationTokenSource();
         try {
             const response = await vscode.lm.sendChatRequest(
