@@ -5,12 +5,11 @@
 
 import { createJsonTranslator } from "typechat";
 import { createZodJsonValidator } from "typechat/zod";
-import { ext } from "../extensionVariables";
 import { type AgentRequest } from "./agent";
 import { getResponseAsStringCopilotInteraction, getStringFieldFromCopilotResponseMaybeWithStrJson } from "./copilotInteractions";
 import { summarizeHistoryThusFar } from "./summarizing";
 import { getTypeChatLanguageModel } from "./typechat/vscodeTypeChatModel";
-import { getZodSchema } from "./typechat/zodIntentDetectionHelper";
+import { getZodIntentDetectionSchema } from "./typechat/zodIntentDetectionHelper";
 
 export type IntentDetectionTarget = {
     name: string,
@@ -19,9 +18,10 @@ export type IntentDetectionTarget = {
 
 /**
  * Detect user intent using Type Chat.
+ * @todo Change the return type so unknown intent can be distinguished from errors thrown by the language model.
  */
 async function detectIntentTypeChat(targets: IntentDetectionTarget[], request: AgentRequest): Promise<IntentDetectionTarget | undefined> {
-    const schema = getZodSchema(targets);
+    const schema = getZodIntentDetectionSchema(targets);
     const validator = createZodJsonValidator(schema, "Action");
     const typeChatLanguageModel = getTypeChatLanguageModel(request);
     const translator = createJsonTranslator(typeChatLanguageModel, validator);
@@ -33,7 +33,6 @@ async function detectIntentTypeChat(targets: IntentDetectionTarget[], request: A
         const intent: string = (data as any).intent;
         // Note: Eventually the Zod schema will be translated to Typescript. We cannot use Typescript keywords such as "unknown", "undefinef", etc.
         if (intent === "UnknownIntent") {
-            ext.outputChannel.appendLog(`Failed to detect user intent using typechat. The intent is unknown give the available targets.`);
             return undefined;
         } else {
             for (const target of targets) {
@@ -41,17 +40,16 @@ async function detectIntentTypeChat(targets: IntentDetectionTarget[], request: A
                     return target;
                 }
             }
-            ext.outputChannel.appendLog(`Failed to detect user intent using typechat. The intent ${intent} was not one of the expected targets.`);
             return undefined;
         }
     } else {
-        ext.outputChannel.appendLog(`Failed to detect user intent using typechat. Error: ${response.message}`);
         return undefined;
     }
 }
 
 /**
  * Detect user intent using a augmented natural language prompt.
+ * @todo Change the return type so unknown intent can be distinguished from errors thrown by the language model.
  */
 async function detectIntentNaturalLanguage(targets: IntentDetectionTarget[], request: AgentRequest): Promise<IntentDetectionTarget | undefined> {
     const systemPrompt = getDetectIntentSystemPrompt1(targets.concat([{ name: "none", intentDetectionDescription: "None of the options are the best option or are applicable." }]));

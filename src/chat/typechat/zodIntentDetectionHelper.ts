@@ -12,7 +12,7 @@ export type ZodIntentDetectionResult = {
 
 export type ZodIntentDetectionSchema = ZodIntentDetectionTarget | ZodIntentDetectionResult;
 
-export function getZodSchema(targets: IntentDetectionTarget[]): { [key: string]: z.ZodObject<ZodIntentDetectionSchema> } {
+export function getZodIntentDetectionSchema(targets: IntentDetectionTarget[]): { [key: string]: z.ZodObject<ZodIntentDetectionSchema> } {
     const zodTargets = targets.map((target) => {
         return {
             // This assumes the target name can be the name of a valid JavaScript identifier and has no conflicts among all the targets.
