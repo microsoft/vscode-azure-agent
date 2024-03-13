@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { IntentDetectionTarget } from "../intentDetection";
+import { type IntentDetectionTarget } from "../intentDetection";
 
 export type ZodIntentDetectionTarget = {
     name: z.ZodLiteral<string>;

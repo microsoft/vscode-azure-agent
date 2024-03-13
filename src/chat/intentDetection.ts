@@ -29,7 +29,7 @@ async function detectIntentTypeChat(targets: IntentDetectionTarget[], request: A
     const response = await translator.translate(userPromptWithSummarizedHistory);
     if (response.success) {
         const data = response.data;
-        const intent = (data as any).intent;
+        const intent: string = (data as any).intent;
         // Note: Eventually the Zod schema will be translated to Typescript. We cannot use Typescript keywords such as "unknown", "undefinef", etc.
         if (intent === "UnknownIntent") {
             ext.outputChannel.appendLog(`Failed to detect user intent using typechat. The intent is unknown give the available targets.`);

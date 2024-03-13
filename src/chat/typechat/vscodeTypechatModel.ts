@@ -1,6 +1,6 @@
-import { PromptSection, Result, TypeChatLanguageModel, error, success } from "typechat";
+import { error, success, type PromptSection, type Result, type TypeChatLanguageModel } from "typechat";
 import * as vscode from "vscode";
-import { AgentRequest } from "../agent";
+import { type AgentRequest } from "../agent";
 import { getResponseAsStringCopilotInteraction } from "../copilotInteractions";
 
 export type CopilotInteractionResult = { copilotResponded: true, copilotResponse: string } | { copilotResponded: false, copilotResponse: undefined };
@@ -61,7 +61,7 @@ export function getTypeChatLanguageModel(request: AgentRequest): TypeChatLanguag
             }
             console.log("NewRequest forged for TypeChat", newRequest);
             const result = await getResponseAsStringCopilotInteraction(systemPrompt, newRequest);
-            if (!!result) {
+            if (result) {
                 return success(result);
             } else {
                 return error("Failed to complete prompt.");
