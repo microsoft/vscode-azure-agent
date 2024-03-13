@@ -29,6 +29,7 @@ async function detectIntentTypeChat(targets: IntentDetectionTarget[], request: A
     const response = await translator.translate(userPromptWithSummarizedHistory);
     if (response.success) {
         const data = response.data;
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
         const intent: string = (data as any).intent;
         // Note: Eventually the Zod schema will be translated to Typescript. We cannot use Typescript keywords such as "unknown", "undefinef", etc.
         if (intent === "UnknownIntent") {
