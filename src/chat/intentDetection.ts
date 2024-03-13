@@ -20,7 +20,7 @@ export type IntentDetectionTarget = {
 /**
  * Detect user intent using Type Chat.
  */
-export async function detectIntentTypeChat(targets: IntentDetectionTarget[], request: AgentRequest): Promise<IntentDetectionTarget | undefined> {
+async function detectIntentTypeChat(targets: IntentDetectionTarget[], request: AgentRequest): Promise<IntentDetectionTarget | undefined> {
     const schema = getZodSchema(targets);
     const validator = createZodJsonValidator(schema, "Action");
     const translator = createJsonTranslator(typeChatLanguageModel, validator);
@@ -50,7 +50,7 @@ export async function detectIntentTypeChat(targets: IntentDetectionTarget[], req
 /**
  * Detect user intent using a augmented natural language prompt.
  */
-export async function detectIntentNaturalLanguage(targets: IntentDetectionTarget[], request: AgentRequest): Promise<IntentDetectionTarget | undefined> {
+async function detectIntentNaturalLanguage(targets: IntentDetectionTarget[], request: AgentRequest): Promise<IntentDetectionTarget | undefined> {
     const systemPrompt = getDetectIntentSystemPrompt1(targets.concat([{ name: "none", intentDetectionDescription: "None of the options are the best option or are applicable." }]));
     const statementForIntentDetection = await summarizeHistoryThusFar(request);
     const maybeJsonCopilotResponse = await getResponseAsStringCopilotInteraction(systemPrompt, { ...request, userPrompt: statementForIntentDetection });
@@ -83,4 +83,16 @@ function getDetectIntentSystemPrompt1(targets: IntentDetectionTarget[]) {
     # Example Response 2 (able to choose a best option):
     Result: { "option": "<one of the non-none provided options>" }
     `;
+}
+
+export async function detectIntent(targets: IntentDetectionTarget[], request: AgentRequest): Promise<IntentDetectionTarget | undefined> {
+    const naturalLanguageResult = await detectIntentNaturalLanguage(targets, request);
+    const typeChatResult = await detectIntentTypeChat(targets, request);
+
+    // Log both natural language results and typeChat results for comarison.
+    console.log("Natural Language intent detection result: ", naturalLanguageResult);
+    console.log("TypeChat intent detection result: ", typeChatResult);
+    console.log("Result match", naturalLanguageResult?.name === typeChatResult?.name);
+
+    return naturalLanguageResult;
 }
