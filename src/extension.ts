@@ -6,9 +6,10 @@
 'use strict';
 
 import { registerAzureUtilsExtensionVariables } from '@microsoft/vscode-azext-azureutils';
-import { callWithTelemetryAndErrorHandling, createAzExtOutputChannel, registerUIExtensionVariables, type IActionContext } from '@microsoft/vscode-azext-utils';
+import { callWithTelemetryAndErrorHandling, createAzExtOutputChannel, registerCommand, registerUIExtensionVariables, type IActionContext } from '@microsoft/vscode-azext-utils';
 import type * as vscode from 'vscode';
 import { registerChatParticipant } from './chat/agent';
+import { showArgQueryResult } from './chat/argQuery/commands/showArgQueryResult';
 import { ext } from './extensionVariables';
 
 export async function activateInternal(context: vscode.ExtensionContext, perfStats: { loadStartTime: number; loadEndTime: number }, ignoreBundle?: boolean): Promise<void> {
@@ -18,6 +19,8 @@ export async function activateInternal(context: vscode.ExtensionContext, perfSta
 
     registerUIExtensionVariables(ext);
     registerAzureUtilsExtensionVariables(ext);
+
+    registerCommand("azureAgent.showArgQueryResult", showArgQueryResult);
 
     await callWithTelemetryAndErrorHandling(`${ext.prefix}.activate`, async (activateContext: IActionContext) => {
         activateContext.telemetry.properties.isActivationEvent = 'true';
