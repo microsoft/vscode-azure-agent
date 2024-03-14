@@ -8,7 +8,7 @@ import { createZodJsonValidator } from "typechat/zod";
 import { type AgentRequest } from "./agent";
 import { getResponseAsStringCopilotInteraction, getStringFieldFromCopilotResponseMaybeWithStrJson } from "./copilotInteractions";
 import { summarizeHistoryThusFar } from "./summarizing";
-import { getTypeChatLanguageModel } from "./typechat/vscodeTypeChatModel";
+import { getTypeChatLanguageModel } from "./typechat/getTypeChatLanguageModel";
 import { getZodIntentDetectionSchema } from "./typechat/zodIntentDetectionHelper";
 
 export type IntentDetectionTarget = {
