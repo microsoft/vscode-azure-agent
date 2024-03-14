@@ -56,7 +56,7 @@ async function summarizeQueryResponse(queryResult: ArgQueryResult, request: Agen
 
 async function displayArgQuery(query: string, queryResponse: ResourceGraphModels.QueryResponse, request: AgentRequest): Promise<void> {
     request.responseStream.markdown(`\n\nThis information was retrieved by querying Azure Resource Graph with the following query:\n\n\`\`\`\n${query}\n\`\`\`\n`);
-    request.responseStream.markdown(`\n\nYou can use the button to view the result of the full query result.\n`);
+    request.responseStream.markdown(`\n\nYou can use the button to view the full query result.\n`);
     request.responseStream.button({
         title: "Show full query result",
         command: "azureAgent.showArgQueryResult",
