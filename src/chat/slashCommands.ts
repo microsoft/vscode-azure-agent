@@ -187,6 +187,7 @@ export class SlashCommandsOwner implements IAgentRequestHandler {
                 const intentDetectionTargets = Array.from(this._invokeableSlashCommands.entries())
                     .map(([name, config]) => ({ name: name, intentDetectionDescription: config.intentDescription || config.shortDescription }));
                 const detectedTarget = await detectIntent(intentDetectionTargets, request);
+
                 if (detectedTarget !== undefined) {
                     const command = detectedTarget.name;
                     const slashCommand = this._invokeableSlashCommands.get(command);

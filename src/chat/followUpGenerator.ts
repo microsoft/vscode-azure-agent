@@ -20,6 +20,7 @@ export async function generateExtensionCommandFollowUpsOther(copilotContent: str
         .map((command) => ({ name: command.name, intentDetectionDescription: command.intentDescription || command.displayName }));
 
     const detectedIntentionTarget = await detectIntent(intentDetectionTargets, copilotContentAgentRequest);
+
     const detectedCommand = availableCommands.find((command) => command.name === detectedIntentionTarget?.name);
     if (detectedCommand !== undefined) {
         return [{ prompt: `${detectedCommand.displayName}` }]
