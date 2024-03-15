@@ -6,6 +6,7 @@
 import { type ResourceGraphModels } from "@azure/arm-resourcegraph";
 import { type IActionContext } from "@microsoft/vscode-azext-utils";
 import * as vscode from "vscode";
+import { z } from "zod";
 
 export type QueryAzureResourceGraphResult = {
     /**
@@ -36,6 +37,11 @@ export interface IAzureAgent {
      * Starts an interaction with the VS Code language model API, where the output from the language model is returned as a `string`.
      */
     getResponseAsStringLanguageModelInteraction(systemPrompt: string, request: AgentRequest, options?: LanguageModelInteractionOptions): Promise<string | undefined>;
+
+    /**
+     * Translates the given {@param message} into an object whose type matches the given {@param zodSchema}.
+     */
+    getTypeChatTranslation<TZodSchema extends Record<string, z.ZodType>, TTypeName extends keyof TZodSchema & string>(zodSchema: TZodSchema, typeName: TTypeName, message: string, request: AgentRequest): Promise<z.TypeOf<TZodSchema[TTypeName]> | undefined>;
 }
 
 export type LanguageModelInteractionOptions = {

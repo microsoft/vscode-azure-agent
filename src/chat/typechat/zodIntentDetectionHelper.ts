@@ -12,6 +12,8 @@ export type ZodIntentDetectionResult = {
 
 export type ZodIntentDetectionSchema = ZodIntentDetectionTarget | ZodIntentDetectionResult;
 
+export const UnknownIntentName = "UnknownIntent";
+
 export function getZodIntentDetectionSchema(targets: IntentDetectionTarget[]): { [key: string]: z.ZodObject<ZodIntentDetectionSchema> } {
     const zodTargets = targets.map((target) => {
         return {
@@ -30,8 +32,9 @@ export function getZodIntentDetectionSchema(targets: IntentDetectionTarget[]): {
     });
 
     // Add a target for intent that is not understood.
-    schemaPartial["UnknownIntent"] = z.object({
-        name: z.literal("UnknownIntent"),
+    // Because the Zod schema will eventually be translated to Typescript, we cannot use Typescript keywords such as "unknown", "undefinef", etc.
+    schemaPartial[UnknownIntentName] = z.object({
+        name: z.literal(UnknownIntentName),
         intentDetectionDescription: z.literal("This is best used when the intention is not understood.")
     });
 
@@ -40,7 +43,7 @@ export function getZodIntentDetectionSchema(targets: IntentDetectionTarget[]): {
 
     return {
         Action: z.object({
-            intent: z.enum(["UnknownIntent", ...targetNames])
+            intent: z.enum([UnknownIntentName, ...targetNames])
         }),
         ...schemaPartial
     };
