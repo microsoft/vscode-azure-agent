@@ -3,13 +3,11 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { createJsonTranslator } from "typechat";
-import { createZodJsonValidator } from "typechat/zod";
 import { type AgentRequest } from "./agent";
 import { getResponseAsStringCopilotInteraction, getStringFieldFromCopilotResponseMaybeWithStrJson } from "./copilotInteractions";
 import { summarizeHistoryThusFar } from "./summarizing";
-import { getTypeChatLanguageModel } from "./typechat/getTypeChatLanguageModel";
-import { getZodIntentDetectionSchema } from "./typechat/zodIntentDetectionHelper";
+import { getTypeChatTranslation } from "./typechat/getTypeChatTranslation";
+import { UnknownIntentName, getZodIntentDetectionSchema } from "./typechat/zodIntentDetectionHelper";
 
 export type IntentDetectionTarget = {
     name: string,
@@ -22,17 +20,13 @@ export type IntentDetectionTarget = {
  */
 async function detectIntentTypeChat(targets: IntentDetectionTarget[], request: AgentRequest): Promise<IntentDetectionTarget | undefined> {
     const schema = getZodIntentDetectionSchema(targets);
-    const validator = createZodJsonValidator(schema, "Action");
-    const typeChatLanguageModel = getTypeChatLanguageModel(request);
-    const translator = createJsonTranslator(typeChatLanguageModel, validator);
     const userPromptWithSummarizedHistory = await summarizeHistoryThusFar(request);
-    const response = await translator.translate(userPromptWithSummarizedHistory);
-    if (response.success) {
-        const data = response.data;
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
-        const intent: string = (data as any).intent;
-        // Note: Eventually the Zod schema will be translated to Typescript. We cannot use Typescript keywords such as "unknown", "undefinef", etc.
-        if (intent === "UnknownIntent") {
+    const translation = await getTypeChatTranslation(schema, "Action", userPromptWithSummarizedHistory, request);
+    if (translation !== undefined) {
+        const intent: string | undefined =
+            (translation as { intent?: string | undefined; }).intent ||
+            (translation as { name?: string | undefined; }).name;
+        if (intent === UnknownIntentName) {
             return undefined;
         } else {
             for (const target of targets) {
