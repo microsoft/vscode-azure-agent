@@ -14,7 +14,7 @@ import { argQueryCommand } from "./argQuery/argQuerySlashCommand";
 import { AgentBenchmarker } from "./benchmarking/AgentBenchmarker";
 import { defaultBenchmarks, helpBenchmarks, multiPromptBenchmarks } from "./benchmarking/agentBenchmarks";
 import { getLearnCommand } from "./commonCommandsAndHandlers";
-import { appServiceExtensionSlashCommandsOwner, azdExtensionSlashCommandsOwner, azureExtensionsCommand, containerAppsExtensionSlashCommandsOwner, databasesExtensionCosmosDbSlashCommandsOwner, databasesExtensionPostgreSQLSlashCommandsOwner, functionsExtensionSlashCommandsOwner, staticWebAppsExtensionSlashCommandsOwner, storageExtensionSlashCommandsOwner, virtualMachinesExtensionSlashCommandsOwner } from "./extensions/azureExtensionsCommand";
+import { appServiceExtensionSlashCommandsOwner, azdExtensionSlashCommandsOwner, containerAppsExtensionSlashCommandsOwner, databasesExtensionCosmosDbSlashCommandsOwner, databasesExtensionPostgreSQLSlashCommandsOwner, functionsExtensionSlashCommandsOwner, staticWebAppsExtensionSlashCommandsOwner, storageExtensionSlashCommandsOwner, virtualMachinesExtensionSlashCommandsOwner } from "./extensions/KnownAzureExtensions";
 import { getRagStatusSlashCommand, toggleRagSlashCommand } from "./rag";
 import { SlashCommandsOwner, type SlashCommandHandlerResult } from "./slashCommands";
 
@@ -45,11 +45,21 @@ const agentLearnCommand = getLearnCommand({ topic: "Azure" });
  */
 const agentSlashCommandsOwner = new SlashCommandsOwner({ noInput: agentHelpCommandName, default: agentLearnCommand[0], });
 agentSlashCommandsOwner.addInvokeableSlashCommands(new Map([
-    azureExtensionsCommand,
     agentLearnCommand,
     argQueryCommand,
     getAgentHelpCommand(agentSlashCommandsOwner),
 ]));
+agentSlashCommandsOwner.addLazyInvokeableSlashCommands(
+    () => appServiceExtensionSlashCommandsOwner.getSlashCommands(),
+    () => azdExtensionSlashCommandsOwner.getSlashCommands(),
+    () => containerAppsExtensionSlashCommandsOwner.getSlashCommands(),
+    () => databasesExtensionCosmosDbSlashCommandsOwner.getSlashCommands(),
+    () => databasesExtensionPostgreSQLSlashCommandsOwner.getSlashCommands(),
+    () => functionsExtensionSlashCommandsOwner.getSlashCommands(),
+    () => staticWebAppsExtensionSlashCommandsOwner.getSlashCommands(),
+    () => storageExtensionSlashCommandsOwner.getSlashCommands(),
+    () => virtualMachinesExtensionSlashCommandsOwner.getSlashCommands(),
+);
 
 /**
  * Owns slash commands that are hidden from the user and related to benchmarking the agent.
