@@ -65,9 +65,12 @@ async function displayArgQuery(query: string, queryResponse: ResourceGraphModels
 }
 
 async function displayTrimWarning(request: AgentRequest) {
-    request.responseStream.markdown(`\n\n> ⚠️ The answer is based on trimmed result to prevent exceeding the language model's token limit.\n`);
+    request.responseStream.markdown(`\n\n> ⚠️ This answer is based on a trimmed result to prevent exceeding the language model's token limit.\n`);
 }
 
+/**
+ * @todo: Find a library to handle the LLM token size limit for all interactions.
+ */
 const tokenLimit = 4000;
 
 /**
