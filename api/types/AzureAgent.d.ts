@@ -29,6 +29,11 @@ export interface IAzureAgent {
     queryAzureResourceGraph(context: IActionContext, prompt: string, request: AgentRequest): Promise<QueryAzureResourceGraphResult | undefined>;
 
     /**
+     * Gets the maximum number of tokens that can be used in a single language model interaction. The limit is based on what lanuage models are currently available from {@link vscode.lm.languageModels}.
+     */
+    getLangaugeModelTokenLimit(): number;
+
+    /**
      * Starts an interaction with the VS Code language model API, where the output from the language model is outputted verbatim to the user.
      */
     verbatimLanguageModelInteraction(systemPrompt: string, request: AgentRequest, options?: LanguageModelInteractionOptions): Promise<LanguageModelInteractionResult>;
