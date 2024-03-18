@@ -3,8 +3,8 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { ResourceGraphModels } from "@azure/arm-resourcegraph";
-import { IActionContext, openReadOnlyContent } from "@microsoft/vscode-azext-utils";
+import { type ResourceGraphModels } from "@azure/arm-resourcegraph";
+import { openReadOnlyContent, type IActionContext } from "@microsoft/vscode-azext-utils";
 import { randomUUID } from "crypto";
 
 export async function showArgQueryResult(_actionContext: IActionContext, queryResponse: ResourceGraphModels.QueryResponse): Promise<void> {

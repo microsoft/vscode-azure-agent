@@ -84,7 +84,7 @@ function getTrimmedQueryResult(queryResponse: ResourceGraphModels.QueryResponse)
         const dataToPreserve: any = [];
         let numTokens = 0;
         // Estimate the number of tokens until it exceeds our limit
-        for (let entry of data) {
+        for (const entry of data) {
             const entryTokenCount = JSON.stringify(entry).length;
             // Make sure there is at least one entry in the data
             if (numTokens > 0 && numTokens + entryTokenCount > tokenLimit) {
