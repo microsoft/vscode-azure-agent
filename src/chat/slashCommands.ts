@@ -157,9 +157,9 @@ export class SlashCommandsOwner implements IAgentRequestHandler {
     }
 
     private async _callLazyInvokeableSlashCommandsResolvers(): Promise<void> {
-        for (const resolver of this._invokeableSlashCommandsResolvers) {
-            const lazySlashCommands = await resolver();
-            this.addInvokeableSlashCommands(lazySlashCommands);
+        const commandsFromResolvers = await Promise.all(this._invokeableSlashCommandsResolvers.map((resolver) => resolver()));
+        for (const commands of commandsFromResolvers) {
+            this.addInvokeableSlashCommands(commands);
         }
         this._invokeableSlashCommandsResolvers = [];
     }
