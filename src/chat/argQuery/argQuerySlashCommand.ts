@@ -70,6 +70,7 @@ async function displayTrimWarning(request: AgentRequest) {
 
 /**
  * @todo: Find a library to handle the LLM token size limit for all interactions.
+ * https://github.com/microsoft/vscode-azure-agent/issues/101
  */
 const tokenLimit = 4000;
 
