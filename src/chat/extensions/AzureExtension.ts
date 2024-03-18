@@ -31,7 +31,7 @@ export class AzureExtension {
         return true;
     }
 
-    public async activate(request: AgentRequest): Promise<void> {
+    public async activate(request: AgentRequest | undefined): Promise<void> {
         if (this.extensionId !== "") {
             this._extension = this._extension || vscode.extensions.getExtension(this.extensionId);
             if (this._extension !== undefined) {

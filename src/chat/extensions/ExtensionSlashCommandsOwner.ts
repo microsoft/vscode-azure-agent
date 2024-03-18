@@ -50,11 +50,16 @@ export class ExtensionSlashCommandsOwner implements IAgentRequestHandler {
         ]
     }
 
+    public async getSlashCommands(): Promise<SlashCommands> {
+        const extensionSlashCommandsOwner = await this._getExtensionSlashCommandsOwner(undefined);
+        return await extensionSlashCommandsOwner.getSlashCommands();
+    }
+
     public getExtension(): AzureExtension {
         return this._extension;
     }
 
-    private async _getExtensionSlashCommandsOwner(request: AgentRequest): Promise<SlashCommandsOwner> {
+    private async _getExtensionSlashCommandsOwner(request: AgentRequest | undefined): Promise<SlashCommandsOwner> {
         if (!this._extensionSlashCommandsOwner) {
             await this._extension.activate(request);
 
