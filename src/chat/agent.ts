@@ -49,7 +49,7 @@ agentSlashCommandsOwner.addInvokeableSlashCommands(new Map([
     argQueryCommand,
     getAgentHelpCommand(agentSlashCommandsOwner),
 ]));
-agentSlashCommandsOwner.addLazyInvokeableSlashCommands(
+agentSlashCommandsOwner.addInvokeableSlashCommandsLazy(
     () => appServiceExtensionSlashCommandsOwner.getSlashCommands(),
     () => azdExtensionSlashCommandsOwner.getSlashCommands(),
     () => containerAppsExtensionSlashCommandsOwner.getSlashCommands(),

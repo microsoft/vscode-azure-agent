@@ -99,7 +99,7 @@ export const defaultSlashCommandName = "default";
  */
 export class SlashCommandsOwner implements IAgentRequestHandler {
     private _invokeableSlashCommands: SlashCommands;
-    private _lazyInvokeableSlashCommandsResolvers: (() => Promise<SlashCommands>)[];
+    private _invokeableSlashCommandsResolvers: (() => Promise<SlashCommands>)[];
     private _fallbackHandlers: FallbackSlashCommandHandlers;
     private _disableIntentDetection: boolean;
 
@@ -107,7 +107,7 @@ export class SlashCommandsOwner implements IAgentRequestHandler {
 
     constructor(fallbackHandlers: FallbackSlashCommandHandlers, options?: SlashCommmandOwnerOptions) {
         this._invokeableSlashCommands = new Map();
-        this._lazyInvokeableSlashCommandsResolvers = [];
+        this._invokeableSlashCommandsResolvers = [];
         this._fallbackHandlers = fallbackHandlers;
         this._disableIntentDetection = options?.disableIntentDetection || false;
     }
@@ -118,8 +118,8 @@ export class SlashCommandsOwner implements IAgentRequestHandler {
         }
     }
 
-    public addLazyInvokeableSlashCommands(...lazySlashCommands: (() => Promise<SlashCommands>)[]): void {
-        this._lazyInvokeableSlashCommandsResolvers.push(...lazySlashCommands);
+    public addInvokeableSlashCommandsLazy(...slashCommandsResolver: (() => Promise<SlashCommands>)[]): void {
+        this._invokeableSlashCommandsResolvers.push(...slashCommandsResolver);
     }
 
     public async handleRequestOrPrompt(request: AgentRequest, handlerChain: string[]): Promise<SlashCommandHandlerResult> {
@@ -157,11 +157,11 @@ export class SlashCommandsOwner implements IAgentRequestHandler {
     }
 
     private async _callLazyInvokeableSlashCommandsResolvers(): Promise<void> {
-        for (const resolver of this._lazyInvokeableSlashCommandsResolvers) {
+        for (const resolver of this._invokeableSlashCommandsResolvers) {
             const lazySlashCommands = await resolver();
             this.addInvokeableSlashCommands(lazySlashCommands);
         }
-        this._lazyInvokeableSlashCommandsResolvers = [];
+        this._invokeableSlashCommandsResolvers = [];
     }
 
     private async _getSlashCommandHandlerForRequest(request: AgentRequest): Promise<{ refinedRequest: AgentRequest, handler: SlashCommandHandler | undefined } | undefined> {
