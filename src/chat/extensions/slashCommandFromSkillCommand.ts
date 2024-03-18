@@ -6,7 +6,7 @@
 import { type SkillCommandArgs, type SkillCommandConfig } from "../../../api";
 import { type AgentRequest } from "../agent";
 import { queryAzureResourceGraph } from "../argQuery/queryAzureResourceGraph";
-import { getResponseAsStringCopilotInteraction, verbatimCopilotInteraction } from "../copilotInteractions";
+import { getLangaugeModelTokenLimit, getResponseAsStringCopilotInteraction, verbatimCopilotInteraction } from "../copilotInteractions";
 import { type SlashCommand, type SlashCommandHandlerResult } from "../slashCommands";
 import { getTypeChatTranslation } from "../typechat/getTypeChatTranslation";
 import { type AzureExtension } from "./AzureExtension";
@@ -23,6 +23,7 @@ export function slashCommandFromSkillCommand(command: SkillCommandConfig, extens
                     agentRequest: request,
                     agent: {
                         verbatimLanguageModelInteraction: verbatimCopilotInteraction,
+                        getLangaugeModelTokenLimit: getLangaugeModelTokenLimit,
                         getResponseAsStringLanguageModelInteraction: getResponseAsStringCopilotInteraction,
                         queryAzureResourceGraph: queryAzureResourceGraph,
                         getTypeChatTranslation: getTypeChatTranslation,

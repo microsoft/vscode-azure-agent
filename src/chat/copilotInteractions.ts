@@ -8,7 +8,32 @@ import { type LanguageModelInteractionOptions, type LanguageModelInteractionResu
 import { type AgentRequest } from "./agent";
 import { agentName } from "./agentConsts";
 
-const languageModelPreference: string[] = ["copilot-gpt-4", "copilot"];
+export type LanguageModel = {
+    name: string;
+    contextWindowTokenLimit: number;
+};
+const languageModelPreference: LanguageModel[] = [
+    // not yet seen/available
+    { name: "copilot-gpt-4-turbo", contextWindowTokenLimit: 128000 },
+    { name: "copilot-gpt-4-turbo-preview", contextWindowTokenLimit: 128000 },
+    // seen/available
+    { name: "copilot-gpt-4", contextWindowTokenLimit: 8192 },
+    { name: "copilot-gpt-3.5-turbo", contextWindowTokenLimit: 4096 },
+    // previously seen/available
+    { name: "copilot", contextWindowTokenLimit: 4096 }
+];
+
+export function getLangaugeModelTokenLimit(): number {
+    const languageModelPreferenceNames = languageModelPreference.map((m) => m.name);
+    const mostPreferredAvailableLanguageModel = vscode.lm.languageModels
+        .filter((model) => languageModelPreferenceNames.includes(model))
+        .sort((a, b) => languageModelPreferenceNames.indexOf(a) - languageModelPreferenceNames.indexOf(b))
+        .at(0) || vscode.lm.languageModels.at(0);
+
+    const smallestContextWindowTokenLimit = languageModelPreference.reduce((smallest, m) => m.contextWindowTokenLimit < smallest ? m.contextWindowTokenLimit : smallest, Number.MAX_SAFE_INTEGER);
+
+    return languageModelPreference.find((m) => m.name === mostPreferredAvailableLanguageModel)?.contextWindowTokenLimit ?? smallestContextWindowTokenLimit
+}
 
 const showDebugCopilotInteractionAsProgress = false;
 function debugCopilotInteraction(responseStream: vscode.ChatResponseStream, msg: string) {
@@ -120,9 +145,10 @@ async function doCopilotInteraction(onResponseFragment: (fragment: string) => vo
             onResponseFragment(copilotInteractionCache[cacheKey].joinedResponseFragments);
             copilotInteractionCache[cacheKey].lastHit = Date.now();
         } else {
+            const languageModelPreferenceNames = languageModelPreference.map((m) => m.name);
             const chatRequestModel = vscode.lm.languageModels
-                .filter((model) => languageModelPreference.includes(model))
-                .sort((a, b) => languageModelPreference.indexOf(a) - languageModelPreference.indexOf(b))
+                .filter((model) => languageModelPreferenceNames.includes(model))
+                .sort((a, b) => languageModelPreferenceNames.indexOf(a) - languageModelPreferenceNames.indexOf(b))
                 .at(0) || vscode.lm.languageModels.at(0);
             const chatRequestOptions = { justification: `Access to Copilot for the @${agentName} agent.` };
             const request = await vscode.lm.sendChatRequest(chatRequestModel as string, messages, chatRequestOptions, agentRequest.token)
