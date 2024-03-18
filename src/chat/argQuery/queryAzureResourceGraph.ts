@@ -55,7 +55,10 @@ async function queryArg(subscription: AzureSubscription, query: string, request:
         request.responseStream.progress("Querying Azure Resource graph...");
 
         const resourceGraphClient = new ResourceGraphClient(tokenCredential);
-        const response = await resourceGraphClient.resources({ query: query });
+        const response = await resourceGraphClient.resources({
+            query: query,
+            options: { resultFormat: "objectArray" }
+        });
         return response;
     }
     return undefined;
