@@ -3,7 +3,9 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
+import { VSCodeAzureSubscriptionProvider } from "@microsoft/vscode-azext-azureauth";
 import { type SkillCommandArgs, type SkillCommandConfig } from "../../../api";
+import { ext } from "../../extensionVariables";
 import { type AgentRequest } from "../agent";
 import { queryAzureResourceGraph } from "../argQuery/queryAzureResourceGraph";
 import { getLangaugeModelTokenLimit, getResponseAsStringCopilotInteraction, verbatimCopilotInteraction } from "../copilotInteractions";
@@ -27,6 +29,8 @@ export function slashCommandFromSkillCommand(command: SkillCommandConfig, extens
                         getResponseAsStringLanguageModelInteraction: getResponseAsStringCopilotInteraction,
                         queryAzureResourceGraph: queryAzureResourceGraph,
                         getTypeChatTranslation: getTypeChatTranslation,
+                        outputChannel: ext.outputChannel,
+                        subscriptionProvider: new VSCodeAzureSubscriptionProvider()
                     }
                 }
                 await extension.runSkillCommand(command, args)

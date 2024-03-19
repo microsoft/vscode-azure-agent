@@ -88,7 +88,7 @@ export async function detectIntent(targets: IntentDetectionTarget[], request: Ag
     // Log both natural language results and typeChat results for comarison.
     ext.outputChannel.debug("Natural Language intent detection result: ", naturalLanguageResult);
     ext.outputChannel.debug("TypeChat intent detection result: ", typeChatResult);
-    ext.outputChannel.debug("Result match", naturalLanguageResult?.name === typeChatResult?.name);
+    ext.outputChannel.debug("Result match:", naturalLanguageResult?.name === typeChatResult?.name);
 
     return naturalLanguageResult;
 }

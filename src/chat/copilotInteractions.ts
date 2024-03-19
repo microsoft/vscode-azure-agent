@@ -42,7 +42,7 @@ function debugCopilotInteraction(responseStream: vscode.ChatResponseStream, msg:
     if (showDebugCopilotInteractionAsProgress) {
         responseStream.markdown(new vscode.MarkdownString(`\n\n${new Date().toISOString()} >> \`${messageToLog}\`\n\n`));
     }
-    ext.outputChannel.debug(messageToLog);
+    ext.outputChannel.trace(messageToLog);
 }
 
 /**
@@ -198,7 +198,7 @@ export function getStringFieldFromCopilotResponseMaybeWithStrJson(copilotRespons
         return findPossibleValuesOfFieldFromParsedCopilotResponse(parsedCopilotResponse, fieldNameOrNames, filter)
             .find((value): value is string => value !== undefined && value !== "" && typeof value === "string");
     } catch (e) {
-        ext.outputChannel.debug("Failed to get string field from copilot response.", e);
+        ext.outputChannel.debug(`Failed to get string field from copilot response: ${JSON.stringify(e)}`);
         return undefined;
     }
 }
@@ -221,7 +221,7 @@ export function getBooleanFieldFromCopilotResponseMaybeWithStrJson(copilotRespon
             .map((value): string | boolean | undefined => typeof value === "boolean" ? value : value.toLowerCase() === "true" || value.toLowerCase() === "false" ? JSON.parse(value.toLowerCase()) as boolean : undefined)
             .find((value): value is boolean => value !== undefined && typeof value === "boolean");
     } catch (e) {
-        ext.outputChannel.debug("Failed to get boolean field from copilot response.", e);
+        ext.outputChannel.debug(`Failed to get boolean field from copilot response: ${JSON.stringify(e)}`);
         return undefined;
     }
 }
