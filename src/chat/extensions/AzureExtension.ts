@@ -127,7 +127,7 @@ export class AzureExtension {
             return this._cachedAgentBenchmarkConfigs;
         } catch (error) {
             this._cachedAgentBenchmarkConfigs = [];
-            ext.outputChannel.debug(`Error getting wizard commands from ${this.extensionDisplayName} extension: ${JSON.stringify(error)}`);
+            ext.outputChannel.debug(`Error getting benchmark commands from ${this.extensionDisplayName} extension: ${JSON.stringify(error)}`);
             return [];
         }
     }
@@ -145,7 +145,7 @@ export class AzureExtension {
             return this._cachedCommandConfigs;
         } catch (error) {
             this._cachedCommandConfigs = [];
-            ext.outputChannel.debug(`Error getting wizard commands from ${this.extensionDisplayName} extension: ${JSON.stringify(error)}`);
+            ext.outputChannel.debug(`Error getting commands from ${this.extensionDisplayName} extension: ${JSON.stringify(error)}`);
             return [];
         }
     }
