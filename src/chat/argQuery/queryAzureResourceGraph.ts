@@ -24,16 +24,16 @@ type ArgGenerateQueryResponseBody = { query?: string; };
 
 export async function queryAzureResourceGraph(actionContext: IActionContext, prompt: string, request: AgentRequest): Promise<QueryAzureResourceGraphResult | undefined> {
     const subscriptionProvider = new VSCodeAzureSubscriptionProvider();
+    const isSignedIn = await subscriptionProvider.isSignedIn();
+    if (!isSignedIn) {
+        await subscriptionProvider.signIn();
+    }
+
     const tenants = await subscriptionProvider.getTenants();
     const homeTenant = tenants.filter((t) => t.tenantCategory === "Home").at(0);
     const desiredTenantId = homeTenant?.tenantId || tenants.at(0)?.tenantId;
 
     if (desiredTenantId !== undefined) {
-        const isSignedIn = await subscriptionProvider.isSignedIn(desiredTenantId);
-        if (!isSignedIn) {
-            await subscriptionProvider.signIn();
-        }
-
         const subscriptions = await subscriptionProvider.getSubscriptions(true);
         const subscriptionForTenant = subscriptions.find(sub => sub.tenantId === desiredTenantId);
         if (subscriptionForTenant !== undefined) {
