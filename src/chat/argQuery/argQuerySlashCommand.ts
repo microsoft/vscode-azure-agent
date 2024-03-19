@@ -79,6 +79,7 @@ const tokenLimit = 4000;
  */
 function getTrimmedQueryResult(queryResponse: ResourceGraphModels.QueryResponse): ArgQueryResult {
     let count = queryResponse.count;
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     let data: any = queryResponse.data;
     if (Array.isArray(data)) {
         const dataToPreserve: any = [];
@@ -91,10 +92,13 @@ function getTrimmedQueryResult(queryResponse: ResourceGraphModels.QueryResponse)
                 break;
             } else {
                 numTokens += entryTokenCount;
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
                 dataToPreserve.push(entry);
             }
         }
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
         count = dataToPreserve.length;
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         data = dataToPreserve;
     } else {
         // This shouldn't happen because we have specified the resultFormat to be "objectArray".
@@ -104,6 +108,7 @@ function getTrimmedQueryResult(queryResponse: ResourceGraphModels.QueryResponse)
     return {
         totalRecords: queryResponse.totalRecords,
         count,
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         data
     };
 }
