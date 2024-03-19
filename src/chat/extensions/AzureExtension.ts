@@ -57,7 +57,7 @@ export class AzureExtension {
             return (await this._getCommandConfigs())
                 .filter((commandConfig): commandConfig is SimpleCommandConfig => commandConfig.type === "simple");
         } catch (error) {
-            ext.outputChannel.debug(`Error getting wizard commands from ${this.extensionDisplayName} extension: ${JSON.stringify(error)}`);
+            ext.outputChannel.debug(`Error getting simple commands from ${this.extensionDisplayName} extension: ${JSON.stringify(error)}`);
             return [];
         }
     }
@@ -67,7 +67,7 @@ export class AzureExtension {
             return (await this._getCommandConfigs())
                 .filter((commandConfig): commandConfig is SkillCommandConfig => commandConfig.type === "skill");
         } catch (error) {
-            ext.outputChannel.debug(`Error getting wizard commands from ${this.extensionDisplayName} extension: ${JSON.stringify(error)}`);
+            ext.outputChannel.debug(`Error getting skill commands from ${this.extensionDisplayName} extension: ${JSON.stringify(error)}`);
             return [];
         }
     }
