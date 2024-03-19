@@ -3,7 +3,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { IAzExtLogOutputChannel } from "@microsoft/vscode-azext-utils";
+import { type IAzExtLogOutputChannel } from "@microsoft/vscode-azext-utils";
 import { type ExtensionContext } from "vscode";
 /**
  * Namespace for common variables used throughout the extension. They must be initialized in the activate() method of extension.ts
