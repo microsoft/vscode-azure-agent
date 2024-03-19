@@ -5,6 +5,7 @@
 
 import { type ResourceGraphModels } from "@azure/arm-resourcegraph";
 import { callWithTelemetryAndErrorHandling } from "@microsoft/vscode-azext-utils";
+import { ext } from "../../extensionVariables";
 import { type AgentRequest } from "../agent";
 import { verbatimCopilotInteraction } from "../copilotInteractions";
 import { type SlashCommand, type SlashCommandHandlerResult } from "../slashCommands";
@@ -105,7 +106,7 @@ function getTrimmedQueryResult(queryResponse: ResourceGraphModels.QueryResponse)
     } else {
         // This shouldn't happen because we have specified the resultFormat to be "objectArray".
         // In case this happens, log a warning and return the query result as is.
-        console.log("Unexpecte query result data format.", data);
+        ext.outputChannel.info("Unexpecte query result data format.", data);
     }
     return {
         totalRecords: queryResponse.totalRecords,

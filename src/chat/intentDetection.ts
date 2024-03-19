@@ -3,6 +3,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
+import { ext } from "../extensionVariables";
 import { type AgentRequest } from "./agent";
 import { getResponseAsStringCopilotInteraction, getStringFieldFromCopilotResponseMaybeWithStrJson } from "./copilotInteractions";
 import { summarizeHistoryThusFar } from "./summarizing";
@@ -85,9 +86,9 @@ export async function detectIntent(targets: IntentDetectionTarget[], request: Ag
     const typeChatResult = await detectIntentTypeChat(targets, request);
 
     // Log both natural language results and typeChat results for comarison.
-    console.log("Natural Language intent detection result: ", naturalLanguageResult);
-    console.log("TypeChat intent detection result: ", typeChatResult);
-    console.log("Result match", naturalLanguageResult?.name === typeChatResult?.name);
+    ext.outputChannel.info("Natural Language intent detection result: ", naturalLanguageResult);
+    ext.outputChannel.info("TypeChat intent detection result: ", typeChatResult);
+    ext.outputChannel.info("Result match", naturalLanguageResult?.name === typeChatResult?.name);
 
     return naturalLanguageResult;
 }

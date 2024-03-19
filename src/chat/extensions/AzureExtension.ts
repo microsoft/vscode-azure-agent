@@ -8,6 +8,7 @@ import * as vscode from "vscode";
 /* eslint-disable-next-line @typescript-eslint/no-unused-vars */
 import { type AzureUserInputQueue } from "@microsoft/vscode-azext-utils";
 import { type AgentBenchmarkConfig, type AgentBenchmarkWithStepsConfig, type ExtensionAgentMetadata, type IAzureAgentInput, type SimpleCommandConfig, type SkillCommandArgs, type SkillCommandConfig, type WizardCommandConfig } from "../../../api";
+import { ext } from "../../extensionVariables";
 import { type AgentRequest } from "../agent";
 
 export class AzureExtension {
@@ -46,7 +47,7 @@ export class AzureExtension {
             return (await this._getCommandConfigs())
                 .filter((commandConfig): commandConfig is WizardCommandConfig => commandConfig.type === "wizard");
         } catch (error) {
-            console.log(`Error getting wizard commands from ${this.extensionDisplayName} extension: ${JSON.stringify(error)}`);
+            ext.outputChannel.info(`Error getting wizard commands from ${this.extensionDisplayName} extension: ${JSON.stringify(error)}`);
             return [];
         }
     }
@@ -56,7 +57,7 @@ export class AzureExtension {
             return (await this._getCommandConfigs())
                 .filter((commandConfig): commandConfig is SimpleCommandConfig => commandConfig.type === "simple");
         } catch (error) {
-            console.log(`Error getting wizard commands from ${this.extensionDisplayName} extension: ${JSON.stringify(error)}`);
+            ext.outputChannel.info(`Error getting wizard commands from ${this.extensionDisplayName} extension: ${JSON.stringify(error)}`);
             return [];
         }
     }
@@ -66,7 +67,7 @@ export class AzureExtension {
             return (await this._getCommandConfigs())
                 .filter((commandConfig): commandConfig is SkillCommandConfig => commandConfig.type === "skill");
         } catch (error) {
-            console.log(`Error getting wizard commands from ${this.extensionDisplayName} extension: ${JSON.stringify(error)}`);
+            ext.outputChannel.info(`Error getting wizard commands from ${this.extensionDisplayName} extension: ${JSON.stringify(error)}`);
             return [];
         }
     }
@@ -126,7 +127,7 @@ export class AzureExtension {
             return this._cachedAgentBenchmarkConfigs;
         } catch (error) {
             this._cachedAgentBenchmarkConfigs = [];
-            console.log(`Error getting wizard commands from ${this.extensionDisplayName} extension: ${JSON.stringify(error)}`);
+            ext.outputChannel.info(`Error getting wizard commands from ${this.extensionDisplayName} extension: ${JSON.stringify(error)}`);
             return [];
         }
     }
@@ -144,7 +145,7 @@ export class AzureExtension {
             return this._cachedCommandConfigs;
         } catch (error) {
             this._cachedCommandConfigs = [];
-            console.log(`Error getting wizard commands from ${this.extensionDisplayName} extension: ${JSON.stringify(error)}`);
+            ext.outputChannel.info(`Error getting wizard commands from ${this.extensionDisplayName} extension: ${JSON.stringify(error)}`);
             return [];
         }
     }
