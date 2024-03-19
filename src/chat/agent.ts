@@ -99,7 +99,7 @@ export function registerChatParticipant() {
         agent2.followupProvider = { provideFollowups: followUpProvider };
         agent2.isSticky = true;
     } catch (e) {
-        console.log(e);
+        ext.outputChannel.error("Failed to register chat participant.", e);
     }
 }
 
