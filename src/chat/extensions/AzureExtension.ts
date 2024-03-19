@@ -47,7 +47,7 @@ export class AzureExtension {
             return (await this._getCommandConfigs())
                 .filter((commandConfig): commandConfig is WizardCommandConfig => commandConfig.type === "wizard");
         } catch (error) {
-            ext.outputChannel.info(`Error getting wizard commands from ${this.extensionDisplayName} extension: ${JSON.stringify(error)}`);
+            ext.outputChannel.debug(`Error getting wizard commands from ${this.extensionDisplayName} extension: ${JSON.stringify(error)}`);
             return [];
         }
     }
@@ -57,7 +57,7 @@ export class AzureExtension {
             return (await this._getCommandConfigs())
                 .filter((commandConfig): commandConfig is SimpleCommandConfig => commandConfig.type === "simple");
         } catch (error) {
-            ext.outputChannel.info(`Error getting wizard commands from ${this.extensionDisplayName} extension: ${JSON.stringify(error)}`);
+            ext.outputChannel.debug(`Error getting wizard commands from ${this.extensionDisplayName} extension: ${JSON.stringify(error)}`);
             return [];
         }
     }
@@ -67,7 +67,7 @@ export class AzureExtension {
             return (await this._getCommandConfigs())
                 .filter((commandConfig): commandConfig is SkillCommandConfig => commandConfig.type === "skill");
         } catch (error) {
-            ext.outputChannel.info(`Error getting wizard commands from ${this.extensionDisplayName} extension: ${JSON.stringify(error)}`);
+            ext.outputChannel.debug(`Error getting wizard commands from ${this.extensionDisplayName} extension: ${JSON.stringify(error)}`);
             return [];
         }
     }
@@ -127,7 +127,7 @@ export class AzureExtension {
             return this._cachedAgentBenchmarkConfigs;
         } catch (error) {
             this._cachedAgentBenchmarkConfigs = [];
-            ext.outputChannel.info(`Error getting wizard commands from ${this.extensionDisplayName} extension: ${JSON.stringify(error)}`);
+            ext.outputChannel.debug(`Error getting wizard commands from ${this.extensionDisplayName} extension: ${JSON.stringify(error)}`);
             return [];
         }
     }
@@ -145,7 +145,7 @@ export class AzureExtension {
             return this._cachedCommandConfigs;
         } catch (error) {
             this._cachedCommandConfigs = [];
-            ext.outputChannel.info(`Error getting wizard commands from ${this.extensionDisplayName} extension: ${JSON.stringify(error)}`);
+            ext.outputChannel.debug(`Error getting wizard commands from ${this.extensionDisplayName} extension: ${JSON.stringify(error)}`);
             return [];
         }
     }

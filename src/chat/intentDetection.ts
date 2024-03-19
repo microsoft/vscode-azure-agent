@@ -86,9 +86,9 @@ export async function detectIntent(targets: IntentDetectionTarget[], request: Ag
     const typeChatResult = await detectIntentTypeChat(targets, request);
 
     // Log both natural language results and typeChat results for comarison.
-    ext.outputChannel.info("Natural Language intent detection result: ", naturalLanguageResult);
-    ext.outputChannel.info("TypeChat intent detection result: ", typeChatResult);
-    ext.outputChannel.info("Result match", naturalLanguageResult?.name === typeChatResult?.name);
+    ext.outputChannel.debug("Natural Language intent detection result: ", naturalLanguageResult);
+    ext.outputChannel.debug("TypeChat intent detection result: ", typeChatResult);
+    ext.outputChannel.debug("Result match", naturalLanguageResult?.name === typeChatResult?.name);
 
     return naturalLanguageResult;
 }

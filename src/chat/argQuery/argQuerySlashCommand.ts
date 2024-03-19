@@ -106,7 +106,7 @@ function getTrimmedQueryResult(queryResponse: ResourceGraphModels.QueryResponse)
     } else {
         // This shouldn't happen because we have specified the resultFormat to be "objectArray".
         // In case this happens, log a warning and return the query result as is.
-        ext.outputChannel.info("Unexpecte query result data format.", data);
+        ext.outputChannel.debug("Unexpecte query result data format.", data);
     }
     return {
         totalRecords: queryResponse.totalRecords,

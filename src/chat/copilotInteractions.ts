@@ -38,10 +38,11 @@ export function getLangaugeModelTokenLimit(): number {
 
 const showDebugCopilotInteractionAsProgress = false;
 function debugCopilotInteraction(responseStream: vscode.ChatResponseStream, msg: string) {
+    const messageToLog = msg.replace(/\n/g, "").trim();
     if (showDebugCopilotInteractionAsProgress) {
-        responseStream.markdown(new vscode.MarkdownString(`\n\n${new Date().toISOString()} >> \`${msg.replace(/\n/g, "").trim()}\`\n\n`));
+        responseStream.markdown(new vscode.MarkdownString(`\n\n${new Date().toISOString()} >> \`${messageToLog}\`\n\n`));
     }
-    ext.outputChannel.info(`${new Date().toISOString()} >> \`${msg.replace(/\n/g, "").trim()}\``);
+    ext.outputChannel.debug(messageToLog);
 }
 
 /**
@@ -197,7 +198,7 @@ export function getStringFieldFromCopilotResponseMaybeWithStrJson(copilotRespons
         return findPossibleValuesOfFieldFromParsedCopilotResponse(parsedCopilotResponse, fieldNameOrNames, filter)
             .find((value): value is string => value !== undefined && value !== "" && typeof value === "string");
     } catch (e) {
-        ext.outputChannel.info("Failed to get string field from copilot response.", e);
+        ext.outputChannel.debug("Failed to get string field from copilot response.", e);
         return undefined;
     }
 }
@@ -220,7 +221,7 @@ export function getBooleanFieldFromCopilotResponseMaybeWithStrJson(copilotRespon
             .map((value): string | boolean | undefined => typeof value === "boolean" ? value : value.toLowerCase() === "true" || value.toLowerCase() === "false" ? JSON.parse(value.toLowerCase()) as boolean : undefined)
             .find((value): value is boolean => value !== undefined && typeof value === "boolean");
     } catch (e) {
-        ext.outputChannel.info("Failed to get boolean field from copilot response.", e);
+        ext.outputChannel.debug("Failed to get boolean field from copilot response.", e);
         return undefined;
     }
 }
@@ -242,7 +243,7 @@ function parseCopilotResponseMaybeWithStrJson(copilotResponseMaybeWithStrJson: s
         const maybeJsonCopilotResponse = copilotResponseMaybeWithStrJson.substring(copilotResponseMaybeWithStrJson.indexOf("{"), copilotResponseMaybeWithStrJson.lastIndexOf("}") + 1);
         return JSON.parse(maybeJsonCopilotResponse) as { [key: string]: (string | boolean | number | object) };
     } catch (e) {
-        ext.outputChannel.info(`Failed to parse copilot response maybe with string JSON, response: '${copilotResponseMaybeWithStrJson}'. Error: ${JSON.stringify(e)}`);
+        ext.outputChannel.debug(`Failed to parse copilot response maybe with string JSON, response: '${copilotResponseMaybeWithStrJson}'. Error: ${JSON.stringify(e)}`);
         return {};
     }
 }
