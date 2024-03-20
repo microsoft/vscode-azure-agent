@@ -4,9 +4,10 @@
  *--------------------------------------------------------------------------------------------*/
 
 import { type ResourceGraphModels } from "@azure/arm-resourcegraph";
-import { type IActionContext } from "@microsoft/vscode-azext-utils";
-import * as vscode from "vscode";
-import { z } from "zod";
+import { type AzureSubscriptionProvider } from "@microsoft/vscode-azext-azureauth";
+import { type IActionContext, type IAzExtLogOutputChannel } from "@microsoft/vscode-azext-utils";
+import type * as vscode from "vscode";
+import { type z } from "zod";
 
 export type QueryAzureResourceGraphResult = {
     /**
@@ -47,6 +48,16 @@ export interface IAzureAgent {
      * Translates the given {@param message} into an object whose type matches the given {@param zodSchema}.
      */
     getTypeChatTranslation<TZodSchema extends Record<string, z.ZodType>, TTypeName extends keyof TZodSchema & string>(zodSchema: TZodSchema, typeName: TTypeName, message: string, request: AgentRequest): Promise<z.TypeOf<TZodSchema[TTypeName]> | undefined>;
+
+    /**
+     * An output channel to use for logging if performing actions on behalf of the agent.
+     */
+    readonly outputChannel: IAzExtLogOutputChannel;
+
+    /**
+     * A subscription provider to use if authenticating with Azure if performing actions on behalf of the agent.
+     */
+    readonly subscriptionProvider: AzureSubscriptionProvider;
 }
 
 export type LanguageModelInteractionOptions = {
