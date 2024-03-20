@@ -42,7 +42,7 @@ function debugCopilotInteraction(responseStream: vscode.ChatResponseStream, msg:
     if (showDebugCopilotInteractionAsProgress) {
         responseStream.markdown(new vscode.MarkdownString(`\n\n${new Date().toISOString()} >> \`${messageToLog}\`\n\n`));
     }
-    ext.outputChannel.trace(messageToLog);
+    ext.outputChannel.debug(messageToLog);
 }
 
 /**
