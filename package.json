@@ -65,7 +65,7 @@
     },
     "scripts": {
         "watch": "webpack --watch",
-        "build": "webpack --mode development",
+        "build": "webpack --mode production --devtool hidden-source-map",
         "ci-build": "npm test",
         "package": "node ./scripts/writeExtraPackageInfo && vsce package",
         "ci-package": "npm test && node ./scripts/writeExtraPackageInfo && vsce package",
