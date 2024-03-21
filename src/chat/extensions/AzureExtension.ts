@@ -7,7 +7,7 @@
 import * as vscode from "vscode";
 /* eslint-disable-next-line @typescript-eslint/no-unused-vars */
 import { type AzureUserInputQueue } from "@microsoft/vscode-azext-utils";
-import { type AgentBenchmarkConfig, type AgentBenchmarkWithStepsConfig, type ExtensionAgentMetadata, type IAzureAgentInput, type SimpleCommandConfig, type SkillCommandArgs, type SkillCommandConfig, type WizardCommandConfig } from "../../../api";
+import { type AgentBenchmarkConfig, type AgentBenchmarkWithStepsConfig, type ExtensionAgentMetadata, type IAzureAgentInput, type SimpleCommandConfig, type SkillCommandArgs, type SkillCommandConfig, type SkillCommandResult, type WizardCommandConfig } from "../../../api";
 import { ext } from "../../extensionVariables";
 import { type AgentRequest } from "../agent";
 
@@ -102,12 +102,12 @@ export class AzureExtension {
         return { title: command.displayName, command: command.commandId };
     }
 
-    public async runSkillCommand(command: SkillCommandConfig, args: SkillCommandArgs): Promise<void> {
+    public async runSkillCommand(command: SkillCommandConfig, args: SkillCommandArgs): Promise<SkillCommandResult> {
         if (!this._extensionAgentMetadata) {
             throw new Error(`Extension ${this.extensionDisplayName} does not yet have extension agent metadata initialized`);
         }
 
-        await vscode.commands.executeCommand(command.commandId, args);
+        return await vscode.commands.executeCommand(command.commandId, args);
     }
 
     private _cachedAgentBenchmarkConfigs: (AgentBenchmarkConfig | AgentBenchmarkWithStepsConfig)[] | undefined;
