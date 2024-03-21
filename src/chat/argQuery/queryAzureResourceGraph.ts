@@ -11,8 +11,6 @@ import { type IActionContext } from "@microsoft/vscode-azext-utils";
 import { type QueryAzureResourceGraphResult } from "../../../api";
 import { type AgentRequest } from "../agent";
 
-export const agentArgQueryCommandName = "argQuery";
-
 const argGenerateQueryEndpoint = "https://management.azure.com/providers/Microsoft.ResourceGraph/generateQuery?api-version=2023-09-01-preview";
 
 type ArgGenerateQueryRequestBody = {
@@ -49,6 +47,8 @@ export async function queryAzureResourceGraph(actionContext: IActionContext, pro
     return undefined;
 }
 
+const facetSize = 5;
+
 async function queryArg(subscription: AzureSubscription, query: string, request: AgentRequest): Promise<ResourceGraphModels.ResourcesResponse | undefined> {
     const tokenCredential = subscription.credential;
     if (tokenCredential !== undefined) {
@@ -57,7 +57,14 @@ async function queryArg(subscription: AzureSubscription, query: string, request:
         const resourceGraphClient = new ResourceGraphClient(tokenCredential);
         const response = await resourceGraphClient.resources({
             query: query,
-            options: { resultFormat: "objectArray" }
+            options: { resultFormat: "objectArray" },
+            facets: [{
+                expression: "id,name,type,location,resourceGroup,subscriptionId",
+                options: {
+                    sortOrder: "asc",
+                    top: facetSize
+                }
+            }]
         });
         return response;
     }

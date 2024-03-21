@@ -24,7 +24,7 @@ const languageModelPreference: LanguageModel[] = [
     { name: "copilot", contextWindowTokenLimit: 4096 }
 ];
 
-export function getLangaugeModelTokenLimit(): number {
+export function getLanguageModelTokenLimit(): number {
     const languageModelPreferenceNames = languageModelPreference.map((m) => m.name);
     const mostPreferredAvailableLanguageModel = vscode.lm.languageModels
         .filter((model) => languageModelPreferenceNames.includes(model))

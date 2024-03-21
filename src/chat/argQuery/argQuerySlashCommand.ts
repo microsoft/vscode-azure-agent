@@ -4,10 +4,12 @@
  *--------------------------------------------------------------------------------------------*/
 
 import { type ResourceGraphModels } from "@azure/arm-resourcegraph";
+// eslint-disable-next-line import/no-internal-modules
+import { type FacetResult } from "@azure/arm-resourcegraph/esm/models";
 import { callWithTelemetryAndErrorHandling } from "@microsoft/vscode-azext-utils";
 import { ext } from "../../extensionVariables";
 import { type AgentRequest } from "../agent";
-import { verbatimCopilotInteraction } from "../copilotInteractions";
+import { getLanguageModelTokenLimit, verbatimCopilotInteraction } from "../copilotInteractions";
 import { type SlashCommand, type SlashCommandHandlerResult } from "../slashCommands";
 import { queryAzureResourceGraph } from "./queryAzureResourceGraph";
 
@@ -25,7 +27,7 @@ export const argQueryCommand: SlashCommand = [
     {
         shortDescription: `Perform an ARG query from a prompt`,
         longDescription: `Perform an ARG query from a prompt`,
-        intentDescription: `This is never best`,
+        intentDescription: `This is best when the user asks for information of Azure resources that can be answered by quering the Azure Resource Graph.`,
         handler: (request) => argQueryHandler(request)
     }
 ];
@@ -34,9 +36,27 @@ async function argQueryHandler(request: AgentRequest): Promise<SlashCommandHandl
     return callWithTelemetryAndErrorHandling("argQueryHandler", async (actionContext) => {
         const result = await queryAzureResourceGraph(actionContext, request.userPrompt, request);
         if (result !== undefined) {
-            const trimmedQueryResult = getTrimmedQueryResult(result.response);
-            const isResultTrimmed = trimmedQueryResult.count < result.response.count;
-            await summarizeQueryResponse(trimmedQueryResult, request);
+            const facetResults = result.response.facets?.filter((facet): facet is FacetResult => facet.resultType === "FacetResult");
+            const firstFacetResult = facetResults?.at(0);
+            // If we have a facet, use it to summarize the response to get a more predictable response.
+            let queryResultToSummarize: ArgQueryResult;
+            if (facetResults && firstFacetResult) {
+                // We can only have at most one facet result.
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+                const data = firstFacetResult.data;
+                queryResultToSummarize = {
+                    totalRecords: result.response.totalRecords,
+                    count: firstFacetResult.count,
+                    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+                    data: data,
+                };
+            } else {
+                // Trim the original response to fall in the token limit of the language model and hope it can be summarized.
+                const tokenLimit = getLanguageModelTokenLimit();
+                queryResultToSummarize = getTrimmedQueryResult(result.response, tokenLimit);
+            }
+            await summarizeQueryResponse(queryResultToSummarize, request);
+            const isResultTrimmed = result.response.totalRecords > queryResultToSummarize.count;
             if (isResultTrimmed) {
                 await displayTrimWarning(request);
             }
@@ -71,15 +91,11 @@ async function displayTrimWarning(request: AgentRequest) {
 }
 
 /**
+ * Trims the response from an Azure Resource Graph query to avoid the summarized system prompt from being too long.
  * @todo: Find a library to handle the LLM token size limit for all interactions.
  * https://github.com/microsoft/vscode-azure-agent/issues/101
  */
-const tokenLimit = 4000;
-
-/**
- * Trims the response from an Azure Resource Graph query to avoid the summarized system prompt from being too long.
- */
-function getTrimmedQueryResult(queryResponse: ResourceGraphModels.QueryResponse): ArgQueryResult {
+function getTrimmedQueryResult(queryResponse: ResourceGraphModels.QueryResponse, tokenLimit: number): ArgQueryResult {
     let count = queryResponse.count;
     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-explicit-any
     let data: any = queryResponse.data;

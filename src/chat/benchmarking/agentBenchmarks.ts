@@ -5,6 +5,7 @@
 
 import { type AgentBenchmarkWithStepsConfig } from "../../../api";
 import { agentHelpCommandName } from "../agentHelpSlashCommand";
+import { agentArgQueryCommandName } from "../argQuery/argQuerySlashCommand";
 import { learnCommandName } from "../commonCommandsAndHandlers";
 import { defaultSlashCommandName } from "../slashCommands";
 
@@ -465,4 +466,62 @@ export const defaultBenchmarks: AgentBenchmarkWithStepsConfig[] = ([
             }
         ]
     },
+]).map((config, index) => getNumbericallyLabeledBenchmarkConfig(config, index + 1));
+
+const argQueryBenchmarkName = "ARG Query Benchmark";
+export const argQueryBenchmarks: AgentBenchmarkWithStepsConfig[] = ([
+    {
+        name: argQueryBenchmarkName,
+        steps: [
+            {
+                prompt: "Show me my storage account.",
+                acceptableHandlerChains: [[agentArgQueryCommandName]]
+            }
+        ]
+    },
+    {
+        name: argQueryBenchmarkName,
+        steps: [
+            {
+                prompt: "Show me my cosmosDB database.",
+                acceptableHandlerChains: [[agentArgQueryCommandName]]
+            }
+        ]
+    },
+    {
+        name: argQueryBenchmarkName,
+        steps: [
+            {
+                prompt: "What is the endpoint of my cosmosDB database?",
+                acceptableHandlerChains: [[agentArgQueryCommandName]]
+            }
+        ]
+    },
+    {
+        name: argQueryBenchmarkName,
+        steps: [
+            {
+                prompt: "Which of my virtual machines are currently running?",
+                acceptableHandlerChains: [[agentArgQueryCommandName]]
+            }
+        ]
+    },
+    {
+        name: argQueryBenchmarkName,
+        steps: [
+            {
+                prompt: "Show me my key vaults.",
+                acceptableHandlerChains: [[agentArgQueryCommandName]]
+            }
+        ]
+    },
+    {
+        name: argQueryBenchmarkName,
+        steps: [
+            {
+                prompt: "Show me my container apps.",
+                acceptableHandlerChains: [[agentArgQueryCommandName]]
+            }
+        ]
+    }
 ]).map((config, index) => getNumbericallyLabeledBenchmarkConfig(config, index + 1));
