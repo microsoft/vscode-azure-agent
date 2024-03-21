@@ -8,7 +8,7 @@
 import * as vscode from "vscode";
 import { type AgentRequest as AgentRequestApi } from "../../api";
 import { ext } from '../extensionVariables';
-import { agentDescription, agentName, maxFollowUps } from "./agentConsts";
+import { agentId, maxFollowUps } from "./agentConsts";
 import { agentHelpCommandName, getAgentHelpCommand } from "./agentHelpSlashCommand";
 import { argQueryCommand } from "./argQuery/argQuerySlashCommand";
 import { AgentBenchmarker } from "./benchmarking/AgentBenchmarker";
@@ -93,8 +93,7 @@ agentHiddenSlashCommandsOwner.addInvokeableSlashCommands(new Map([toggleRagSlash
 
 export function registerChatParticipant() {
     try {
-        const agent2 = vscode.chat.createChatParticipant(agentName, handler);
-        agent2.description = agentDescription;
+        const agent2 = vscode.chat.createChatParticipant(agentId, handler);
         agent2.iconPath = vscode.Uri.joinPath(ext.context.extensionUri, "resources", "azure-color.svg");
         agent2.followupProvider = { provideFollowups: followUpProvider };
         agent2.isSticky = true;

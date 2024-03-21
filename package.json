@@ -41,6 +41,7 @@
     "contributes": {
         "chatParticipants": [
             {
+                "id": "ms-azuretools.azure-agent",
                 "name": "azure",
                 "description": "Agent for working with all things Azure",
                 "commands": [

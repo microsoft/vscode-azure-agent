@@ -12,7 +12,7 @@ export function getTypeChatLanguageModel(request: AgentRequest): TypeChatLanguag
     const systemPrompt = "";
     const command = "";
     // @todo: Pull the name and the id of the extension
-    const participant = { extensionId: "", name: "" };
+    const participant: string = "";
     return {
         // Before calling TypeChat, we have already summarized the conversation history including the latest user prompt.
         // TypeChat will call this function with a further augmented user prompt and optionally assistant prompts if it needs to repair the response.
