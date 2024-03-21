@@ -42,10 +42,12 @@ async function argQueryHandler(request: AgentRequest): Promise<SlashCommandHandl
             let queryResultToSummarize: ArgQueryResult;
             if (facetResults && firstFacetResult) {
                 // We can only have at most one facet result.
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
                 const data = firstFacetResult.data;
                 queryResultToSummarize = {
                     totalRecords: result.response.totalRecords,
                     count: firstFacetResult.count,
+                    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
                     data: data,
                 };
             } else {
