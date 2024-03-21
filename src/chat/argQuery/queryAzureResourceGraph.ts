@@ -9,6 +9,7 @@ import { VSCodeAzureSubscriptionProvider, type AzureSubscription } from "@micros
 import { sendRequestWithTimeout, type AzExtRequestPrepareOptions } from "@microsoft/vscode-azext-azureutils";
 import { type IActionContext } from "@microsoft/vscode-azext-utils";
 import { type QueryAzureResourceGraphResult } from "../../../api";
+import { ext } from "../../extensionVariables";
 import { type AgentRequest } from "../agent";
 
 const argGenerateQueryEndpoint = "https://management.azure.com/providers/Microsoft.ResourceGraph/generateQuery?api-version=2023-09-01-preview";
@@ -37,6 +38,7 @@ export async function queryAzureResourceGraph(actionContext: IActionContext, pro
         if (subscriptionForTenant !== undefined) {
             const generateQueryResponse = await generateQuery(actionContext, prompt, subscriptionForTenant, request);
             if (generateQueryResponse?.query !== undefined) {
+                ext.outputChannel.debug("Generated query", generateQueryResponse.query);
                 const queryResponse = await queryArg(subscriptionForTenant, generateQueryResponse.query, request);
                 if (queryResponse !== undefined) {
                     return { query: generateQueryResponse.query, response: queryResponse._response.parsedBody };
