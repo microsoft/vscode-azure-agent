@@ -3,6 +3,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
+import type * as vscode from "vscode";
 import { type AgentRequest, type IAzureAgent } from "./AzureAgent";
 
 export type BaseCommandConfig = {
@@ -172,4 +173,33 @@ export type AgentBenchmarkConfig = AgentBenchmarkStepConfig & {
 export type SkillCommandArgs = {
     agentRequest: AgentRequest;
     agent: IAzureAgent;
+};
+
+export type SkillCommandResult = {
+    /**
+     * The VsCode chat agent result.
+     */
+    chatAgentResult: Omit<vscode.ChatResult, 'metadata'> & { metadata: SkillCommandResultMetadata };
+
+    /**
+     * Any follow-up messages to be given for this result.
+     */
+    followUp?: vscode.ChatFollowup[],
+};
+
+export type SkillCommandResultMetadata = {
+    /**
+     * The chain of slash command handlers that were invoked to produce this result. Will be populated by the agent.
+     */
+    handlerChain?: string[]
+
+    /**
+     * A unique identifier for the result. Will be populated by the agent.
+     */
+    resultId?: string;
+
+    /**
+     * Any additional metadata that the skill command handler wants to attach to the result.
+     */
+    [key: string]: unknown;
 };

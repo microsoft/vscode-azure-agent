@@ -25,7 +25,7 @@ export function slashCommandFromSkillCommand(command: SkillCommandConfig, extens
                     agentRequest: request,
                     agent: {
                         verbatimLanguageModelInteraction: verbatimCopilotInteraction,
-                        getLangaugeModelTokenLimit: getLanguageModelTokenLimit,
+                        getLanguageModelTokenLimit: getLanguageModelTokenLimit,
                         getResponseAsStringLanguageModelInteraction: getResponseAsStringCopilotInteraction,
                         queryAzureResourceGraph: queryAzureResourceGraph,
                         getTypeChatTranslation: getTypeChatTranslation,
@@ -33,10 +33,8 @@ export function slashCommandFromSkillCommand(command: SkillCommandConfig, extens
                         subscriptionProvider: new VSCodeAzureSubscriptionProvider()
                     }
                 }
-                await extension.runSkillCommand(command, args)
 
-                // @todo: consider letting skill commands return results/followups
-                return { chatAgentResult: {}, followUp: [] };
+                return await extension.runSkillCommand(command, args);
             }
         }
     ]

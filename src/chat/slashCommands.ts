@@ -26,7 +26,7 @@ export type ChatAgentResultMetadata = {
 }
 
 /**
- * The result of a slash command handler.
+ * The result of a slash command handler. Meant to be (nearly) identical to {@link SkillCommandResult}
  */
 export type SlashCommandHandlerResult = {
     /**
