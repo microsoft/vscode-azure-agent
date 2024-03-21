@@ -60,7 +60,10 @@ async function queryArg(subscription: AzureSubscription, query: string, request:
             options: { resultFormat: "objectArray" },
             facets: [{
                 expression: "id,name,type,location,resourceGroup,subscriptionId",
-                options: { sortOrder: "asc", top: facetSize }
+                options: {
+                    sortOrder: "asc",
+                    top: facetSize
+                }
             }]
         });
         return response;

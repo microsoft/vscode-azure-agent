@@ -4,13 +4,13 @@
  *--------------------------------------------------------------------------------------------*/
 
 import { type ResourceGraphModels } from "@azure/arm-resourcegraph";
-import { FacetResult } from "@azure/arm-resourcegraph/esm/models";
+// eslint-disable-next-line import/no-internal-modules
+import { type FacetResult } from "@azure/arm-resourcegraph/esm/models";
 import { callWithTelemetryAndErrorHandling } from "@microsoft/vscode-azext-utils";
 import { ext } from "../../extensionVariables";
 import { type AgentRequest } from "../agent";
-import { getLangaugeModelTokenLimit, verbatimCopilotInteraction } from "../copilotInteractions";
+import { getLanguageModelTokenLimit, verbatimCopilotInteraction } from "../copilotInteractions";
 import { type SlashCommand, type SlashCommandHandlerResult } from "../slashCommands";
-import { shouldPerformArgQuery } from "./argQueryIntentDetection";
 import { queryAzureResourceGraph } from "./queryAzureResourceGraph";
 
 type ArgQueryResult = {
@@ -33,8 +33,6 @@ export const argQueryCommand: SlashCommand = [
 ];
 
 async function argQueryHandler(request: AgentRequest): Promise<SlashCommandHandlerResult> {
-    const shouldQueryArg = await shouldPerformArgQuery(request);
-    ext.outputChannel.debug("shouldQueryArg", shouldQueryArg);
     return callWithTelemetryAndErrorHandling("argQueryHandler", async (actionContext) => {
         const result = await queryAzureResourceGraph(actionContext, request.userPrompt, request);
         if (result !== undefined) {
@@ -52,7 +50,7 @@ async function argQueryHandler(request: AgentRequest): Promise<SlashCommandHandl
                 };
             } else {
                 // Trim the original response to fall in the token limit of the language model and hope it can be summarized.
-                const tokenLimit = getLangaugeModelTokenLimit();
+                const tokenLimit = getLanguageModelTokenLimit();
                 queryResultToSummarize = getTrimmedQueryResult(result.response, tokenLimit);
             }
             await summarizeQueryResponse(queryResultToSummarize, request);
