@@ -6,7 +6,7 @@
 import { type AgentBenchmarkWithStepsConfig } from "../../../api";
 import { agentHelpCommandName } from "../agentHelpSlashCommand";
 import { agentArgQueryCommandName } from "../argQuery/argQuerySlashCommand";
-import { learnCommandName } from "../commonCommandsAndHandlers";
+import { learnCommandName } from "../learn/learnSlashCommand";
 import { defaultSlashCommandName } from "../slashCommands";
 
 function getNumbericallyLabeledBenchmarkConfig(config: AgentBenchmarkWithStepsConfig, numericalLabel: number) {

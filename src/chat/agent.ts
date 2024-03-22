@@ -13,8 +13,8 @@ import { agentHelpCommandName, getAgentHelpCommand } from "./agentHelpSlashComma
 import { argQueryCommand } from "./argQuery/argQuerySlashCommand";
 import { AgentBenchmarker } from "./benchmarking/AgentBenchmarker";
 import { argQueryBenchmarks, defaultBenchmarks, helpBenchmarks, multiPromptBenchmarks } from "./benchmarking/agentBenchmarks";
-import { getLearnCommand } from "./commonCommandsAndHandlers";
 import { appServiceExtensionSlashCommandsOwner, azdExtensionSlashCommandsOwner, containerAppsExtensionSlashCommandsOwner, databasesExtensionCosmosDbSlashCommandsOwner, databasesExtensionPostgreSQLSlashCommandsOwner, functionsExtensionSlashCommandsOwner, staticWebAppsExtensionSlashCommandsOwner, storageExtensionSlashCommandsOwner, virtualMachinesExtensionSlashCommandsOwner } from "./extensions/KnownAzureExtensions";
+import { getLearnCommand } from "./learn/learnSlashCommand";
 import { getRagStatusSlashCommand, toggleRagSlashCommand } from "./rag";
 import { setResourceContextCommand } from "./setResourceContextCommand";
 import { SlashCommandsOwner, type SlashCommandHandlerResult } from "./slashCommands";
