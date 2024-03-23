@@ -101,12 +101,12 @@ async function summarizeAzureResourceInfo(request: AgentRequest): Promise<string
     // Put the original user prompt in the system prompt and use our own user prompt to prevent it hijacking the language model
     // For example, if the original user prompt has a strong intention like "Write a program to blah blah", the language model will not only summarize the mentioned Azure resources
     // but also emit the code that the original user prompt is asking for.
-    const systemPrompt = `You are an expert in Azure resources. The following text may reference some of the user's Azure resources. Here is the text: ${request.userPrompt}.`;
+    const systemPrompt = `You are an expert in Azure resources. The following text may reference some of the user's Azure resources by their names or ids. Here is the text: ${request.userPrompt}.`;
     const response = await getResponseAsStringCopilotInteraction(systemPrompt, {
         context: {
             history: []
         },
-        userPrompt: "Summarize the Azure resources mentioned in the text. Answer 'no' if the text doesn't mention any Azure resources.",
+        userPrompt: "Summarize the Azure resources whose names or ids are mentioned in the text. Answer 'no' if the text doesn't mention any Azure resources.",
         responseStream: request.responseStream,
         token: request.token
     });
