@@ -48,7 +48,6 @@ function learnHandler(config: LearnCommandConfig, request: AgentRequest): Promis
 
             const systemPrompt = getLearnSystemPrompt(config, ragContent?.content);
 
-            // const { languageModelResponded, languageModelResponse } = await verbatimCopilotInteraction(systemPrompt, request, { includeHistory: "all", progressMessage: "Getting an answer..." });
             const learnResponse = await getResponseAsStringCopilotInteraction(systemPrompt, request, { includeHistory: "all", progressMessage: "Getting an answer..." });
             const learnResponded = learnResponse !== undefined;
             ext.outputChannel.debug("learnResponse", learnResponse);
