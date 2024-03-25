@@ -92,7 +92,7 @@ async function queueCopilotInteraction(onResponseFragment: (fragment: string) =>
 }
 
 let lastCopilotInteractionRunTime: number = 0;
-const timeBetweenCopilotInteractions = 1500
+const timeBetweenCopilotInteractions = 500;
 async function runCopilotInteractionQueue() {
     while (copilotInteractionQueue.length > 0) {
         const queueItem = copilotInteractionQueue.shift();
@@ -139,6 +139,7 @@ async function doCopilotInteraction(onResponseFragment: (fragment: string) => vo
         ];
 
         debugCopilotInteraction(agentRequest.responseStream, `System Prompt:\n\n${systemPrompt}\n`);
+        debugCopilotInteraction(agentRequest.responseStream, `History:\n\n${historyMessages.map((m) => m.content).join("\n")}\n`);
         debugCopilotInteraction(agentRequest.responseStream, `User Content:\n\n${agentRequest.userPrompt}\n`);
 
         const cacheKey = encodeCopilotInteractionToCacheKey(messages);
