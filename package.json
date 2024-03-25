@@ -28,9 +28,7 @@
         "chat",
         "copilot"
     ],
-    "activationEvents": [
-        "onStartupFinished"
-    ],
+    "activationEvents": [],
     "enabledApiProposals": [
         "chatParticipant",
         "chatParticipantAdditions",
