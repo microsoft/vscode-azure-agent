@@ -5,6 +5,7 @@
 
 import { callWithTelemetryAndErrorHandling } from "@microsoft/vscode-azext-utils";
 import * as vscode from "vscode";
+import { QueryAzureResourceGraphResult } from "../../../api";
 import { ext } from "../../extensionVariables";
 import { type AgentRequest } from "../agent";
 import { queryAzureResourceGraph } from "../argQuery/queryAzureResourceGraph";
@@ -59,16 +60,26 @@ function learnHandler(config: LearnCommandConfig, request: AgentRequest): Promis
                 let finalResponse = learnResponse;
                 const resourceInfo = await summarizeAzureResourceInfo(request);
                 ext.outputChannel.debug("resourceInfo", resourceInfo);
-                if (resourceInfo !== undefined && resourceInfo?.toLowerCase() !== "no") {
-                    // @todo: Display the query result to the user
-                    const argQueryResult = await queryAzureResourceGraph(actionContext, resourceInfo, request);
+
+                const shouldQueryAzureResourceGraph = resourceInfo !== undefined && resourceInfo?.toLowerCase() !== "no";
+                let argQueryResult: QueryAzureResourceGraphResult | undefined = undefined;
+                if (shouldQueryAzureResourceGraph) {
+                    argQueryResult = await queryAzureResourceGraph(actionContext, resourceInfo, request);
                     ext.outputChannel.debug("argQueryResult", argQueryResult);
                     if (argQueryResult) {
                         finalResponse = await augmentLearnResponse(learnResponse, JSON.stringify(argQueryResult.response), request);
                     }
                 }
                 ext.outputChannel.debug("finalResponse", finalResponse);
-                request.responseStream.markdown(finalResponse);
+                request.responseStream.markdown(finalResponse + "\n");
+                if (argQueryResult) {
+                    request.responseStream.markdown(`The answer is generated based on the result of an Azure Resource Graph query.`);
+                    request.responseStream.button({
+                        title: "Show full query result",
+                        command: "azureAgent.showArgQueryResult",
+                        arguments: [{ queryResponse: argQueryResult.response }]
+                    });
+                }
 
                 if (ragContent !== undefined) {
                     request.responseStream.reference(vscode.Uri.parse(ragContent.contentUrl));
