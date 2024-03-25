@@ -16,6 +16,7 @@ import { argQueryBenchmarks, defaultBenchmarks, helpBenchmarks, multiPromptBench
 import { getLearnCommand } from "./commonCommandsAndHandlers";
 import { appServiceExtensionSlashCommandsOwner, azdExtensionSlashCommandsOwner, containerAppsExtensionSlashCommandsOwner, databasesExtensionCosmosDbSlashCommandsOwner, databasesExtensionPostgreSQLSlashCommandsOwner, functionsExtensionSlashCommandsOwner, staticWebAppsExtensionSlashCommandsOwner, storageExtensionSlashCommandsOwner, virtualMachinesExtensionSlashCommandsOwner } from "./extensions/KnownAzureExtensions";
 import { getRagStatusSlashCommand, toggleRagSlashCommand } from "./rag";
+import { setResourceContextCommand } from "./setResourceContextCommand";
 import { SlashCommandsOwner, type SlashCommandHandlerResult } from "./slashCommands";
 
 // @todo: Replace this type with the one from the API.
@@ -47,6 +48,7 @@ const agentSlashCommandsOwner = new SlashCommandsOwner({ noInput: agentHelpComma
 agentSlashCommandsOwner.addInvokeableSlashCommands(new Map([
     agentLearnCommand,
     argQueryCommand,
+    setResourceContextCommand,
     getAgentHelpCommand(agentSlashCommandsOwner),
 ]));
 agentSlashCommandsOwner.addInvokeableSlashCommandsLazy(
