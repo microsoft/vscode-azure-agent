@@ -49,9 +49,9 @@ export interface IAzureAgent {
     getResponseAsStringLanguageModelInteraction(systemPrompt: string, request: AgentRequest, options?: LanguageModelInteractionOptions): Promise<string | undefined>;
 
     /**
-     * Translates the given {@param message} into an object whose type matches the given {@param zodSchema}.
+     * Translates the current {@param request}'s user prompt into an object whose type matches the given {@param zodSchema}.
      */
-    getTypeChatTranslation<TZodSchema extends Record<string, z.ZodType>, TTypeName extends keyof TZodSchema & string>(zodSchema: TZodSchema, typeName: TTypeName, message: string, request: AgentRequest): Promise<z.TypeOf<TZodSchema[TTypeName]> | undefined>;
+    getTypeChatTranslation<TZodSchema extends Record<string, z.ZodType>, TTypeName extends keyof TZodSchema & string>(zodSchema: TZodSchema, typeName: TTypeName, request: AgentRequest, options?: TypeChatTranslationOptions): Promise<z.TypeOf<TZodSchema[TTypeName]> | undefined>;
 
     /**
      * An output channel to use for logging if performing actions on behalf of the agent.
@@ -101,6 +101,15 @@ export type LanguageModelInteractionOptions = {
      */
     progressMessage?: string;
 };
+
+export type TypeChatTranslationOptions = {
+    /**
+     * What type of history (aka, users requests prior to the current one) to include in the context for the TypeChat translation.
+     * - `"none"`: No history will be included (default)
+     * - `"all"`: All history will be included
+     */
+    includeHistory?: "none" | "all";
+}
 
 export type LanguageModelInteractionResult = { languageModelResponded: true, languageModelResponse: string } | { languageModelResponded: false, languageModelResponse: undefined };
 
