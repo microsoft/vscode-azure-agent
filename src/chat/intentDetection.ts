@@ -21,8 +21,8 @@ export type IntentDetectionTarget = {
  */
 async function detectIntentTypeChat(targets: IntentDetectionTarget[], request: AgentRequest): Promise<IntentDetectionTarget | undefined> {
     const schema = getZodIntentDetectionSchema(targets);
-    const userPromptWithSummarizedHistory = await summarizeHistoryThusFar(request);
-    const translation = await getTypeChatTranslation(schema, "Action", userPromptWithSummarizedHistory, request);
+    const statementForIntentDetection = await summarizeHistoryThusFar(request);
+    const translation = await getTypeChatTranslation(schema, "Action", { ...request, userPrompt: statementForIntentDetection });
     if (translation !== undefined) {
         const intent: string | undefined =
             (translation as { intent?: string | undefined; }).intent ||

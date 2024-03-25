@@ -1,12 +1,13 @@
 import { error, success, type PromptSection, type Result, type TypeChatLanguageModel } from "typechat";
 import * as vscode from "vscode";
+import { type TypeChatTranslationOptions } from "../../../api";
 import { type AgentRequest } from "../agent";
 import { getResponseAsStringCopilotInteraction } from "../copilotInteractions";
 
 /**
  * @param request Original user prompt and its context.
  */
-export function getTypeChatLanguageModel(request: AgentRequest): TypeChatLanguageModel {
+export function getTypeChatLanguageModel(request: AgentRequest, options?: TypeChatTranslationOptions): TypeChatLanguageModel {
     // Leave properties that TypeChat doesn't use as blank to reduce noise.
     // TypeChat doesn't use the system prompt so leave it blank.
     const systemPrompt = "";
@@ -18,20 +19,20 @@ export function getTypeChatLanguageModel(request: AgentRequest): TypeChatLanguag
         // TypeChat will call this function with a further augmented user prompt and optionally assistant prompts if it needs to repair the response.
         // If there are multiple prompts, the first prompt will be the oldest prompt and the prompts will be interleaving user prompts and assistance prompts.
         // e.g. [1st_user_prompt, 1st_assistance_prompt (aka. Response of the 1st_user_prompt), 2nd_user_prompt]
-        async complete(prompt: string | PromptSection[]): Promise<Result<string>> {
+        async complete(typeChatPrompt: string | PromptSection[]): Promise<Result<string>> {
             let typeChatRequest: AgentRequest;
-            if (typeof prompt === "string") {
+            if (typeof typeChatPrompt === "string") {
                 typeChatRequest = {
                     ...request,
-                    userPrompt: prompt,
+                    userPrompt: typeChatPrompt,
                     context: {
                         history: []
                     }
                 };
             } else {
-                const userPrompt = prompt.at(prompt.length - 1);
-                const historyPrompts = (prompt.length > 1 ? prompt.slice(0, prompt.length - 1) : []);
-                const historyTurns = historyPrompts.map((prompt) => {
+                const typeChatUserPrompt = typeChatPrompt.at(typeChatPrompt.length - 1);
+                const typeChatHistoryPrompts = (typeChatPrompt.length > 1 ? typeChatPrompt.slice(0, typeChatPrompt.length - 1) : []);
+                const typeChatHistoryTurns = typeChatHistoryPrompts.map((prompt) => {
                     if (prompt.role === "user") {
                         const requestTurn: vscode.ChatRequestTurn = { prompt: prompt.content, command, variables: [], participant };
                         return requestTurn;
@@ -47,16 +48,22 @@ export function getTypeChatLanguageModel(request: AgentRequest): TypeChatLanguag
                         return undefined;
                     }
                 }).filter((turn): turn is (vscode.ChatRequestTurn | vscode.ChatResponseTurn) => !!turn);
+
+                let history: (vscode.ChatRequestTurn | vscode.ChatResponseTurn)[];
+                if (options?.includeHistory === "all") {
+                    history = request.context.history.concat(typeChatHistoryTurns);
+                } else {
+                    history = typeChatHistoryTurns;
+                }
+
                 typeChatRequest = {
                     ...request,
                     // userPrompt.content should never be empty but handle it just in case
-                    userPrompt: userPrompt?.content ?? "",
-                    context: {
-                        history: historyTurns
-                    }
+                    userPrompt: typeChatUserPrompt?.content ?? "",
+                    context: { history: history }
                 };
             }
-            const result = await getResponseAsStringCopilotInteraction(systemPrompt, typeChatRequest);
+            const result = await getResponseAsStringCopilotInteraction(systemPrompt, typeChatRequest, { includeHistory: "all" });
             if (result) {
                 return success(result);
             } else {
