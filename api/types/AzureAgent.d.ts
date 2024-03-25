@@ -24,9 +24,6 @@ export type QueryAzureResourceGraphResult = {
     response: ResourceGraphModels.QueryResponse;
 };
 
-/**
- * An interface for interacting with the Azure agent.
- */
 export interface IAzureAgent {
     /**
      * Queries Azure Resource Graph based on the given natual language {@param prompt}.
@@ -52,6 +49,11 @@ export interface IAzureAgent {
      * Translates the current {@param request}'s user prompt into an object whose type matches the given {@param zodSchema}.
      */
     getTypeChatTranslation<TZodSchema extends Record<string, z.ZodType>, TTypeName extends keyof TZodSchema & string>(zodSchema: TZodSchema, typeName: TTypeName, request: AgentRequest, options?: TypeChatTranslationOptions): Promise<z.TypeOf<TZodSchema[TTypeName]> | undefined>;
+
+    /**
+     * Takes the conversation history (including the current user prompt) from {@param request} and returns it as a `string` which represents a conversation between a user and an assistant.
+     */
+    getConversationAsString(request: AgentRequest): Promise<string>;
 
     /**
      * An output channel to use for logging if performing actions on behalf of the agent.

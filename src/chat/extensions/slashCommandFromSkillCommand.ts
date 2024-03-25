@@ -8,7 +8,7 @@ import { type SkillCommandArgs, type SkillCommandConfig } from "../../../api";
 import { ext } from "../../extensionVariables";
 import { type AgentRequest } from "../agent";
 import { queryAzureResourceGraph } from "../argQuery/queryAzureResourceGraph";
-import { getLanguageModelTokenLimit, getResponseAsStringCopilotInteraction, verbatimCopilotInteraction } from "../copilotInteractions";
+import { getConversationAsString, getLanguageModelTokenLimit, getResponseAsStringCopilotInteraction, verbatimCopilotInteraction } from "../copilotInteractions";
 import { type SlashCommand, type SlashCommandHandlerResult } from "../slashCommands";
 import { getTypeChatTranslation } from "../typechat/getTypeChatTranslation";
 import { type AzureExtension } from "./AzureExtension";
@@ -29,6 +29,7 @@ export function slashCommandFromSkillCommand(command: SkillCommandConfig, extens
                         getResponseAsStringLanguageModelInteraction: getResponseAsStringCopilotInteraction,
                         queryAzureResourceGraph: queryAzureResourceGraph,
                         getTypeChatTranslation: getTypeChatTranslation,
+                        getConversationAsString: getConversationAsString,
                         outputChannel: ext.outputChannel,
                         subscriptionProvider: new VSCodeAzureSubscriptionProvider()
                     }
