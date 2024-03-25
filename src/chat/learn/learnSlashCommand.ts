@@ -125,12 +125,12 @@ async function summarizeAzureResourceInfo(request: AgentRequest): Promise<string
 }
 
 async function augmentLearnResponse(learnResponse: string, queryResult: string, request: AgentRequest): Promise<string> {
-    const systemPrompt = `You are an expert in code related to Azure resources. The following text refers to some Azure resource in the query result. Replace any placeholders in the text with the corresponding values of the resources in the query result. For example, if the text contains the placeholder of a connection string, replace the placeholder with the connection string of the corresponding resource. Here is the text: ${learnResponse}. Here is the query result: ${queryResult}`;
+    const systemPrompt = `You are an expert in code related to Azure resources. The user prompt refers to some Azure resource in the query result. If the text contains the placeholder of the url to a resource, replace the placeholder with the url to the corresponding resource. Here is the query result: ${queryResult}`;
     const response = await getResponseAsStringCopilotInteraction(systemPrompt, {
         context: {
             history: []
         },
-        userPrompt: "",
+        userPrompt: learnResponse,
         responseStream: request.responseStream,
         token: request.token
     });
