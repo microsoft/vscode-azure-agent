@@ -9,6 +9,10 @@ import { type IActionContext, type IAzExtLogOutputChannel } from "@microsoft/vsc
 import type * as vscode from "vscode";
 import { type z } from "zod";
 
+export type AgentId = "ms-azuretools.azure-agent";
+
+export type AgentName = "azure";
+
 export type QueryAzureResourceGraphResult = {
     /**
      * The query that was used to query Azure Resource Graph.
