@@ -5,7 +5,7 @@
 
 import { callWithTelemetryAndErrorHandling } from "@microsoft/vscode-azext-utils";
 import * as vscode from "vscode";
-import { QueryAzureResourceGraphResult } from "../../../api";
+import { type QueryAzureResourceGraphResult } from "../../../api";
 import { ext } from "../../extensionVariables";
 import { type AgentRequest } from "../agent";
 import { queryAzureResourceGraph } from "../argQuery/queryAzureResourceGraph";
