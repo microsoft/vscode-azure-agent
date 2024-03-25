@@ -73,7 +73,7 @@ function learnHandler(config: LearnCommandConfig, request: AgentRequest): Promis
                 ext.outputChannel.debug("finalResponse", finalResponse);
                 request.responseStream.markdown(finalResponse + "\n");
                 if (argQueryResult) {
-                    request.responseStream.markdown(`The answer is generated based on the result of an Azure Resource Graph query.`);
+                    request.responseStream.markdown(`This content is generated based on the result of an Azure Resource Graph query.`);
                     request.responseStream.button({
                         title: "Show full query result",
                         command: "azureAgent.showArgQueryResult",

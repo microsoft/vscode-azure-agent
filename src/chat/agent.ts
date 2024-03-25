@@ -39,7 +39,7 @@ export interface IAgentRequestHandler {
     getFollowUpForLastHandledSlashCommand(result: vscode.ChatResult, token: vscode.CancellationToken): vscode.ChatFollowup[] | undefined;
 }
 
-const agentLearnCommand = getLearnCommand({ topic: "Azure" });
+const agentLearnCommand = getLearnCommand({ topic: "Azure, coding for Azure, or your Azure resources" });
 
 /**
  * Owns slash commands that are knowingly exposed to the user.
