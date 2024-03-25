@@ -73,6 +73,18 @@ export async function getResponseAsStringCopilotInteraction(systemPrompt: string
     return joinedFragements;
 }
 
+export async function getConversationAsString(request: AgentRequest): Promise<string> {
+    const conversation: string[] = [
+        ...request.context.history.map((turn) => {
+            return isRequestTurn(turn) ?
+                `User: ${new vscode.LanguageModelChatUserMessage(turn.prompt).content}` :
+                `Assistant: ${new vscode.LanguageModelChatAssistantMessage(getResponseTurnContent(turn))}`;
+        }),
+        `User: ${request.userPrompt}`
+    ];
+    return conversation.join("\n\n");
+}
+
 let copilotInteractionQueueRunning = false;
 type CopilotInteractionQueueItem = { onResponseFragment: (fragment: string) => void, systemPrompt: string, request: AgentRequest, options: Required<LanguageModelInteractionOptions>, resolve: () => void };
 const copilotInteractionQueue: CopilotInteractionQueueItem[] = [];
@@ -139,7 +151,7 @@ async function doCopilotInteraction(onResponseFragment: (fragment: string) => vo
         ];
 
         debugCopilotInteraction(agentRequest.responseStream, `System Prompt:\n\n${systemPrompt}\n`);
-        debugCopilotInteraction(agentRequest.responseStream, `History:\n\n${historyMessages.map((m) => m.content).join("\n")}\n`);
+        debugCopilotInteraction(agentRequest.responseStream, `History:\n\n${historyMessages.map((m) => `(${m instanceof vscode.LanguageModelChatUserMessage ? "user" : "assistant"})>${m.content}`).join("\n")}\n`);
         debugCopilotInteraction(agentRequest.responseStream, `User Content:\n\n${agentRequest.userPrompt}\n`);
 
         const cacheKey = encodeCopilotInteractionToCacheKey(messages);
