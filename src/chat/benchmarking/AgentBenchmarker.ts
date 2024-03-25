@@ -245,7 +245,7 @@ export class AgentBenchmarker implements IAgentRequestHandler {
         const benchmarkAllResponseStream: vscode.ChatExtendedResponseStream = getBenchmarkChatExtendedResponseStream(undefined, undefined, {
             markdown: function (value: string | vscode.MarkdownString): void { fs.appendFileSync(outFile, typeof value === "string" ? value : value.value); },
             button: function (command: vscode.Command): void { fs.appendFileSync(outFile, JSON.stringify(command.toString())); },
-            reference: function (value: vscode.Uri | vscode.Location): void { fs.appendFileSync(outFile, JSON.stringify(value.toString())); },
+            reference: function (value: vscode.Uri | vscode.Location | { variableName: string, value?: vscode.Uri | vscode.Location | undefined }): void { fs.appendFileSync(outFile, JSON.stringify(value.toString())); },
             progress: function (value: string): void { fs.appendFileSync(outFile, value.toString()); },
         });
 
