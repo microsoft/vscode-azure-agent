@@ -78,7 +78,7 @@ export async function getConversationAsString(request: AgentRequest): Promise<st
         ...request.context.history.map((turn) => {
             return isRequestTurn(turn) ?
                 `User: ${new vscode.LanguageModelChatUserMessage(turn.prompt).content}` :
-                `Assistant: ${new vscode.LanguageModelChatAssistantMessage(getResponseTurnContent(turn))}`;
+                `Assistant: ${new vscode.LanguageModelChatAssistantMessage(getResponseTurnContent(turn)).content}`;
         }),
         `User: ${request.userPrompt}`
     ];
