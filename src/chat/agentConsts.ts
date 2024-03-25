@@ -3,7 +3,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { AgentId, AgentName } from "../../api";
+import { type AgentId, type AgentName } from "../../api";
 
 export const agentId: AgentId = "ms-azuretools.azure-agent";
 export const agentName: AgentName = "azure";
