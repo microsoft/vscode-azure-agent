@@ -103,6 +103,6 @@
         "@microsoft/vscode-azext-azureauth": "^2.3.0",
         "@microsoft/vscode-azext-azureutils": "^3.0.0",
         "@microsoft/vscode-azext-utils": "^2.3.0",
-        "typechat": "file:./typechat-0.1.0-vscodeAzureAgent.0.tgz"
+        "typechat": "0.1.0"
     }
 }
