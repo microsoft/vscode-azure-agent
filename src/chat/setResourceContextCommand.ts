@@ -3,9 +3,9 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { AgentRequest } from "./agent";
+import { type AgentRequest } from "./agent";
 import { verbatimCopilotInteraction } from "./copilotInteractions";
-import { SlashCommand, SlashCommandHandlerResult } from "./slashCommands";
+import { type SlashCommand, type SlashCommandHandlerResult } from "./slashCommands";
 
 export const setResourceContextCommandName = "setResourceContext";
 
@@ -25,4 +25,4 @@ async function setResourceContextHandler(request: AgentRequest): Promise<SlashCo
     await verbatimCopilotInteraction(respondToSetResourceContextSystemPrompt, request);
 
     return { chatAgentResult: {}, followUp: [] };
-};
+}
