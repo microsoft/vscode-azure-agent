@@ -46,6 +46,7 @@
                 "id": "ms-azuretools.azure-agent",
                 "name": "azure",
                 "description": "Agent for working with all things Azure",
+                "isSticky": true,
                 "commands": [
                     {
                         "name": "learn",

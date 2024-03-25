@@ -19,10 +19,10 @@ The Azure Agent for VS Code is your assistant for helping you use the [Azure Ext
 
 - VS Code (Insiders):
    - 1.88.0-insider
-   - Commit: e5515ac702c6ace9a8f73c52d8cb67d482bf3775
-   - Date: 2024-03-21T14:07:58.240Z
-- GitHub Copilot extension: v1.175.780 (pre-release)
-- GitHub Copilot Chat extension: v0.14.2024032101 (pre-release)
+   - Commit: b0d975fc6370f15570c380f41015b1ca2cdcb791
+   - Date: 2024-03-25T05:49:32.344Z
+- GitHub Copilot extension: v1.175.784 (pre-release)
+- GitHub Copilot Chat extension: v0.14.2024032501 (pre-release)
 
 ## Contributing
 

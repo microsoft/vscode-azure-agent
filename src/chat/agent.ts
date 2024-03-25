@@ -97,7 +97,6 @@ export function registerChatParticipant() {
         const agent2 = vscode.chat.createChatParticipant(agentId, handler);
         agent2.iconPath = vscode.Uri.joinPath(ext.context.extensionUri, "resources", "azure-color.svg");
         agent2.followupProvider = { provideFollowups: followUpProvider };
-        agent2.isSticky = true;
     } catch (e) {
         ext.outputChannel.error("Failed to register chat participant.", e);
     }
