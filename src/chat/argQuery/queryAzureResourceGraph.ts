@@ -49,8 +49,6 @@ export async function queryAzureResourceGraph(actionContext: IActionContext, pro
     return undefined;
 }
 
-const facetSize = 5;
-
 async function queryArg(subscription: AzureSubscription, query: string, request: AgentRequest): Promise<ResourceGraphModels.ResourcesResponse | undefined> {
     const tokenCredential = subscription.credential;
     if (tokenCredential !== undefined) {

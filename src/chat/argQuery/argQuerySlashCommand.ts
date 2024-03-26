@@ -77,7 +77,7 @@ function getTrimmedQueryResult(queryResponse: ResourceGraphModels.QueryResponse,
     let data: any = queryResponse.data;
     if (Array.isArray(data)) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const dataToPreserve: any = [];
+        const dataToPreserve: any[] = [];
         let numTokens = 0;
         // Estimate the number of tokens until it exceeds our limit
         for (const entry of data) {
