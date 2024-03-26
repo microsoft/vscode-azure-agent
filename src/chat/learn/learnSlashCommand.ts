@@ -47,65 +47,62 @@ function learnHandler(config: LearnCommandConfig, request: AgentRequest): Promis
             const questionForRagContent = await summarizeHistoryThusFar(request);
             const ragContent = await getMicrosoftLearnRagContent(actionContext, questionForRagContent, request);
 
-            const systemPrompt = getLearnSystemPrompt(config, ragContent?.content);
 
+            const resourceInfo = await summarizeAzureResourceInfo(request);
+            ext.outputChannel.debug("summarizedResourceInfo", resourceInfo);
+            const shouldQueryAzureResourceGraph = resourceInfo !== undefined && resourceInfo?.toLowerCase() !== "no";
+            let summarizedQueryResult: string | undefined;
+            let argQueryResult: QueryAzureResourceGraphResult | undefined;
+            if (shouldQueryAzureResourceGraph) {
+                argQueryResult = await queryAzureResourceGraph(actionContext, resourceInfo, request);
+                ext.outputChannel.debug("argQueryResult", argQueryResult);
+                if (argQueryResult) {
+                    summarizedQueryResult = await summarizeAzureResourceQueryResult(request, argQueryResult);
+                    ext.outputChannel.debug("summarizedQueryResult", resourceInfo);
+                }
+            }
+
+            const systemPrompt = getLearnSystemPrompt(config, ragContent?.content, summarizedQueryResult);
             const learnResponse = await getResponseAsStringCopilotInteraction(systemPrompt, request, { includeHistory: "all", progressMessage: "Getting an answer..." });
-            const learnResponded = learnResponse !== undefined;
             ext.outputChannel.debug("learnResponse", learnResponse);
-
-            if (!learnResponded) {
+            if (!learnResponse) {
                 request.responseStream.markdown("Sorry, I can't help with that right now.\n");
                 return { chatAgentResult: {}, followUp: [], };
-            } else {
-                let finalResponse = learnResponse;
-                const resourceInfo = await summarizeAzureResourceInfo(request);
-                ext.outputChannel.debug("resourceInfo", resourceInfo);
-
-                const shouldQueryAzureResourceGraph = resourceInfo !== undefined && resourceInfo?.toLowerCase() !== "no";
-                let argQueryResult: QueryAzureResourceGraphResult | undefined = undefined;
-                if (shouldQueryAzureResourceGraph) {
-                    argQueryResult = await queryAzureResourceGraph(actionContext, resourceInfo, request);
-                    ext.outputChannel.debug("argQueryResult", argQueryResult);
-                    if (argQueryResult) {
-                        finalResponse = await augmentLearnResponse(learnResponse, JSON.stringify(argQueryResult.response), request);
-                    }
-                }
-                ext.outputChannel.debug("finalResponse", finalResponse);
-                request.responseStream.markdown(finalResponse + "\n");
-                if (argQueryResult) {
-                    request.responseStream.markdown(`This content is generated based on the result of an Azure Resource Graph query.`);
-                    request.responseStream.button({
-                        title: "Show full query result",
-                        command: "azureAgent.showArgQueryResult",
-                        arguments: [{ queryResponse: argQueryResult.response }]
-                    });
-                }
-
-                if (ragContent !== undefined) {
-                    request.responseStream.reference(vscode.Uri.parse(ragContent.contentUrl));
-                }
-                const followUps: vscode.ChatFollowup[] = [];
-                if (config.associatedExtension !== undefined && config.associatedExtension.isInstalled()) {
-                    followUps.push(...(await generateExtensionCommandFollowUps(learnResponse, config.associatedExtension, request)));
-                } else if (config.associatedExtension !== undefined && !config.associatedExtension.isInstalled()) {
-                    request.responseStream.markdown(`\n\nFor additional help related to ${config.topic}, install the ${config.associatedExtension.extensionDisplayName} extension for VS Code.`);
-
-                    request.responseStream.button({ title: `Install the ${config.associatedExtension.extensionDisplayName} Extension`, command: "workbench.extensions.search", arguments: [config.associatedExtension.extensionId] });
-                }
-                followUps.push(...(await generateNextQuestionsFollowUps(learnResponse, request)));
-
-                return { chatAgentResult: {}, followUp: followUps, };
             }
+            request.responseStream.markdown(learnResponse + "\n");
+            if (argQueryResult && summarizedQueryResult) {
+                request.responseStream.markdown(`This content is generated based on the result of an Azure Resource Graph query.`);
+                request.responseStream.button({
+                    title: "Show full query result",
+                    command: "azureAgent.showArgQueryResult",
+                    arguments: [{ queryResponse: argQueryResult.response }]
+                });
+            }
+
+            if (ragContent !== undefined) {
+                request.responseStream.reference(vscode.Uri.parse(ragContent.contentUrl));
+            }
+            const followUps: vscode.ChatFollowup[] = [];
+            if (config.associatedExtension !== undefined && config.associatedExtension.isInstalled()) {
+                followUps.push(...(await generateExtensionCommandFollowUps(learnResponse, config.associatedExtension, request)));
+            } else if (config.associatedExtension !== undefined && !config.associatedExtension.isInstalled()) {
+                request.responseStream.markdown(`\n\nFor additional help related to ${config.topic}, install the ${config.associatedExtension.extensionDisplayName} extension for VS Code.`);
+
+                request.responseStream.button({ title: `Install the ${config.associatedExtension.extensionDisplayName} Extension`, command: "workbench.extensions.search", arguments: [config.associatedExtension.extensionId] });
+            }
+            followUps.push(...(await generateNextQuestionsFollowUps(learnResponse, request)));
+
+            return { chatAgentResult: {}, followUp: followUps, };
         }
     });
 }
 
-function getLearnSystemPrompt(config: LearnCommandConfig, ragContent: string | undefined): string {
+function getLearnSystemPrompt(config: LearnCommandConfig, ragContent: string | undefined, summarizedQueryResult: string | undefined): string {
     const initialSection = `You are an expert in ${config.topic}. The user wants to use ${config.topic}. They ultimately want to use ${config.topic} to solve a problem or accomplish a task. Your job is to help the user learn about how they can use ${config.topic} to solve a problem or accomplish a task. Assume that the user has already downloaded and installed VS Code. Assume the the user is only interested in using cloud services from Microsoft Azure. If they ask to see how to do something that would involve writing code, consider giving code examples to help them. If you end up using different or more accurate terminology than the user, specifically highlight why you used different terminology. Most importantly, try to not overwhelm the user with too much information. Keep responses short and sweet.`;
-
     const ragSection = !ragContent ? "" : `\n\nHere is some up-to-date information about the topic the user is asking about:\n\n${ragContent}\n\nMake use of this information when coming up with a reply to the user.`;
+    const querySection = !summarizedQueryResult ? "" : `\n\nHere is a summary of the Azure resources mentioned in the user's text:\n\n${summarizedQueryResult}. Use this information when generating code for the user.`;
 
-    return initialSection + ragSection;
+    return initialSection + ragSection + querySection;
 }
 
 async function summarizeAzureResourceInfo(request: AgentRequest): Promise<string | undefined> {
@@ -124,15 +121,15 @@ async function summarizeAzureResourceInfo(request: AgentRequest): Promise<string
     return response;
 }
 
-async function augmentLearnResponse(learnResponse: string, queryResult: string, request: AgentRequest): Promise<string> {
-    const systemPrompt = `You are an expert in code related to Azure resources. The user prompt refers to some Azure resource in the query result. If the text contains the placeholder of the url to a resource, replace the placeholder with the url to the corresponding resource. Here is the query result: ${queryResult}`;
+async function summarizeAzureResourceQueryResult(request: AgentRequest, queryResult: QueryAzureResourceGraphResult): Promise<string | undefined> {
+    const systemPrompt = `You are an expert in Azure Resource Graph. You are given the response to an Azure Resource Graph query: ${JSON.stringify(queryResult.response)}`;
     const response = await getResponseAsStringCopilotInteraction(systemPrompt, {
         context: {
             history: []
         },
-        userPrompt: learnResponse,
+        userPrompt: "Summarize the names, ids and endpoints that can be used in a program to interact with the resources",
         responseStream: request.responseStream,
         token: request.token
     });
-    return response ?? learnResponse;
+    return response;
 }
