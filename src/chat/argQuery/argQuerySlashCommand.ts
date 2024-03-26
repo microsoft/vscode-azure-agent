@@ -5,7 +5,6 @@
 
 import { type ResourceGraphModels } from "@azure/arm-resourcegraph";
 // eslint-disable-next-line import/no-internal-modules
-import { type FacetResult } from "@azure/arm-resourcegraph/esm/models";
 import { callWithTelemetryAndErrorHandling } from "@microsoft/vscode-azext-utils";
 import { ext } from "../../extensionVariables";
 import { type AgentRequest } from "../agent";
@@ -36,30 +35,12 @@ async function argQueryHandler(request: AgentRequest): Promise<SlashCommandHandl
     return callWithTelemetryAndErrorHandling("argQueryHandler", async (actionContext) => {
         const result = await queryAzureResourceGraph(actionContext, request.userPrompt, request);
         if (result !== undefined) {
-            const facetResults = result.response.facets?.filter((facet): facet is FacetResult => facet.resultType === "FacetResult");
-            const firstFacetResult = facetResults?.at(0);
-            // If we have a facet, use it to summarize the response to get a more predictable response.
-            let queryResultToSummarize: ArgQueryResult;
-            if (facetResults && firstFacetResult) {
-                // We can only have at most one facet result.
-                // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-                const data = firstFacetResult.data;
-                queryResultToSummarize = {
-                    totalRecords: result.response.totalRecords,
-                    count: firstFacetResult.count,
-                    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-                    data: data,
-                };
-            } else {
-                // Trim the original response to fall in the token limit of the language model and hope it can be summarized.
-                const tokenLimit = getLanguageModelTokenLimit();
-                queryResultToSummarize = getTrimmedQueryResult(result.response, tokenLimit);
-            }
+            const tokenLimit = getLanguageModelTokenLimit();
+            // @todo: Make the recordLimit a configurable setting
+            const recordLimit = 5;
+            // Trim the original response to fall in the token limit of the language model and hope it can be summarized.
+            const queryResultToSummarize = getTrimmedQueryResult(result.response, tokenLimit, recordLimit);
             await summarizeQueryResponse(queryResultToSummarize, request);
-            const isResultTrimmed = result.response.totalRecords > queryResultToSummarize.count;
-            if (isResultTrimmed) {
-                await displayTrimWarning(request);
-            }
             await displayArgQuery(result.query, result.response, request);
         }
 
@@ -67,13 +48,12 @@ async function argQueryHandler(request: AgentRequest): Promise<SlashCommandHandl
     });
 }
 
-function getSummarizeQueryResponseSystemPrompt(queryResult: ArgQueryResult) {
-    return `You are an expert in Azure resources. The user has asked a question regarding their Azure resources. Answer their question using the information in this Azure Resource Graph query result:\n\n${JSON.stringify(queryResult, null, 3)}\n\nDo not mention the query or query results in your response, simply answer the question.`;
-}
-
 async function summarizeQueryResponse(queryResult: ArgQueryResult, request: AgentRequest): Promise<void> {
-    const systemPrompt = getSummarizeQueryResponseSystemPrompt(queryResult);
-    await verbatimCopilotInteraction(systemPrompt, request, { includeHistory: "all", progressMessage: "Getting an answer..." });
+    let systemPrompt = `You are an expert in Azure resources. The user has asked a question for the user's Azure resources. Answer the question using the query result of Azure Resource Graph: ${JSON.stringify(queryResult, null, 3)}.`;
+    if (queryResult.count < queryResult.totalRecords) {
+        systemPrompt += "\nAlso mention that the answer is generated based on a subset of the user's Azure resources.";
+    }
+    await verbatimCopilotInteraction(systemPrompt, request, { includeHistory: "none", progressMessage: "Getting an answer..." });
 }
 
 async function displayArgQuery(query: string, queryResponse: ResourceGraphModels.QueryResponse, request: AgentRequest): Promise<void> {
@@ -86,16 +66,12 @@ async function displayArgQuery(query: string, queryResponse: ResourceGraphModels
     });
 }
 
-async function displayTrimWarning(request: AgentRequest) {
-    request.responseStream.markdown(`\n\n> ⚠️ This answer is based on a trimmed result to prevent exceeding the language model's token limit.\n`);
-}
-
 /**
  * Trims the response from an Azure Resource Graph query to avoid the summarized system prompt from being too long.
  * @todo: Find a library to handle the LLM token size limit for all interactions.
  * https://github.com/microsoft/vscode-azure-agent/issues/101
  */
-function getTrimmedQueryResult(queryResponse: ResourceGraphModels.QueryResponse, tokenLimit: number): ArgQueryResult {
+function getTrimmedQueryResult(queryResponse: ResourceGraphModels.QueryResponse, tokenLimit: number, recordLimit: number): ArgQueryResult {
     let count = queryResponse.count;
     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-explicit-any
     let data: any = queryResponse.data;
@@ -105,8 +81,12 @@ function getTrimmedQueryResult(queryResponse: ResourceGraphModels.QueryResponse,
         let numTokens = 0;
         // Estimate the number of tokens until it exceeds our limit
         for (const entry of data) {
+            // Limit the number of records
+            if (dataToPreserve.length >= recordLimit) {
+                break;
+            }
             const entryTokenCount = JSON.stringify(entry).length;
-            // Make sure there is at least one entry in the data
+            // Limit the size of the result but make sure there is at least one record in the data
             if (numTokens > 0 && numTokens + entryTokenCount > tokenLimit) {
                 break;
             } else {

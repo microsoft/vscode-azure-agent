@@ -59,14 +59,7 @@ async function queryArg(subscription: AzureSubscription, query: string, request:
         const resourceGraphClient = new ResourceGraphClient(tokenCredential);
         const response = await resourceGraphClient.resources({
             query: query,
-            options: { resultFormat: "objectArray" },
-            facets: [{
-                expression: "id,name,type,location,resourceGroup,subscriptionId",
-                options: {
-                    sortOrder: "asc",
-                    top: facetSize
-                }
-            }]
+            options: { resultFormat: "objectArray" }
         });
         return response;
     }
