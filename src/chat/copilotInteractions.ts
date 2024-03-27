@@ -104,7 +104,7 @@ async function queueCopilotInteraction(onResponseFragment: (fragment: string) =>
 }
 
 let lastCopilotInteractionRunTime: number = 0;
-const timeBetweenCopilotInteractions = 500;
+const timeBetweenCopilotInteractions = 100;
 async function runCopilotInteractionQueue() {
     while (copilotInteractionQueue.length > 0) {
         const queueItem = copilotInteractionQueue.shift();
