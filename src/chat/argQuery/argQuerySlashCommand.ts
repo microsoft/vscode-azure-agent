@@ -49,7 +49,7 @@ async function argQueryHandler(request: AgentRequest): Promise<SlashCommandHandl
 }
 
 async function summarizeQueryResponse(queryResult: ArgQueryResult, request: AgentRequest): Promise<void> {
-    let systemPrompt = `You are an expert in Azure resources. The user has asked a question for the user's Azure resources. Answer the question using the query result of Azure Resource Graph: ${JSON.stringify(queryResult, null, 3)}.`;
+    let systemPrompt = `You are an expert in Azure resources. The user has asked a question about their Azure resources. Answer the question using the query result of Azure Resource Graph: ${JSON.stringify(queryResult, null, 3)}.`;
     if (queryResult.count < queryResult.totalRecords) {
         systemPrompt += "\nAlso mention that the answer is generated based on a subset of the user's Azure resources.";
     }
@@ -60,7 +60,7 @@ async function displayArgQuery(query: string, queryResponse: ResourceGraphModels
     request.responseStream.markdown(`\n\nThis information was retrieved by querying Azure Resource Graph with the following query:\n\n\`\`\`\n${query}\n\`\`\`\n`);
     request.responseStream.markdown(`\n\nYou can use the button to view the full query result.\n`);
     request.responseStream.button({
-        title: "Show full query result",
+        title: "Show Full Query Result",
         command: "azureAgent.showArgQueryResult",
         arguments: [{ queryResponse }]
     });

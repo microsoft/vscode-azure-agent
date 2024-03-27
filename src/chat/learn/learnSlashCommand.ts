@@ -44,9 +44,9 @@ function learnHandler(config: LearnCommandConfig, request: AgentRequest): Promis
             request.responseStream.markdown(`If you want to learn more about ${config.topic}, simply ask me what it is you'd like to learn.\n`);
             return { chatAgentResult: {}, followUp: config.noInputSuggestions?.map((suggestion) => ({ prompt: `${suggestion}` })), };
         } else {
+            // @todo: Find better way to summarize the full conversation history
             const questionForRagContent = await summarizeHistoryThusFar(request);
             const ragContent = await getMicrosoftLearnRagContent(actionContext, questionForRagContent, request);
-
 
             const resourceInfo = await summarizeAzureResourceInfo(request);
             ext.outputChannel.debug("summarizedResourceInfo", resourceInfo);
@@ -73,7 +73,7 @@ function learnHandler(config: LearnCommandConfig, request: AgentRequest): Promis
             if (argQueryResult && summarizedQueryResult) {
                 request.responseStream.markdown(`This content is generated based on the result of an Azure Resource Graph query.`);
                 request.responseStream.button({
-                    title: "Show full query result",
+                    title: "Show Full Query Result",
                     command: "azureAgent.showArgQueryResult",
                     arguments: [{ queryResponse: argQueryResult.response }]
                 });
