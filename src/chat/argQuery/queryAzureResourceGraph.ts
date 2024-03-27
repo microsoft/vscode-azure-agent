@@ -49,8 +49,6 @@ export async function queryAzureResourceGraph(actionContext: IActionContext, pro
     return undefined;
 }
 
-const facetSize = 5;
-
 async function queryArg(subscription: AzureSubscription, query: string, request: AgentRequest): Promise<ResourceGraphModels.ResourcesResponse | undefined> {
     const tokenCredential = subscription.credential;
     if (tokenCredential !== undefined) {
@@ -59,14 +57,7 @@ async function queryArg(subscription: AzureSubscription, query: string, request:
         const resourceGraphClient = new ResourceGraphClient(tokenCredential);
         const response = await resourceGraphClient.resources({
             query: query,
-            options: { resultFormat: "objectArray" },
-            facets: [{
-                expression: "id,name,type,location,resourceGroup,subscriptionId",
-                options: {
-                    sortOrder: "asc",
-                    top: facetSize
-                }
-            }]
+            options: { resultFormat: "objectArray" }
         });
         return response;
     }
