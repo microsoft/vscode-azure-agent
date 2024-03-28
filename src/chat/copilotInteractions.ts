@@ -36,15 +36,6 @@ export function getLanguageModelTokenLimit(): number {
     return languageModelPreference.find((m) => m.name === mostPreferredAvailableLanguageModel)?.contextWindowTokenLimit ?? smallestContextWindowTokenLimit
 }
 
-const showDebugCopilotInteractionAsProgress = false;
-function debugCopilotInteraction(responseStream: vscode.ChatResponseStream, msg: string) {
-    const messageToLog = msg.replace(/\n/g, "").trim();
-    if (showDebugCopilotInteractionAsProgress) {
-        responseStream.markdown(new vscode.MarkdownString(`\n\n${new Date().toISOString()} >> \`${messageToLog}\`\n\n`));
-    }
-    ext.outputChannel.debug(messageToLog);
-}
-
 /**
  * Feeds {@link systemPrompt} and {@link userContent} to Copilot and redirects the response directly to ${@link progress}.
  */
@@ -69,7 +60,7 @@ export async function getResponseAsStringCopilotInteraction(systemPrompt: string
     await queueCopilotInteraction((fragment) => {
         joinedFragements += fragment;
     }, systemPrompt, request, { includeHistory: "none", setCache: false, useCache: true, progressMessage: "", ...options });
-    debugCopilotInteraction(request.responseStream, `Copilot response:\n\n${joinedFragements}\n`);
+    ext.outputChannel.debug(`Copilot response:\n\n${joinedFragements}\n`);
     return joinedFragements;
 }
 
@@ -150,13 +141,13 @@ async function doCopilotInteraction(onResponseFragment: (fragment: string) => vo
             new vscode.LanguageModelChatUserMessage(agentRequest.userPrompt)
         ];
 
-        debugCopilotInteraction(agentRequest.responseStream, `System Prompt:\n\n${systemPrompt}\n`);
-        debugCopilotInteraction(agentRequest.responseStream, `History:\n\n${historyMessages.map((m) => `(${m instanceof vscode.LanguageModelChatUserMessage ? "user" : "assistant"})>${m.content}`).join("\n")}\n`);
-        debugCopilotInteraction(agentRequest.responseStream, `User Content:\n\n${agentRequest.userPrompt}\n`);
+        ext.outputChannel.debug(`System Prompt:\n\n${systemPrompt}\n`);
+        ext.outputChannel.debug(`History:\n\n${historyMessages.map((m) => `(${m instanceof vscode.LanguageModelChatUserMessage ? "user" : "assistant"})>${m.content}`).join("\n")}\n`);
+        ext.outputChannel.debug(`User Content:\n\n${agentRequest.userPrompt}\n`);
 
         const cacheKey = encodeCopilotInteractionToCacheKey(messages);
         if (options.useCache && copilotInteractionCache[cacheKey]) {
-            debugCopilotInteraction(agentRequest.responseStream, `Using cached response...`);
+            ext.outputChannel.debug(`Using cached response...`);
             onResponseFragment(copilotInteractionCache[cacheKey].joinedResponseFragments);
             copilotInteractionCache[cacheKey].lastHit = Date.now();
         } else {
@@ -179,7 +170,7 @@ async function doCopilotInteraction(onResponseFragment: (fragment: string) => vo
             }
         }
     } catch (e) {
-        debugCopilotInteraction(agentRequest.responseStream, `Failed to do copilot interaction with system prompt '${systemPrompt}'. Error: ${JSON.stringify(e)}`);
+        ext.outputChannel.error(`Failed to do copilot interaction with system prompt '${systemPrompt}'. Error: ${JSON.stringify(e)}`);
     }
 }
 
