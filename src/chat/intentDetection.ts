@@ -5,8 +5,7 @@
 
 import { ext } from "../extensionVariables";
 import { type AgentRequest } from "./agent";
-import { getResponseAsStringCopilotInteraction, getStringFieldFromCopilotResponseMaybeWithStrJson } from "./copilotInteractions";
-import { summarizeHistoryThusFar } from "./summarizing";
+import { getConversationAsString, getResponseAsStringCopilotInteraction, getStringFieldFromCopilotResponseMaybeWithStrJson } from "./copilotInteractions";
 import { getTypeChatTranslation } from "./typechat/getTypeChatTranslation";
 import { UnknownIntentName, getZodIntentDetectionSchema } from "./typechat/zodIntentDetectionHelper";
 
@@ -21,8 +20,8 @@ export type IntentDetectionTarget = {
  */
 async function detectIntentTypeChat(targets: IntentDetectionTarget[], request: AgentRequest): Promise<IntentDetectionTarget | undefined> {
     const schema = getZodIntentDetectionSchema(targets);
-    const statementForIntentDetection = await summarizeHistoryThusFar(request);
-    const translation = await getTypeChatTranslation(schema, "Action", { ...request, userPrompt: statementForIntentDetection });
+    const conversationAsString = await getConversationAsString(request);
+    const translation = await getTypeChatTranslation(schema, "Action", { ...request, userPrompt: conversationAsString });
     if (translation !== undefined) {
         const intent: string | undefined =
             (translation as { intent?: string | undefined; }).intent ||
@@ -48,8 +47,8 @@ async function detectIntentTypeChat(targets: IntentDetectionTarget[], request: A
  */
 async function detectIntentNaturalLanguage(targets: IntentDetectionTarget[], request: AgentRequest): Promise<IntentDetectionTarget | undefined> {
     const systemPrompt = getDetectIntentSystemPrompt1(targets.concat([{ name: "none", intentDetectionDescription: "None of the options are the best option or are applicable." }]));
-    const statementForIntentDetection = await summarizeHistoryThusFar(request);
-    const maybeJsonCopilotResponse = await getResponseAsStringCopilotInteraction(systemPrompt, { ...request, userPrompt: statementForIntentDetection });
+    const conversationAsString = await getConversationAsString(request);
+    const maybeJsonCopilotResponse = await getResponseAsStringCopilotInteraction(systemPrompt, { ...request, userPrompt: conversationAsString });
     const determinedOption =
         getStringFieldFromCopilotResponseMaybeWithStrJson(maybeJsonCopilotResponse, "option") ||
         getStringFieldFromCopilotResponseMaybeWithStrJson(maybeJsonCopilotResponse, "intent");
@@ -67,7 +66,7 @@ async function detectIntentNaturalLanguage(targets: IntentDetectionTarget[], req
 
 function getDetectIntentSystemPrompt1(targets: IntentDetectionTarget[]) {
     const targetDescriptions = targets.map((target) => `'${target.name}' (${target.intentDetectionDescription})`).join(", ")
-    return `You are an expert in determining which of the following options the user is interested, if any. Your job is to determine which option, if any, would most help the user based on their query. If none of the options are relevant pick the "none" option.
+    return `You are an expert in reading conversations between an assistant and a user, and determining which of the following options the user wants the assistant to perform next, based both on the user's latest message and the conversation as a whole. If none of the options are relevant pick the "none" option.
 
     The options are: ${targetDescriptions}.
 
