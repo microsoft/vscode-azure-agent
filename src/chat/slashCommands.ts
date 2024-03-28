@@ -5,7 +5,7 @@
 
 import * as crypto from "crypto";
 import type * as vscode from "vscode";
-import { AzureAgentChatResultMetadata } from "../../api";
+import { type AzureAgentChatResultMetadata } from "../../api";
 import { type AgentRequest, type IAgentRequestHandler } from "./agent";
 import { detectIntent } from "./intentDetection";
 

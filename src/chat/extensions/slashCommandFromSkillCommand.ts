@@ -4,7 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 import { VSCodeAzureSubscriptionProvider } from "@microsoft/vscode-azext-azureauth";
-import { AzureAgentChatResultMetadata, type SkillCommandArgs, type SkillCommandConfig } from "../../../api";
+import { type AzureAgentChatResultMetadata, type SkillCommandArgs, type SkillCommandConfig } from "../../../api";
 import { ext } from "../../extensionVariables";
 import { type AgentRequest } from "../agent";
 import { queryAzureResourceGraph } from "../argQuery/queryAzureResourceGraph";
