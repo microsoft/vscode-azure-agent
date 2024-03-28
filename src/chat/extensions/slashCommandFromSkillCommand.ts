@@ -4,7 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 import { VSCodeAzureSubscriptionProvider } from "@microsoft/vscode-azext-azureauth";
-import { type SkillCommandArgs, type SkillCommandConfig } from "../../../api";
+import { AzureAgentChatResultMetadata, type SkillCommandArgs, type SkillCommandConfig } from "../../../api";
 import { ext } from "../../extensionVariables";
 import { type AgentRequest } from "../agent";
 import { queryAzureResourceGraph } from "../argQuery/queryAzureResourceGraph";
@@ -35,7 +35,16 @@ export function slashCommandFromSkillCommand(command: SkillCommandConfig, extens
                     }
                 }
 
-                return await extension.runSkillCommand(command, args);
+                // Make sure skill commands are not be setting anything that would be in AzureAgentChatResultMetadata
+                const result = await extension.runSkillCommand(command, args);
+                const resultMetadata = result.chatAgentResult.metadata;
+                if (resultMetadata !== undefined) {
+                    // Set the handler chain to an empty array and the resultId to an empty string, they'll be set to real values later
+                    const newMetadata: AzureAgentChatResultMetadata = { ...resultMetadata, handlerChain: [], resultId: "" };
+                    result.chatAgentResult = { ...result.chatAgentResult, metadata: newMetadata };
+                }
+
+                return result;
             }
         }
     ]

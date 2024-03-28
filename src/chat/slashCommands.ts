@@ -5,25 +5,14 @@
 
 import * as crypto from "crypto";
 import type * as vscode from "vscode";
+import { AzureAgentChatResultMetadata } from "../../api";
 import { type AgentRequest, type IAgentRequestHandler } from "./agent";
-import { type WizardContinuation } from "./extensions/slashCommandFromWizardCommand";
 import { detectIntent } from "./intentDetection";
 
 /**
  * A camel cased string that names the slash command. Will be used as the string that the user types to invoke the command.
  */
 export type SlashCommandName = string;
-
-export type ChatAgentResultMetadata = {
-    /**
-     * The chain of slash command handlers that were invoked to produce this result.
-     */
-    handlerChain?: string[]
-
-    resultId?: string;
-
-    wizardContinuation?: WizardContinuation;
-}
 
 /**
  * The result of a slash command handler. Meant to be (nearly) identical to {@link SkillCommandResult}
@@ -32,12 +21,12 @@ export type SlashCommandHandlerResult = {
     /**
      * The VsCode chat agent result.
      */
-    chatAgentResult: Omit<vscode.ChatResult, "metadata"> & { metadata?: ChatAgentResultMetadata },
+    chatAgentResult: vscode.ChatResult;
 
     /**
      * Any follow-up messages to be given for this result.
      */
-    followUp?: vscode.ChatFollowup[],
+    followUp?: vscode.ChatFollowup[];
 } | undefined;
 
 /**
@@ -52,15 +41,15 @@ export type SlashCommandConfig = {
     /**
      * A short sentence description of the slash command. Should give the user a good idea of what the command does.
      */
-    shortDescription: string,
+    shortDescription: string;
     /**
      * A longer sentence description of the slash command. Should make clear to the user when the command is appropriate to use.
      */
-    longDescription: string,
+    longDescription: string;
     /**
      * A sentence description that helps copilot understand when the command should be used.
      */
-    intentDescription?: string,
+    intentDescription?: string;
 
     handler: SlashCommandHandler
 };
@@ -133,7 +122,10 @@ export class SlashCommandsOwner implements IAgentRequestHandler {
 
             this._previousSlashCommandHandlerResult = result;
             if (result !== undefined) {
-                result.chatAgentResult.metadata = { handlerChain: handlerChain, resultId: crypto.randomUUID(), ...result.chatAgentResult.metadata };
+                // Allow handlerChain and resultId this slash commands owner knows of to be overwritten by existing values in result.chatAgentResult.metadata.
+                // This means that these values are ultimately set by the final slash commands owner to process it, which is who knows the full chain.
+                const agentMetdata: AzureAgentChatResultMetadata = { handlerChain: handlerChain, resultId: crypto.randomUUID(), ...result.chatAgentResult.metadata };
+                result.chatAgentResult = { ...result.chatAgentResult, metadata: agentMetdata };
             }
             return result;
         } else {
@@ -142,13 +134,17 @@ export class SlashCommandsOwner implements IAgentRequestHandler {
     }
 
     public getFollowUpForLastHandledSlashCommand(result: vscode.ChatResult, _token: vscode.CancellationToken): vscode.ChatFollowup[] | undefined {
-        if (this._previousSlashCommandHandlerResult?.chatAgentResult?.metadata?.resultId === result.metadata?.["resultId"]) {
-            const followUpForLastHandledSlashCommand = this._previousSlashCommandHandlerResult?.followUp;
-            this._previousSlashCommandHandlerResult = undefined;
-            return followUpForLastHandledSlashCommand;
-        } else {
-            return undefined;
+        if (this._previousSlashCommandHandlerResult?.chatAgentResult?.metadata !== undefined) {
+            const previousSlashCommandHandlerResultAgentMetadata = this._previousSlashCommandHandlerResult.chatAgentResult.metadata as AzureAgentChatResultMetadata;
+            const resultMetadata = result.metadata as AzureAgentChatResultMetadata;
+            if (previousSlashCommandHandlerResultAgentMetadata.resultId === resultMetadata.resultId) {
+                const followUpForLastHandledSlashCommand = this._previousSlashCommandHandlerResult?.followUp;
+                this._previousSlashCommandHandlerResult = undefined;
+                return followUpForLastHandledSlashCommand;
+            }
+
         }
+        return undefined;
     }
 
     public async getSlashCommands(): Promise<SlashCommands> {

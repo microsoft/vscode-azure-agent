@@ -179,27 +179,10 @@ export type SkillCommandResult = {
     /**
      * The VsCode chat agent result.
      */
-    chatAgentResult: Omit<vscode.ChatResult, 'metadata'> & { metadata: SkillCommandResultMetadata };
+    chatAgentResult: vscode.ChatResult;
 
     /**
      * Any follow-up messages to be given for this result.
      */
     followUp?: vscode.ChatFollowup[],
-};
-
-export type SkillCommandResultMetadata = {
-    /**
-     * The chain of slash command handlers that were invoked to produce this result. Will be populated by the agent.
-     */
-    handlerChain?: string[]
-
-    /**
-     * A unique identifier for the result. Will be populated by the agent.
-     */
-    resultId?: string;
-
-    /**
-     * Any additional metadata that the skill command handler wants to attach to the result.
-     */
-    [key: string]: unknown;
 };
