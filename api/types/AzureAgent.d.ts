@@ -126,3 +126,25 @@ export type AgentRequest = {
     responseStream: vscode.ChatExtendedResponseStream;
     token: vscode.CancellationToken;
 };
+
+/**
+ * Metadata that the Azure agent attaches to the result of a chat command. When looking at Azure agent response turns in a {@link vscode.ChatContext.history}, it should
+ * be expected that this metadata will be present in the {@link vscode.ChatResponseTurn.result}'s metadata. A handler of a command neither needs to nor should create this metadata.
+ */
+export type AzureAgentChatResultMetadata = {
+    /**
+     * The chain of slash command handlers that were invoked to produce this result.
+     */
+    handlerChain: string[];
+
+    /**
+     * A unique identifier for the result.
+     */
+    resultId: string;
+
+    /**
+     * Any additional metadata that was added by some other code.
+     */
+    [key: string]: unknown;
+};
+
