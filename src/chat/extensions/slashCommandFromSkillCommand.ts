@@ -39,7 +39,6 @@ export function slashCommandFromSkillCommand(command: SkillCommandConfig, extens
                 const result = await extension.runSkillCommand(command, args);
                 const resultMetadata = result.chatAgentResult.metadata;
                 if (resultMetadata !== undefined) {
-                    // Make sure the skill commands are not setting anything that would be in AzureAgentChatResultMetadata
                     const newMetadata = { ...resultMetadata };
                     delete newMetadata["handlerChain"];
                     delete newMetadata["resultId"];
