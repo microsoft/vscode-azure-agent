@@ -7,7 +7,7 @@ import * as fs from "fs";
 import * as os from "os";
 import * as path from "path";
 import * as vscode from "vscode";
-import { type AgentBenchmarkConfig, type AgentBenchmarkWithStepsConfig } from "../../../api";
+import { type AgentBenchmarkConfig, type AgentBenchmarkWithStepsConfig, type AzureAgentChatResultMetadata } from "../../../api";
 import { type AgentRequest, type IAgentRequestHandler } from "../agent";
 import { agentId, agentName } from "../agentConsts";
 import { type AzureExtension } from "../extensions/AzureExtension";
@@ -141,7 +141,8 @@ export class AgentBenchmarker implements IAgentRequestHandler {
 
             if (handleResult) {
                 let validationString = "🔍 Automated Validation:\n";
-                const handlerChain = handleResult.chatAgentResult.metadata?.handlerChain || [];
+                const metadata = handleResult.chatAgentResult.metadata as AzureAgentChatResultMetadata | undefined;
+                const handlerChain = metadata?.handlerChain || [];
                 const handlerChainIsOptional = this._validateHandlerChain(handlerChain || [], step.acceptableHandlerChains);
                 validationString += handlerChainIsOptional ? `✅ Handler chain is valid (${JSON.stringify(handlerChain)}).\n` : `❌ Handler chain is invalid. Expected one of: ${JSON.stringify(step.acceptableHandlerChains)}, Actual: ${JSON.stringify(handlerChain)}\n`;
 
